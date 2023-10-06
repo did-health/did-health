@@ -39,15 +39,20 @@ const PatientForm: React.FC = () => {
 
   const [hasCreatedProfile, setHasCreatedProfile] = useState(false);
   const [uri, setUri] = useState("");
+  const [didsuffix, setDIDSuffix] = useState<string>("");
   const [did, setDID] = useState<string>("");
 
   const handleDIDChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+
+    setDIDSuffix(value); // Assuming value contains the new suffix
     setDID((prevDID) => {
       return 'did:health:' + chainIdString + value;
     });
+
+
   }
 
   const handleInputChange = (
@@ -152,11 +157,19 @@ const PatientForm: React.FC = () => {
           </label>
           <input
             type="text"
-            name="did"
-            value={did}
+            name="didsuffix"
+            value={didsuffix}
             onChange={handleDIDChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
+          <label>Your DID is (will be) : </label>
+          <input
+            type="text"
+            name="did"
+            value={did}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          />
+
         </div>
       </div>
       <div className="form-group">
