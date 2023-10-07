@@ -1,57 +1,101 @@
-#!/usr/bin/env node
-import didResolver from 'did-resolver';
-//import healthdid from 'health-did-resolver';
-    
-const didHealthDocument = async (did: string) => {
-    const didDocument = await resolveHealthDIDDocument(did);
+import React, { useState, useEffect } from 'react';
+import { useScaffoldContractRead } from "../hooks/scaffold-eth";
 
-}
+const DidDocumentForm = () => {
+  const [inputDID, setInputDID] = useState(""); // State to store the entered DID
 
-async function resolveHealthDIDDocument( did: string){
-    //const healthDidResolver = healthdid.getResolver(providerConfig)
-    //const didResolver = new healthdid.Resolver(healthDidResolver)
-    /*didResolver.resolve(did).then(
-        (doc) => console.log(doc)
-    )*/
-    try{
-      const resolver =  new didResolver.Resolver()
-      const doc = await resolver.resolve(did)  
-      console.log(JSON.stringify(doc))
-      if ( doc.didDocument != null ){ 
-      //const isValid =  isValidDIDDocument(doc.didDocument)
-      return doc.didDocument;
-      }
+  const handleInputChange = (e) => {
+    setInputDID(e.target.value);
+  };
+
+  const { data: resolvedDid } = useScaffoldContractRead({
+    contractName: "HealthDIDRegistry",
+    functionName: "getHealtDID",
+    args: [inputDID], // Pass the user-entered DID as an argument
+  });
+
+  const convertToDidDocument = (resolvedDid) => {
+    if (!resolvedDid || !resolvedDid.healthDid) return null;
+
+    return {
+      "@context": "https://www.w3.org/ns/did/v1",
+      "id": `did:health:${resolvedDid.healthDid}`,
+      "verificationMethod": [
+        {
+          "id": `did:health:${resolvedDid.healthDid}#keys-1`,
+          "type": "EcdsaSecp256k1RecoveryMethod2020",
+          "controller": `did:health:${resolvedDid.healthDid}`,
+          "publicKeyBase58": resolvedDid.publicKeyBase58,
+          "threshold": {
+            "n": 5,
+            "t": 3
+          }
+        }
+      ],
+      "authentication": [
+        `did:health:${resolvedDid.healthDid}#keys-1`
+      ],
+      "assertionMethod": [
+        `did:health:${resolvedDid.healthDid}#keys-1`
+      ],
+      "capabilityInvocation": [
+        `did:health:${resolvedDid.healthDid}#keys-1`
+      ],
+      "capabilityDelegation": [
+        `did:health:${resolvedDid.healthDid}#keys-1`
+      ],
+      "keyAgreement": [
+        {
+          "id": `did:health:${resolvedDid.healthDid}#keys-2`,
+          "type": "EcdsaSecp256k1RecoveryMethod2020",
+          "controller": `did:health:${resolvedDid.healthDid}`,
+          "publicKeyBase58": resolvedDid.publicKeyBase58,
+          "threshold": {
+            "n": 5,
+            "t": 3
+          }
+        }
+      ],
+      "service": [
+        {
+          "id": `did:health:${resolvedDid.healthDid}#medical-records`,
+          "type": "SecureMedicalRecordsStore",
+          "serviceEndpoint": resolvedDid.serviceEndpoint,
+          "description": resolvedDid.description
+        }
+      ]
+    };
+  };
+
+  const didDocument = convertToDidDocument(resolvedDid);
+
+  return (
   
-    }
-    catch(e){
-      return undefined;
-    }
-    
-}
+    <div>
+      <form className="bg-white p-6 rounded shadow-lg">
+      <label className="block text-gray-700 text-sm font-bold mb-2">
+          Enter DID:
+          <input
+            type="text"
+            value={inputDID}
+            onChange={handleInputChange}
+          />
+        </label>
+      </form>
+      <div>
+        <h2>Resolved DID</h2>
+        <div className="mb-4">
+          <pre>{JSON.stringify(resolvedDid, null, 2)}</pre>
+          </div>
+      </div>
 
-function isValidDIDDocument(didDocument: { id: any; service: any; verificationMethod: any; authentication: any; }) {
-    // Check if 'id' field exists and is a string
-    if (!didDocument.id || typeof didDocument.id !== 'string') {
-    console.log("missing id")
-      return false;
-    }  
-    // Check if 'service' field exists and is an array
-    if (!Array.isArray(didDocument.service)) {
-    console.log("missing service")
-      return false;
-    }  
-    // Check if 'verificationMethod' field exists and is an array
-    if (!Array.isArray(didDocument.verificationMethod)) {
-        console.log("missing verification method") 
-      return false;
-    }  
-    // Check if 'authentication' field exists and is an array
-    if (!Array.isArray(didDocument.authentication)) {
-        console.log("authentication")
-      return false;
-    }  
-    // Additional checks can be added here based on your specific requirements
-      return true;
-  }
-  
-  export default didHealthDocument;
+      <div>
+        <h2>Resolved DID Document</h2>
+        <div className="mb-4">
+          <pre>{JSON.stringify(didDocument, null, 2)}</pre>
+          </div>
+      </div>
+    </div>
+  );
+};
+export default DidDocumentForm;
