@@ -27,35 +27,52 @@ class Lit {
   }
 
   async encryptFile(file: any) {
+    console.log('connecting to lit');
     if (!this.litNodeClient) {
-      await this.connect();
+        console.log("awaiting connect")
+        await this.connect();
+
     }
-    const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain });
-    const { encryptedFile, symmetricKey } = await LitJsSdk.encryptFile({ file });
+    console.log('checking auth sign message on chain' + chain)
+    
+    try{
+        const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain });
+        console.log('actually doing enc')
+        const { encryptedFile, symmetricKey } = await LitJsSdk.encryptFile({ file });
   
-    if (symmetricKey === undefined) {
-      throw new Error('Symmetric key is undefined'); // Handle the case where symmetricKey is undefined
+        if (symmetricKey === undefined) {
+        throw new Error('Symmetric key is undefined'); // Handle the case where symmetricKey is undefined
+        }
+        console.log('saving enc key')
+        const encryptedSymmetricKey = await this.litNodeClient?.saveEncryptionKey({
+        accessControlConditions: accessControlConditions,
+        symmetricKey: symmetricKey,
+        authSig,
+        chain,
+        });
+        
+        console.log("returning key")
+        if (encryptedSymmetricKey !== undefined) {
+        return {
+            encryptedFile: encryptedFile,
+            encryptedSymmetricKey: LitJsSdk.uint8arrayToString(encryptedSymmetricKey as Uint8Array, "base16")
+        };
+        } else {
+        console.log('no key');
+        return {
+            encryptedFile: null, // Assuming encryptedFile can be null
+            encryptedSymmetricKey: null
+        };
+        }
     }
-  
-    const encryptedSymmetricKey = await this.litNodeClient?.saveEncryptionKey({
-      accessControlConditions: accessControlConditions,
-      symmetricKey: symmetricKey,
-      authSig,
-      chain,
-    });
-  
-    if (encryptedSymmetricKey !== undefined) {
-      return {
-        encryptedFile: encryptedFile,
-        encryptedSymmetricKey: LitJsSdk.uint8arrayToString(encryptedSymmetricKey as Uint8Array, "base16")
-      };
-    } else {
-      console.log('no key');
-      return {
-        encryptedFile: null, // Assuming encryptedFile can be null
-        encryptedSymmetricKey: null
-      };
+    catch(e){
+        console.log('error' + e )
+        return {
+            encryptedFile: null, // Assuming encryptedFile can be null
+            encryptedSymmetricKey: null
+        };
     }
+    
   }
 
   async decryptFile(encryptedFile: any, encryptedSymmetricKey: any) {
