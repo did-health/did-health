@@ -3,9 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useScaffoldContractWrite } from "../hooks/scaffold-eth";
 import { makeStorageClient } from "../hooks/useIpfs";
 import { useAccount, useNetwork } from "wagmi";
-import { generateQRCode } from "../utils/QRcodeGeneration";
 import Button from "../components/Button";
-import Image from "next/image";
 import { v4 } from "uuid";
 
 import Patient = fhir4.Patient;
@@ -104,7 +102,58 @@ const PatientForm: React.FC = () => {
     downloadJson(patient, uuid);
     const blob = new Blob([JSON.stringify(patient)], { type: "application/json" });
     const files = [new File([blob], "plain-utf8.txt)"), new File([blob], "Patient/" + uuid)];
+    //Sign files with LIT
+    console.log('sign files with lit')
+    const quantity = 1;
+    const lockedFiles = files;
+    const { symmetricKey, encryptedZip } = await LitNodeClient.zipAndEncryptString(lockedFiles)
+    console.log('minting')
+    const { tokenId, tokenAddress, mintingAddress, txHash, errorCode, authSig } = await LitNodeClient.mintLIT({ chain, quantity })
 
+    const accessControlConditions = [
+      {
+        contractAddress: tokenAddress,
+        standardContractType: 'ERC1155',
+        chain,
+        method: 'balanceOf',
+        parameters: [
+          ':userAddress',
+          tokenAddress
+        ],
+        returnValueTest: {
+          comparator: '>',
+          value: '0'
+        }
+      }
+    ]
+    
+    /*if (errorCode) {
+      if (errorCode === 'wrong_chain') {
+        setError(
+          <>
+            <Typography variant='body1'>
+              Your Metamask or wallet is on the wrong blockchain.{/* }  
+              </Typography>
+          </>
+        )
+      } else if (errorCode === 'user_rejected_request') {
+        setError('You rejected the request in your wallet')
+      } else {
+        setError('An unknown error occurred')
+      }
+      setMinting(false)
+      return
+    }
+    */
+    //setTokenId(tokenId)
+    //setTxHash(txHash)
+
+    const encryptedSymmetricKey = await window.LitNodeClientsaveEncryptionKey({
+      accessControlConditions,
+      symmetricKey,
+      authSig,
+      chain
+    })
 
     const client = makeStorageClient();
     const cid = await client.put(files);
@@ -112,17 +161,10 @@ const PatientForm: React.FC = () => {
     const uri = "https://" + cid + ".ipfs.dweb.link/Patient/" + uuid;
     console.log(uri)
     //create new did registry entry
-
-    
-    //resolve diddocument
-    const diddocument = ''
-    const qrcode = await generateQRCode(diddocument);
     console.log("stored files with cid:", cid);
     console.log("uri:", uri);
     setHasCreatedProfile(true);
     setUri(uri);
-    setQrcode(qrcode);
-
     return uri;
   };
 
@@ -140,8 +182,7 @@ const PatientForm: React.FC = () => {
   const { writeAsync, isLoading } = useScaffoldContractWrite({
     contractName: "HealthDIDRegistry",
     functionName: "registerDID",
-    // args: [chainId + (patient?.did ?? ""), uri],
-    args: [chainIdString + (patient?.identifier?.[0].value ?? ""), uri],
+    args: [chainIdString + didsuffix, uri],
     blockConfirmations: 10,
     onBlockConfirmation: txnReceipt => {
       console.log("📦 Transaction blockHash", txnReceipt.blockHash);
@@ -167,6 +208,7 @@ const PatientForm: React.FC = () => {
             type="text"
             name="did"
             value={did}
+            readOnly
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
 
@@ -364,9 +406,17 @@ const PatientForm: React.FC = () => {
               />
             )}
           </div>
-          {qrcode && <Image src={qrcode} alt="QR Code" width={300} height={300} />}
+
     </form>
   );
 };
 
 export default PatientForm;
+
+function setMinting(arg0: boolean) {
+  throw new Error('Function not implemented.');
+}
+function setError(arg0: JSX.Element) {
+  throw new Error('Function not implemented.');
+}
+
