@@ -112,6 +112,7 @@ const PatientForm: React.FC = () => {
     console.log('encrypt files with lit:' + encFile?.text)
     if (encFile != null){
       const files = [new File([blob], "plain-utf8.txt)"), new File([encFile], "Patient/" + uuid)];
+      
       //Upload File to IPFS
       const client = makeStorageClient();
       const cid = await client.put(files);

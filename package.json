@@ -38,10 +38,10 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
+    "@lit-protocol/lit-node-client": "^2.2.61",
     "@mui/material": "^5.14.10",
     "@types/fhir": "^0.0.37",
     "did-resolver": "^4.1.0",
-    "lit-js-sdk": "^1.1.250",
     "react-icons": "^4.11.0",
     "react-qr-svg": "^2.4.0"
   }
