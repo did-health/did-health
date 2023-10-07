@@ -78,7 +78,7 @@ const DidDocumentForm = () => {
   console.log(didDocument)
   if (didDocument!=null)
   {  
-      const qrcode = generateQRCode(didDocument);
+      const qrcode = generateQRCode(JSON.stringify(didDocument));
   }
   //if (!resolvedDid || !resolvedDid.healthDid || resolvedDid.owner.startsWith("0x00")) return null;
 

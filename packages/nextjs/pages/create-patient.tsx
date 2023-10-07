@@ -5,7 +5,7 @@ import { makeStorageClient } from "../hooks/useIpfs";
 import { useAccount, useNetwork } from "wagmi";
 import Button from "../components/Button";
 import { v4 } from "uuid";
-import { litsdk }  from "lit-js-sdk";
+import Lit  from "./lit";
 
 import Patient = fhir4.Patient;
 import HumanName = fhir4.HumanName;
@@ -101,72 +101,31 @@ const PatientForm: React.FC = () => {
     patient.id = uuid;
 
     downloadJson(patient, uuid);
+    console.log("downloaded file");
     const blob = new Blob([JSON.stringify(patient)], { type: "application/json" });
-    const files = [new File([blob], "plain-utf8.txt)"), new File([blob], "Patient/" + uuid)];
-    //Sign files with LIT
-    console.log('sign files with lit')
-    const quantity = 1;
-    const lockedFiles = files;
-    const { symmetricKey, encryptedZip } = await litsdk.zipAndEncryptString(lockedFiles)
-    console.log('minting')
-    const { tokenId, tokenAddress, mintingAddress, txHash, errorCode, authSig } = await LitNodeClient.mintLIT({ chain, quantity })
+    console.log("created blob");
 
-    const accessControlConditions = [
-      {
-        contractAddress: tokenAddress,
-        standardContractType: 'ERC1155',
-        chain,
-        method: 'balanceOf',
-        parameters: [
-          ':userAddress',
-          tokenAddress
-        ],
-        returnValueTest: {
-          comparator: '>',
-          value: '0'
-        }
-      }
-    ]
-    
-    /*if (errorCode) {
-      if (errorCode === 'wrong_chain') {
-        setError(
-          <>
-            <Typography variant='body1'>
-              Your Metamask or wallet is on the wrong blockchain.{/* }  
-              </Typography>
-          </>
-        )
-      } else if (errorCode === 'user_rejected_request') {
-        setError('You rejected the request in your wallet')
-      } else {
-        setError('An unknown error occurred')
-      }
-      setMinting(false)
-      return
+    //Start Lit
+    const encBlob  = await Lit.encryptFile(blob);
+    console.log("executed encytption with lit:" + encBlob );    
+    const encFile =  encBlob.encryptedFile;
+    console.log('encrypt files with lit:' + encFile?.text)
+    if (encFile != null){
+      const files = [new File([blob], "plain-utf8.txt)"), new File([encFile], "Patient/" + uuid)];
+      //Upload File to IPFS
+      const client = makeStorageClient();
+      const cid = await client.put(files);
+      console.log(cid)
+      const uri = "https://" + cid + ".ipfs.dweb.link/Patient/" + uuid;
+      console.log(uri)
+      //create new did registry entry
+      console.log("stored files with cid:", cid);
+      console.log("uri:", uri);
+      setHasCreatedProfile(true);
+      setUri(uri);
+      return uri;
     }
-    */
-    //setTokenId(tokenId)
-    //setTxHash(txHash)
-
-    const encryptedSymmetricKey = await window.LitNodeClientsaveEncryptionKey({
-      accessControlConditions,
-      symmetricKey,
-      authSig,
-      chain
-    })
-
-    const client = makeStorageClient();
-    const cid = await client.put(files);
-    console.log(cid)
-    const uri = "https://" + cid + ".ipfs.dweb.link/Patient/" + uuid;
-    console.log(uri)
-    //create new did registry entry
-    console.log("stored files with cid:", cid);
-    console.log("uri:", uri);
-    setHasCreatedProfile(true);
-    setUri(uri);
-    return uri;
+    
   };
 
     
