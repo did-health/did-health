@@ -4,6 +4,7 @@ import { generateQRCode } from "../utils/QRcodeGeneration";
 import Image from "next/image";
 
 const DidDocumentForm = () => {
+  const [qrcode, setQrcode] = useState<any>("");
   const [inputDID, setInputDID] = useState(""); // State to store the entered DID
 
   const handleInputChange = (e) => {

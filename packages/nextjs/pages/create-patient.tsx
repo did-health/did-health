@@ -25,7 +25,7 @@ const PatientForm: React.FC = () => {
   });
 
   const account = useAccount();
-  const [qrcode, setQrcode] = useState<any>("");
+
   console.log("account", account);
   const { chain, chains } = useNetwork();
   const chainId = chain?.id;
@@ -106,7 +106,7 @@ const PatientForm: React.FC = () => {
     console.log("created blob");
 
     //Start Lit
-    const encBlob  = await Lit.encryptFile(blob);
+    const encBlob  = await Lit.encryptFile(blob, chainIdString);
     console.log("executed encytption with lit:" + encBlob );    
     const encFile =  encBlob.encryptedFile;
     console.log('encrypt files with lit:' + encFile?.text)
