@@ -49,7 +49,7 @@ const Home: NextPage = () => {
             <Link href="/did-document">
               <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl shadow-lg">
                 <BugAntIcon className="h-8 w-8 fill-secondary" />
-                <p>2. Share your HealthCare data with did:health(soon)</p>
+                <p>2. Share your HealthCare Idenitty with did:health</p>
               </div>
             </Link>
           </div>
