@@ -5,6 +5,7 @@ import { makeStorageClient } from "../hooks/useIpfs";
 import { useAccount, useNetwork } from "wagmi";
 import Button from "../components/Button";
 import { v4 } from "uuid";
+import { litsdk }  from "lit-js-sdk";
 
 import Patient = fhir4.Patient;
 import HumanName = fhir4.HumanName;
@@ -106,7 +107,7 @@ const PatientForm: React.FC = () => {
     console.log('sign files with lit')
     const quantity = 1;
     const lockedFiles = files;
-    const { symmetricKey, encryptedZip } = await LitNodeClient.zipAndEncryptString(lockedFiles)
+    const { symmetricKey, encryptedZip } = await litsdk.zipAndEncryptString(lockedFiles)
     console.log('minting')
     const { tokenId, tokenAddress, mintingAddress, txHash, errorCode, authSig } = await LitNodeClient.mintLIT({ chain, quantity })
 
