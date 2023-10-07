@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useScaffoldContractRead } from "../hooks/scaffold-eth";
+import { generateQRCode } from "../utils/QRcodeGeneration";
+import Image from "next/image";
 
 const DidDocumentForm = () => {
   const [inputDID, setInputDID] = useState(""); // State to store the entered DID
@@ -13,8 +15,13 @@ const DidDocumentForm = () => {
     functionName: "getHealtDID",
     args: [inputDID], // Pass the user-entered DID as an argument
   });
+  console.log(resolvedDid)
 
-  const convertToDidDocument = (resolvedDid) => {
+  const convertToDidDocument = (resolvedDid: {
+    description: any;
+    serviceEndpoint: any;
+    publicKeyBase58: any; owner: string; delegateAddresses: readonly string[]; healthDid: string; ipfsUri: string; altIpfsUris: readonly string[]; reputationScore: number; hasWorldId: boolean; hasPolygonId: boolean; hasSocialId: boolean; 
+} | undefined) => {
     if (!resolvedDid || !resolvedDid.healthDid) return null;
 
     return {
@@ -56,18 +63,24 @@ const DidDocumentForm = () => {
           }
         }
       ],
-      "service": [
-        {
-          "id": `did:health:${resolvedDid.healthDid}#medical-records`,
-          "type": "SecureMedicalRecordsStore",
-          "serviceEndpoint": resolvedDid.serviceEndpoint,
-          "description": resolvedDid.description
-        }
-      ]
+    "service": [
+      {
+        "id": `did:health:${resolvedDid.healthDid}#patient`,
+        "type": "Patient", // Assuming this is the type
+        "serviceEndpoint": resolvedDid.ipfsUri,
+        "description": "Access to the Pateint Demographics secured by LIT Protocol and stored on IPFS."
+      }
+    ]
     };
   };
 
-  const didDocument = convertToDidDocument(resolvedDid);
+  const didDocument = convertToDidDocument(resolvedDid); 
+  console.log(didDocument)
+  if (didDocument!=null)
+  {  
+      const qrcode = generateQRCode(didDocument);
+  }
+  //if (!resolvedDid || !resolvedDid.healthDid || resolvedDid.owner.startsWith("0x00")) return null;
 
   return (
   
@@ -96,6 +109,8 @@ const DidDocumentForm = () => {
           </div>
       </div>
     </div>
+//        {qrcode && <Image src={qrcode} alt="QR Code" width={300} height={300} />}      
   );
+  
 };
 export default DidDocumentForm;
