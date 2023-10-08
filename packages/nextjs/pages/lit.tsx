@@ -1,9 +1,9 @@
 import * as LitJsSdk from '@lit-protocol/lit-node-client';
-import { ethConnect } from "@lit-protocol/auth-browser";;
 const client = new LitJsSdk.LitNodeClient([]);
 //const client = new LitJsSdk.LitNodeClient();
 let chain = "";
 import { useAccount, useNetwork } from "wagmi";
+
 
 //Not used yet, but we need to get the chain id
 const chainIdToName = {
@@ -77,21 +77,15 @@ class Lit {
     const key = chainId as keyof typeof chainIdToName;
     return chainIdToName[key];
 }
-  async encryptFile(file: any, chainIdString: any) {
+  async encryptFile(file: any, chainIdString: any, authSig: any) {
     console.log('connecting to lit');
     if (!this.litNodeClient) {
         console.log("awaiting connect")
         await this.connect();
 
     }
-    //chain = this.getChainName(chainIdString);
-    chain = "goerli";
-    console.log('checking auth sign message on chain' + chain)
-    ///const chain = chainIdToName[chainid];
+  
     try{
-        //const authSig = await ethConnect.checkAndSignEVMAuthMessage({ chain });
-        const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain });
-        //const authSig = await ethConnect.signAndSaveAuthMessage({chain}); 
         console.log('actually doing enc')
         const { encryptedFile, symmetricKey } = await LitJsSdk.encryptFile({ file });
   

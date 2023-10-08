@@ -6,6 +6,7 @@ import { useAccount, useNetwork } from "wagmi";
 import Button from "../components/Button";
 import { v4 } from "uuid";
 import Lit  from "./lit";
+import { ethConnect } from "@lit-protocol/auth-browser";;
 
 import Patient = fhir4.Patient;
 import HumanName = fhir4.HumanName;
@@ -40,6 +41,10 @@ const PatientForm: React.FC = () => {
   const [uri, setUri] = useState("");
   const [didsuffix, setDIDSuffix] = useState<string>("");
   const [did, setDID] = useState<string>("");
+  const [showShareModal, setShowShareModal] = useState<boolean>(false);
+  const [savedSigningConditionsId, setSavedSigningConditionsId] =
+    useState<string>();
+  const [authSig, setAuthSig] = useState<Record<string, object>>({});
 
   const handleDIDChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -87,10 +92,35 @@ const PatientForm: React.FC = () => {
     });
   };
   
-  useEffect(() => {
-    console.log(patient); // This will log the updated patient state after each render
-  }, [patient]); // Only run this effect when patient state changes
+    useEffect(() => {
+      console.log(patient); // This will log the updated patient state after each render
+    }, [patient]); // Only run this effect when patient state changes
 
+    // Misc
+    const { address: publicKey } = useAccount();
+    console.log(publicKey)
+    // Step 1: pre-sign the auth message
+    useEffect(() => {
+      if (publicKey) {
+
+        Promise.resolve().then(async () => {
+          try {
+            const expiration = new Date(Date.now() + 1000 * 60 * 60 * 99999).toISOString();
+            setAuthSig({
+              ethereum: await ethConnect.checkAndSignEVMAuthMessage({
+                chain: "goerli",
+                switchChain: true,
+                expiration: expiration
+              }),
+            });
+          } catch (err: any) {
+            alert(`Error signing auth message: ${err?.message || err}`);
+          }
+        });
+      }
+    }, [publicKey]);
+
+  console.log(authSig)
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
@@ -106,10 +136,9 @@ const PatientForm: React.FC = () => {
     console.log("created blob");
 
     //Start Lit
-    const encBlob  = await Lit.encryptFile(blob, chainIdString);
+    const encBlob  = await Lit.encryptFile(blob, chainIdString, authSig);
     console.log("executed encytption with lit:" + encBlob );    
     const encFile =  encBlob.encryptedFile;
-    console.log('encrypt files with lit:' + encFile?.text)
     if (encFile != null){
       const files = [new File([blob], "plain-utf8.txt)"), new File([encFile], "Patient/" + uuid)];
       
@@ -360,7 +389,7 @@ const PatientForm: React.FC = () => {
               <Button
                 btnType="submit"
                 title="Register DID"
-                styles="bg-[#f71b02] text-white"
+                styles="bg-[#f71b023] text-white"
                 handleClick={() => {
                   writeAsync();
                 }}
