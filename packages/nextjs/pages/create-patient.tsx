@@ -351,7 +351,7 @@ const PatientForm: React.FC = () => {
               <Button
                 btnType="submit"
                 title="Create a Profile"
-                styles="bg-[#3a3a43] text-white"
+                styles="bg-[#f71b02] text-white"
                 handleClick={() => {
                   handleSubmit;
                 }}
@@ -360,7 +360,7 @@ const PatientForm: React.FC = () => {
               <Button
                 btnType="submit"
                 title="Register DID"
-                styles="bg-[#3a3a43] text-white"
+                styles="bg-[#f71b02] text-white"
                 handleClick={() => {
                   writeAsync();
                 }}
