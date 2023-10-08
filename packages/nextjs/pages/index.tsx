@@ -1,7 +1,4 @@
-import { useEffect } from "react";
 import Link from "next/link";
-import * as LitJsSdk from "@lit-protocol/lit-node-client";
-import { Button } from "@mui/material";
 import type { NextPage } from "next";
 import { useAccount } from "wagmi";
 import { BugAntIcon } from "@heroicons/react/24/outline";
@@ -9,16 +6,6 @@ import { MetaHeader } from "~~/components/MetaHeader";
 
 const Home: NextPage = () => {
   const { address } = useAccount();
-  async function connect() {
-    const client = new LitJsSdk.LitNodeClient({ alertWhenUnauthorized: false });
-    await client.connect();
-    const authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: "mumbai" });
-    console.log("authSig", authSig);
-  }
-  useEffect(() => {
-    if (!address) return;
-    connect();
-  }, [address]);
   return (
     <>
       <MetaHeader />
