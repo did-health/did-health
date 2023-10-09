@@ -6,16 +6,9 @@ import { useAccount, useNetwork } from "wagmi";
 import Button from "../components/Button";
 import { v4 } from "uuid";
 import Lit from "./lit";
-// import * as LitJsSdk from "@lit-protocol/lit-node-client";
-import { checkAndSignAuthMessage, ethConnect } from '@lit-protocol/lit-node-client';
-import { usePublicClient } from 'wagmi';
-
-
+import { ethConnect } from '@lit-protocol/lit-node-client';
 import Patient = fhir4.Patient;
-import HumanName = fhir4.HumanName;
-import Address = fhir4.Address;
-import Identifier = fhir4.Identifier;
-import { JsonRpcProvider, Web3Provider } from '@ethersproject/providers';
+import {  Web3Provider } from '@ethersproject/providers';
 
 const PatientForm: React.FC = () => {
   const [patient, setPatient] = useState<Patient>({
@@ -40,18 +33,13 @@ const PatientForm: React.FC = () => {
   if (chainId && chainId < 100000) {
     chainIdString = String(chainId).padStart(6, "0");
   }
-  //console.log("chain", chain);
-  //console.log("chains", chains);
 
   const [hasCreatedProfile, setHasCreatedProfile] = useState(false);
   const [uri, setUri] = useState("");
   const [didsuffix, setDIDSuffix] = useState<string>("");
   const [did, setDID] = useState<string>("");
-  const [showShareModal, setShowShareModal] = useState<boolean>(false);
-  const [savedSigningConditionsId, setSavedSigningConditionsId] =
     useState<string>();
-  const [authSig, setAuthSig] = useState<Record<string, object>>({});
-  const [testSig, setTestSig] = useState<any>();
+  const [authSig, setAuthSig] = useState<any>();
 
   const handleDIDChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -109,65 +97,30 @@ const PatientForm: React.FC = () => {
   const [error, setError] = useState<any>(null);
 
   async function generateAuthSig() {
-    setTestSig(null);
-    // setError(null);
-    // try {
-    //   const newAuthSig = await checkAndSignAuthMessage({
-    //     chain: 'goerli',
-    //   });
-    //   setTestSig(newAuthSig);
-    // } catch (err) {
-    //   console.error(err);
-    //   setError(`Failed to sign auth message: `);
-    // }
+    setAuthSig(null);
     if (publicKey) {
       const authSig = await ethConnect.signAndSaveAuthMessage({
         web3: provider,
-        account: publicKey,
+        account: publicKey.toLowerCase(),
         chainId: 5,
+        resources: {},
         expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-      });
+      }
+      );
+      setAuthSig(authSig)
     }
   }
 
-  // async function disconnect() {
-  //   setError(null);
-  //   try {
-  //     await LitJsSdk.disconnectWeb3();
-  //     setTestSig(null);
-  //   } catch (err) {
-  //     console.error(err);
-  //     setError(`Failed to disconnect: `);
-  //   }
-  // }
-
-  // Step 1: pre-sign the auth message
   useEffect(() => {
     if (publicKey) {
-
-      // Promise.resolve().then(async () => {
-      //   try {
-      //     const expiration = new Date(Date.now() + 1000 * 60 * 60 * 99999).toISOString();
-      //     setAuthSig({
-      //       ethereum: await checkAndSignAuthMessage({
-      //         chain: "goerli",
-      //         walletConnectProjectId: "didhealth"
-      //       }),
-      //     });
-      //   } catch (err: any) {
-      //     alert(`Error signing auth message: ${err?.message || err}`);
-      //   }
-      // });
-
       generateAuthSig();
-
     }
   }, [publicKey]);
 
   useEffect(() => {
-    console.log("This is the tsetSig: ", testSig);
+    console.log("This is the tsetSig: ", authSig);
 
-  }, [testSig]);
+  }, [authSig]);
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
@@ -182,10 +135,6 @@ const PatientForm: React.FC = () => {
     console.log("downloaded file");
     const blob = new Blob([JSON.stringify(patient)], { type: "application/json" });
     console.log("created blob");
-
-    //Start Lit
-    // await generateAuthSig();
-
     const encBlob = await Lit.encryptFile(blob, chainIdString, authSig);
     console.log("executed encytption with lit:" + encBlob);
     const encFile = encBlob.encryptedFile;
