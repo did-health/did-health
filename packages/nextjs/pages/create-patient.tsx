@@ -388,7 +388,7 @@ const PatientForm: React.FC = () => {
           <Button
             btnType="submit"
             title="Register DID"
-            styles="bg-[#f71b023] text-white"
+            styles="bg-[#f71b02] text-white"
             handleClick={() => {
               writeAsync();
             }}
@@ -401,11 +401,4 @@ const PatientForm: React.FC = () => {
 };
 
 export default PatientForm;
-
-function setMinting(arg0: boolean) {
-  throw new Error('Function not implemented.');
-}
-function setError(arg0: JSX.Element) {
-  throw new Error('Function not implemented.');
-}
 
