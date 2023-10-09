@@ -17,14 +17,15 @@ export async function generateQRCode(jsonf: string) {
   try {
     const generateQR = async (text: any) => {
       try {
-        console.log(await QRCode.toDataURL(text));
+        await QRCode.toDataURL(text);
       } catch (err) {
         console.error(err);
       }
     };
 
     // const data = await fs.promises.readFile(jsonf, "utf-8");
-    await generateQR(jsonf);
+    // await generateQR(jsonf);
+    return QRCode.toDataURL(jsonf);
   } catch (error) {
     console.error("Error generating QR code:", error);
   }
