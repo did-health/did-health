@@ -38,6 +38,8 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
+    "@lit-protocol/auth-browser": "^2.2.61",
+    "@lit-protocol/lit-node-client": "^2.2.61",
     "@mui/material": "^5.14.10",
     "@types/fhir": "^0.0.37",
     "did-resolver": "^4.1.0",

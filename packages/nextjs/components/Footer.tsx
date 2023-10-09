@@ -33,12 +33,12 @@ export const Footer = () => {
           <div className="flex justify-center items-center gap-2 text-sm w-full">
             <div className="text-center">
               <a
-                href="https://github.com/yogeshdarji/did-health"
+                href="https://github.com/did-health/did-health"
                 target="_blank"
                 rel="noreferrer"
                 className="underline underline-offset-2"
               >
-                Github
+                View on Github
               </a>
             </div>
           </div>
