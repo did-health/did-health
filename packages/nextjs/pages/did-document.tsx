@@ -88,20 +88,14 @@ const DidDocumentForm = () => {
       }
     }
   }, [resolvedDid]);
-
   useEffect(() => {
     console.log("QR code : ", qrcode);
   }, [qrcode])
-
-  // console.log("inputDID:", inputDID);
-  // console.log("resolvedDid:", resolvedDid);
-  // console.log("didDocument:", didDocument);
-  // console.log("qrcode:", qrcode);
   return (
     <div>
       <form className="bg-white p-6 rounded shadow-lg">
         <label className="block text-gray-700 text-sm font-bold mb-2">
-          Enter DID:
+          Enter did:health:
           <input
             type="text"
             value={inputDID}

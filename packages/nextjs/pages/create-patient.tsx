@@ -5,11 +5,12 @@ import { makeStorageClient } from "../hooks/useIpfs";
 import { useAccount, useNetwork } from "wagmi";
 import Button from "../components/Button";
 import { v4 } from "uuid";
-import Lit from "./lit";
 import { ethConnect } from '@lit-protocol/lit-node-client';
 import Patient = fhir4.Patient;
 import {  Web3Provider } from '@ethersproject/providers';
-
+import ShareModal from "lit-share-modal-v3";
+import * as LitJsSdk from "@lit-protocol/lit-node-client";
+import { LitNodeClient } from "@lit-protocol/lit-node-client";
 const PatientForm: React.FC = () => {
   const [patient, setPatient] = useState<Patient>({
     resourceType: 'Patient',
@@ -21,38 +22,74 @@ const PatientForm: React.FC = () => {
     address: [{ line: [], city: '', state: '', postalCode: '', country: '' }],
     identifier: [{ system: 'https://www.w3.org/ns/did', value: '' }, { type: { coding: [{ code: '', system: 'http://terminology.hl7.org/CodeSystem/v2-0203' }] } }],
   });
-
   const account = useAccount();
-  const { ethereum } = window as any;
+  const { address: publicKey } = useAccount();
+    const { ethereum } = window as any;
   const provider = new Web3Provider(ethereum);
-
-  console.log("account", account);
   const { chain, chains } = useNetwork();
   const chainId = chain?.id;
   let chainIdString = "";
   if (chainId && chainId < 100000) {
     chainIdString = String(chainId).padStart(6, "0");
   }
-
   const [hasCreatedProfile, setHasCreatedProfile] = useState(false);
   const [uri, setUri] = useState("");
   const [didsuffix, setDIDSuffix] = useState<string>("");
   const [did, setDID] = useState<string>("");
-    useState<string>();
-  const [authSig, setAuthSig] = useState<any>();
+  const [authSig, setAuthSig] = useState({});
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [accessControlConditions, setAccessControlConditions] = useState([]);
+  const [error, setError] = useState<any>(null);
+  const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
+  client.connect();
+  window.LitNodeClient = client;
 
+  useEffect(() => {
+    console.log(patient); // This will log the updated patient state after each render
+  }, [patient]);
+  useEffect(() => {
+    if (publicKey) {
+      generateAuthSig();
+    }
+  }, [publicKey]);
+  async function generateAuthSig() {
+    
+    if (publicKey!=null) {
+      const authSig = await ethConnect.signAndSaveAuthMessage({
+        web3: provider,
+        account: publicKey.toLowerCase(),
+        chainId: 5,
+        resources: {},
+        expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+      }
+      );
+      setAuthSig(authSig) 
+      console.log(authSig)
+    }
+  }
+  const onUnifiedAccessControlConditionsSelected = (shareModalOutput: any) => {
+    // Since shareModalOutput is already an object, no need to parse it
+    console.log('ddd', shareModalOutput);
+  
+    // Check if shareModalOutput has the property "unifiedAccessControlConditions" and it's an array
+    if (shareModalOutput.hasOwnProperty("unifiedAccessControlConditions") && Array.isArray(shareModalOutput.unifiedAccessControlConditions)) {
+      setAccessControlConditions(shareModalOutput.unifiedAccessControlConditions);
+    } else {
+      // Handle the case where "unifiedAccessControlConditions" doesn't exist or isn't an array
+      console.error("Invalid shareModalOutput: missing unifiedAccessControlConditions array");
+    }
+  
+    setShowShareModal(false);
+  };  
   const handleDIDChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-
     setDIDSuffix(value); // Assuming value contains the new suffix
     setDID((prevDID) => {
       return 'did:health:' + chainIdString + value;
     });
-
   }
-
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -85,62 +122,47 @@ const PatientForm: React.FC = () => {
       return updatedPatient;
     });
   };
-
-  useEffect(() => {
-    console.log(patient); // This will log the updated patient state after each render
-  }, [patient]); // Only run this effect when patient state changes
-
-  // Misc
-  const { address: publicKey } = useAccount();
-  console.log(publicKey)
-
-  const [error, setError] = useState<any>(null);
-
-  async function generateAuthSig() {
-    setAuthSig(null);
-    if (publicKey) {
-      const authSig = await ethConnect.signAndSaveAuthMessage({
-        web3: provider,
-        account: publicKey.toLowerCase(),
-        chainId: 5,
-        resources: {},
-        expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-      }
-      );
-      setAuthSig(authSig)
-    }
-  }
-
-  useEffect(() => {
-    if (publicKey) {
-      generateAuthSig();
-    }
-  }, [publicKey]);
-
-  useEffect(() => {
-    console.log("This is the tsetSig: ", authSig);
-
-  }, [authSig]);
-
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-
     if (patient.identifier && patient.identifier[0]) {
       patient.identifier[0].value = did;
     }
     const uuid = v4();
     patient.id = uuid;
-
+    //Add the current user to the accessControlCoditions
+    const userSelfCondition = {
+      chain: "ethereum",
+      conditionType: "evmBasic",
+      contractAddress: "",
+      method: "",
+      parameters: [':userAddress'],
+      returnValueTest : {comparator: '=', value: publicKey} ,
+      standardContractType :  ""
+    }
+    accessControlConditions.push(userSelfCondition);
+    setAccessControlConditions(accessControlConditions);
+    console.log(accessControlConditions)
     downloadJson(patient, uuid);
     console.log("downloaded file");
-    const blob = new Blob([JSON.stringify(patient)], { type: "application/json" });
+    const JSONpatient = JSON.stringify(patient)
+    const blob = new Blob([JSONpatient], { type: "application/json" });
     console.log("created blob");
-    const encBlob = await Lit.encryptFile(blob, chainIdString, authSig);
-    console.log("executed encytption with lit:" + encBlob);
-    const encFile = encBlob.encryptedFile;
+    const { ciphertext, dataToEncryptHash } = await LitJsSdk.encryptFile(
+      {
+        // accessControlConditions: accessControlConditions,
+        accessControlConditions,
+        authSig: authSig,
+        chain: chainIdString,
+        file: blob,
+      },
+      window.LitNodeClient 
+    );
+    const hash = dataToEncryptHash;
+    console.log("executed encytption with lit:" + hash);
+    const encFile = ciphertext;
+    console.log("File encrypted with Lit protocol:" + encFile);
     if (encFile != null) {
-      const files = [new File([blob], "plain-utf8.txt)"), new File([encFile], "Patient/" + uuid)];
-
+      const files = [new File([encFile], "Patient/" + uuid)];
       //Upload File to IPFS
       const client = makeStorageClient();
       const cid = await client.put(files);
@@ -154,10 +176,7 @@ const PatientForm: React.FC = () => {
       setUri(uri);
       return uri;
     }
-
   };
-
-
   const downloadJson = (object: Patient, filename: string) => {
     const blob = new Blob([JSON.stringify(object)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -167,7 +186,6 @@ const PatientForm: React.FC = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
-
   const { writeAsync, isLoading } = useScaffoldContractWrite({
     contractName: "HealthDIDRegistry",
     functionName: "registerDID",
@@ -177,7 +195,6 @@ const PatientForm: React.FC = () => {
       console.log("📦 Transaction blockHash", txnReceipt.blockHash);
     },
   });
-
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-lg">
       <div className="form-group">
@@ -200,7 +217,6 @@ const PatientForm: React.FC = () => {
             readOnly
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
-
         </div>
       </div>
       <div className="form-group">
@@ -374,11 +390,38 @@ const PatientForm: React.FC = () => {
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
         /></div>
       </div>
+      <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2">
+            Access Control (Who Can Read your Patient Profile):
+          </label>
+          <Button
+            btnType="submit"
+            title=" Access Control"
+            styles="bg-[#f71b02] text-white"
+            handleClick={() => {
+              setShowShareModal(true);
+            }}
+          />
+        </div>
+      <div>
+        {showShareModal && (
+          <div className={"lit-share-modal"}>
+            <ShareModal
+              onClose={() => {
+                setShowShareModal(false);
+              }}
+              onUnifiedAccessControlConditionsSelected={
+                onUnifiedAccessControlConditionsSelected
+              }
+            />
+          </div>
+        )}
+      </div>
       <div className="flex justify-center items-center">
         {!hasCreatedProfile && !uri ? (
           <Button
             btnType="submit"
-            title="Create a Profile"
+            title="Create DID Patient"
             styles="bg-[#f71b02] text-white"
             handleClick={() => {
               handleSubmit;
@@ -394,11 +437,9 @@ const PatientForm: React.FC = () => {
             }}
           />
         )}
-      </div>
-
+      </div>    
     </form>
   );
 };
-
 export default PatientForm;
 
