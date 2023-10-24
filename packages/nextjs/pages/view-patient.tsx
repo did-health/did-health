@@ -143,7 +143,7 @@ const ViewPatientForm: React.FC = () => {
     console.log('get IPFS file at cid:' + url)
     const data = await ipfsClient.get(url);
     console.log(`Got a response! [${data?.status}] ${data?.statusText}`)
-    if (!(data?.statusText=='OK')) {
+    if ((data?.statusText=='OK') || data==null) {
       console.log (`failed to get ${url} - [${data?.status}] ${data?.statusText}`)
       return;
     }
@@ -179,7 +179,7 @@ const ViewPatientForm: React.FC = () => {
       );
       const decryptString = await LitJsSdk.decryptToString( {
         ciphertext: response.toString(),          
-        dataToEncryptHash: hash,
+        dataToEncryptHash: hash.toString(),
         accessControlConditions,
         chain: chainIdString ,
         authSig: dc_AuthSig,
@@ -196,22 +196,19 @@ const ViewPatientForm: React.FC = () => {
   }
  }
   return (
-    
+    <div>
     <form className="bg-white p-6 rounded shadow-lg">
-      <div className="form-group">
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            DID:
-          </label>
-          <input
-            type="text"
-            name="didsuffix"
-            value={didsuffix}
-            onChange={handleDIDInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-      </div>
+      <label className="block text-gray-700 text-sm font-bold mb-2">
+        Enter did:health:
+        <input
+          type="text"
+          value={inputDID}
+          onChange={handleDIDInputChange }
+        />
+      </label>
+    </form>
+    {resolvedDid && (
+    <form className="bg-white p-6 rounded shadow-lg">
       <div className="form-group">
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -382,6 +379,8 @@ const ViewPatientForm: React.FC = () => {
         /></div>
       </div>      
     </form>
+    )}
+    </div>    
   );
 };
 export default ViewPatientForm;
