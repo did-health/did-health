@@ -1,6 +1,9 @@
 export function getServiceEndpointById (services: any[], serviceId: any) {
     // Find the service with the matching ID
+    console.log('***********************' + services[0])
+    console.log('***********************' + serviceId)
     const service = services.find((service) => service.id === serviceId);  
+    console.log('***********************' + service.serviceEndpoint)
     // If found, return the service endpoint, otherwise return null
     return service ? service.serviceEndpoint : null;
   };
@@ -58,14 +61,10 @@ export function convertToDidDocument (resolvedDid: { owner: string; delegateAddr
 
   };
 export function getEncHash(url: string | URL) {
-    // Assuming "url" is the URL string you provided
-    // Create a URL object from the URL string
     const urlObj = new URL(url);  
-    // Get the query string part of the URL
     const queryString = urlObj.search;  
-    // Use URLSearchParams API to work with the query string
     const params = new URLSearchParams(queryString);  
-    // Get the "encHash" parameter
     const encHash = params.get("encHash");  
+    console.log(encHash)
     return encHash;
   }  
