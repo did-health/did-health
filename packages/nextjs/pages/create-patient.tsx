@@ -3,13 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { useScaffoldContractWrite } from "../hooks/scaffold-eth";
 import { makeStorageClient } from "../hooks/useIpfs";
 import { useAccount, useNetwork } from "wagmi";
+import Patient = fhir4.Patient;
+import * as LitJsSdk from "@lit-protocol/lit-node-client";
+import { ethConnect } from '@lit-protocol/lit-node-client';
+import {  Web3Provider } from '@ethersproject/providers';
 import Button from "../components/Button";
 import { v4 } from "uuid";
-import Patient = fhir4.Patient;
-import {  Web3Provider } from '@ethersproject/providers';
-import { ethConnect } from '@lit-protocol/lit-node-client';
 import ShareModal from "lit-share-modal-v3";
-import * as LitJsSdk from "@lit-protocol/lit-node-client";
+
 const PatientForm: React.FC = () => {
   const [patient, setPatient] = useState<Patient>({
     resourceType: 'Patient',
@@ -42,10 +43,6 @@ const PatientForm: React.FC = () => {
   const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
   client.connect();
   window.LitNodeClient = client;
-
-  useEffect(() => {
-    console.log(patient); // This will log the updated patient state after each render
-  }, [patient]);
   useEffect(() => {
     if (publicKey) {
       generateAuthSig();
@@ -68,16 +65,13 @@ const PatientForm: React.FC = () => {
   }
   const onUnifiedAccessControlConditionsSelected = (shareModalOutput: any) => {
     // Since shareModalOutput is already an object, no need to parse it
-    console.log('ddd', shareModalOutput);
-  
     // Check if shareModalOutput has the property "unifiedAccessControlConditions" and it's an array
     if (shareModalOutput.hasOwnProperty("unifiedAccessControlConditions") && Array.isArray(shareModalOutput.unifiedAccessControlConditions)) {
       setAccessControlConditions(shareModalOutput.unifiedAccessControlConditions);
     } else {
       // Handle the case where "unifiedAccessControlConditions" doesn't exist or isn't an array
       console.error("Invalid shareModalOutput: missing unifiedAccessControlConditions array");
-    }
-  
+    }  
     setShowShareModal(false);
   };  
   const handleDIDChange = (

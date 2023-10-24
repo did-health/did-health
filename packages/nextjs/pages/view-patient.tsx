@@ -1,21 +1,22 @@
 ///<reference path="../../../node_modules/@types/fhir/index.d.ts"/>
 import React, { useState, useEffect } from 'react';
-import { useScaffoldContractWrite } from "../hooks/scaffold-eth";
-import { makeStorageClient } from "../hooks/useIpfs";
+import { useScaffoldContractRead } from "../hooks/scaffold-eth";
 import { useAccount, useNetwork } from "wagmi";
 import Patient = fhir4.Patient;
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
 import { ethConnect } from '@lit-protocol/lit-node-client';
-import https from 'https'
 import { Web3Provider } from '@ethersproject/providers';
+import https from 'https'
 import { URL } from 'url';
 import { convertToDidDocument, getServiceEndpointById, getEncHash } from './api/did/document'
-import { useScaffoldContractRead } from "../hooks/scaffold-eth";
 
 const ViewPatientForm: React.FC = () => {
+  const [patient, setPatient] = useState<Patient>({
+    resourceType: 'Patient'  
+  });
   const account = useAccount(); 
   const { address: publicKey } = useAccount();
-  const { ethereum } = window as any;
+    const { ethereum } = window as any;
   const provider = new Web3Provider(ethereum);
   const { chain, chains } = useNetwork();
   const chainId = chain?.id;
@@ -39,21 +40,14 @@ const ViewPatientForm: React.FC = () => {
                                                 },
                                                 }]);
   const [error, setError] = useState<any>(null);
-
-
-
+  const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
+  client.connect();
+  window.LitNodeClient = client;
   const { data: resolvedDid } = useScaffoldContractRead({
     contractName: "HealthDIDRegistry",
     functionName: "getHealtDID",
     args: [inputDID],
-  });
-
-  const handleDIDInputChange = (e: { target: { value: React.SetStateAction<string>; }; }) => {
-    setInputDID(e.target.value);
-  };
-  const [patient, setPatient] = useState<Patient>({
-    resourceType: 'Patient'  
-  });
+  });  
   useEffect(() => {
     if (publicKey) {
       generateAuthSig();
@@ -63,9 +57,6 @@ const ViewPatientForm: React.FC = () => {
     if (resolvedDid) {
       const document = convertToDidDocument(resolvedDid);
       setDidDocument(document)
-      if (document) {
-        DownloadandDecryptFile(resolvedDid.ipfsUri)
-      }
     }
   }, [resolvedDid]);
   async function generateAuthSig() {    
@@ -98,7 +89,13 @@ const ViewPatientForm: React.FC = () => {
       reject(err);
     });
   });
- }
+  }
+  const handleDIDInputChange = (e: { target: { value: React.SetStateAction<string>; }; }) => {
+    setInputDID(e.target.value);
+    if (didDocument && resolvedDid) {
+      DownloadandDecryptFile(resolvedDid.ipfsUri)
+    }
+  };
   const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
@@ -130,7 +127,7 @@ const ViewPatientForm: React.FC = () => {
 
         return updatedPatient;
         });
- };
+  };
   const DownloadandDecryptFile = async (url: string) => {
   try {
     // Specify your access control conditions here
@@ -150,16 +147,16 @@ const ViewPatientForm: React.FC = () => {
     const chainIdString = "ethereum" 
     console.log("decrypting: " + response)
     const hash = new String(getEncHash(dWebLinkURL))
-    console.log(hash)
+    console.log("Lit encryption Hash: " + hash)
     if (hash!='null') {
         const decryptString = await LitJsSdk.decryptToString( {
             ciphertext: response.toString(),          
             dataToEncryptHash: hash.toString(),
-            accessControlConditions: accessControlConditions,
+            accessControlConditions,
             chain: chainIdString ,
             authSig: authSig,
         },
-        ethConnect,
+        window.LitNodeClient,
         );
         console.log('File decrypted with Lit protocol');
         console.log(decryptString )
@@ -173,7 +170,7 @@ const ViewPatientForm: React.FC = () => {
         setError("failure to encrypt or store file")
         console.log('Failed to encrypt or store file:', error);
   }
- }
+  }
   return (
     <div>
     <form className="bg-white p-6 rounded shadow-lg">
