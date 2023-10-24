@@ -40,9 +40,7 @@ const ViewPatientForm: React.FC = () => {
                                                 },
                                                 }]);
   const [error, setError] = useState<any>(null);
-  const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
-  client.connect();
-  window.LitNodeClient = client;
+
   const { data: resolvedDid } = useScaffoldContractRead({
     contractName: "HealthDIDRegistry",
     functionName: "getHealtDID",
@@ -130,6 +128,9 @@ const ViewPatientForm: React.FC = () => {
   };
   const DownloadandDecryptFile = async (url: string) => {
   try {
+    const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
+    await client.connect();
+    window.LitNodeClient = client;
     // Specify your access control conditions here
     // Download file from IPFS
     console.log('create ipfs client');
@@ -154,7 +155,7 @@ const ViewPatientForm: React.FC = () => {
             dataToEncryptHash: hash.toString(),
             accessControlConditions,
             chain: chainIdString ,
-            authSig: authSig,
+            authSig,
         },
         window.LitNodeClient,
         );
