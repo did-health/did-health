@@ -20,8 +20,8 @@ const Home: NextPage = () => {
             <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
               W3C-compliant Decentralized Identifier (DID) solution
             </code>{" "}
-            tailored for the healthcare sector.  DID:Health helps you manage your identity in the healthcare system and provides a bridge to your personal medical records.
-            Your did:health identifier is interoperable with any health system that support Fast Healthcare Interoperability Resources.
+            tailored for the healthcare sector. did:health helps you manage your identity in the healthcare system and provides a bridge to your personal medical records.
+            Your did:health identifier and your data is interoperable with any health system that support Fast Healthcare Interoperability Resources (FHIR).
           </p>
         </div>
 
@@ -30,13 +30,19 @@ const Home: NextPage = () => {
             <Link href="/create-patient">
               <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl shadow-lg">
                 <BugAntIcon className="h-8 w-8 fill-secondary" />
-                <p>1. Connect/Create wallet and create Your Patient Profile</p>
+                <p>Create Your Identifier</p>
+              </div>
+            </Link>
+            <Link href="/view-patient">
+              <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl shadow-lg">
+                <BugAntIcon className="h-8 w-8 fill-secondary" />
+                <p>View/Edit Identifier</p>
               </div>
             </Link>
             <Link href="/did-document">
               <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl shadow-lg">
                 <BugAntIcon className="h-8 w-8 fill-secondary" />
-                <p>2. Share your HealthCare Idenitty with did:health</p>
+                <p>Share your identity and data</p>
               </div>
             </Link>
           </div>
