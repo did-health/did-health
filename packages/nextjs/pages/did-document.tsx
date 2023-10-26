@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useScaffoldContractRead } from "../hooks/scaffold-eth";
 import { generateQRCode } from "../utils/QRcodeGeneration";
 import Image from "next/image";
+import { convertToDidDocument, getServiceEndpointById } from './api/did/document'
+import DIDMarkdownComponent from '../components/DIDMarkdown'
 
 const DidDocumentForm = () => {
   const [qrcode, setQrcode] = useState<any>("");
@@ -9,7 +11,7 @@ const DidDocumentForm = () => {
   const [didDocument, setDidDocument] = useState<any>(null); // Define the didDocument state
 
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: { target: { value: React.SetStateAction<string>; }; }) => {
     setInputDID(e.target.value);
   };
 
@@ -19,59 +21,6 @@ const DidDocumentForm = () => {
     args: [inputDID],
   });
 
-  const convertToDidDocument = (resolvedDid) => {
-    if (!resolvedDid || !resolvedDid.healthDid) return null;
-
-    return {
-      "@context": "https://www.w3.org/ns/did/v1",
-      "id": `did:health:${resolvedDid.healthDid}`,
-      "verificationMethod": [
-        {
-          "id": `did:health:${resolvedDid.healthDid}#keys-1`,
-          "type": "EcdsaSecp256k1RecoveryMethod2020",
-          "controller": `did:health:${resolvedDid.healthDid}`,
-          "publicKeyBase58": resolvedDid.publicKeyBase58,
-          "threshold": {
-            "n": 5,
-            "t": 3
-          }
-        }
-      ],
-      "authentication": [
-        `did:health:${resolvedDid.healthDid}#keys-1`
-      ],
-      "assertionMethod": [
-        `did:health:${resolvedDid.healthDid}#keys-1`
-      ],
-      "capabilityInvocation": [
-        `did:health:${resolvedDid.healthDid}#keys-1`
-      ],
-      "capabilityDelegation": [
-        `did:health:${resolvedDid.healthDid}#keys-1`
-      ],
-      "keyAgreement": [
-        {
-          "id": `did:health:${resolvedDid.healthDid}#keys-2`,
-          "type": "EcdsaSecp256k1RecoveryMethod2020",
-          "controller": `did:health:${resolvedDid.healthDid}`,
-          "publicKeyBase58": resolvedDid.publicKeyBase58,
-          "threshold": {
-            "n": 5,
-            "t": 3
-          }
-        }
-      ],
-      "service": [
-        {
-          "id": `did:health:${resolvedDid.healthDid}#patient`,
-          "type": "Patient", // Assuming this is the type
-          "serviceEndpoint": resolvedDid.ipfsUri,
-          "description": "Access to the Pateint Demographics secured by LIT Protocol and stored on IPFS."
-        }
-      ]
-    };
-
-  };
 
   useEffect(() => {
     if (resolvedDid) {
@@ -88,20 +37,14 @@ const DidDocumentForm = () => {
       }
     }
   }, [resolvedDid]);
-
   useEffect(() => {
     console.log("QR code : ", qrcode);
   }, [qrcode])
-
-  // console.log("inputDID:", inputDID);
-  // console.log("resolvedDid:", resolvedDid);
-  // console.log("didDocument:", didDocument);
-  // console.log("qrcode:", qrcode);
   return (
     <div>
       <form className="bg-white p-6 rounded shadow-lg">
         <label className="block text-gray-700 text-sm font-bold mb-2">
-          Enter DID:
+          Enter did:health:
           <input
             type="text"
             value={inputDID}
@@ -121,7 +64,11 @@ const DidDocumentForm = () => {
               <div className="mb-4">
                 <pre>{JSON.stringify(didDocument, null, 2)}</pre>
               </div>
-            </div>
+              <div>
+                <h2>DID Document Markdown Content</h2>
+                <DIDMarkdownComponent didDocument={JSON.stringify(didDocument).toString()} />
+              </div>
+            </div>            
           )}
         </div>
       )}
