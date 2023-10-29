@@ -44,7 +44,7 @@ const SelectDIDTypeForm: React.FC = () => {
             </Link>
         </div>
         <label className='block text-gray-700 text-sm font-bold mb-2"'>
-              DID's can be made for:
+              A DID can be made for:
                 <ul>
                   <li>Patient</li>
                   <li>Pracitioner (Doctors, Nurses, and other healthcare professionals)</li>
