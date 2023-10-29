@@ -50,7 +50,7 @@ const PatientForm: React.FC = () => {
     if (publicKey) {
       generateAuthSig();
     }
-  }, [publicKey]);
+  },[publicKey, authSig]);
   async function generateAuthSig() {
     
     if (publicKey!=null) {
