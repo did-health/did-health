@@ -22727,6 +22727,7 @@ __metadata:
     husky: ^8.0.1
     lint-staged: ^13.0.3
     lit-access-control-conditions-modal: ^1.1.34
+    node-gyp: ^10.0.0
     react-icons: ^4.11.0
     react-qr-svg: ^2.4.0
   languageName: unknown
