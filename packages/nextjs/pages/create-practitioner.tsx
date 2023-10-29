@@ -3,17 +3,16 @@ import React, { useState, useEffect } from 'react';
 import { useScaffoldContractWrite } from "../hooks/scaffold-eth";
 import { makeStorageClient } from "../hooks/useIpfs";
 import { useAccount, useNetwork } from "wagmi";
-import Patient = fhir4.Patient;
-import * as LitJsSdk from "@lit-protocol/lit-node-client";
-import { ethConnect } from '@lit-protocol/lit-node-client';
-import {  Web3Provider } from '@ethersproject/providers';
 import Button from "../components/Button";
 import { v4 } from "uuid";
+import Practitioner = fhir4.Practitioner;
+import {  Web3Provider } from '@ethersproject/providers';
+import { ethConnect } from '@lit-protocol/lit-node-client';
 import ShareModal from "lit-share-modal-v3";
-
+import * as LitJsSdk from "@lit-protocol/lit-node-client";
 const PatientForm: React.FC = () => {
-  const [patient, setPatient] = useState<Patient>({
-    resourceType: 'Patient',
+  const [practitioner, setPatient] = useState<Practitioner>({
+    resourceType: 'Practitioner',
     id: '',
     name: [{ given: [], family: '' }],
     gender: 'unknown',
@@ -43,6 +42,10 @@ const PatientForm: React.FC = () => {
   const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
   client.connect();
   window.LitNodeClient = client;
+
+  useEffect(() => {
+    console.log(practitioner); // This will log the updated practitioner state after each render
+  }, [practitioner]);
   useEffect(() => {
     if (publicKey) {
       generateAuthSig();
@@ -65,13 +68,16 @@ const PatientForm: React.FC = () => {
   }
   const onUnifiedAccessControlConditionsSelected = (shareModalOutput: any) => {
     // Since shareModalOutput is already an object, no need to parse it
+    console.log('ddd', shareModalOutput);
+  
     // Check if shareModalOutput has the property "unifiedAccessControlConditions" and it's an array
     if (shareModalOutput.hasOwnProperty("unifiedAccessControlConditions") && Array.isArray(shareModalOutput.unifiedAccessControlConditions)) {
       setAccessControlConditions(shareModalOutput.unifiedAccessControlConditions);
     } else {
       // Handle the case where "unifiedAccessControlConditions" doesn't exist or isn't an array
       console.error("Invalid shareModalOutput: missing unifiedAccessControlConditions array");
-    }  
+    }
+  
     setShowShareModal(false);
   };  
   const handleDIDChange = (
@@ -117,11 +123,11 @@ const PatientForm: React.FC = () => {
   };
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    if (patient.identifier && patient.identifier[0]) {
-      patient.identifier[0].value = did;
+    if (practitioner.identifier && practitioner.identifier[0]) {
+      practitioner.identifier[0].value = did;
     }
     const uuid = v4();
-    patient.id = uuid;
+    practitioner.id = uuid;
     //Add the current user to the accessControlCoditions
     const userSelfCondition = {
       chain: "ethereum",
@@ -135,9 +141,9 @@ const PatientForm: React.FC = () => {
     accessControlConditions.push(userSelfCondition); // add rights to decrypt the data yourself
     setAccessControlConditions(accessControlConditions);
     console.log(accessControlConditions)
-    downloadJson(patient, uuid);
+    downloadJson(practitioner, uuid);
     console.log("downloaded file");
-    const JSONpatient = JSON.stringify(patient)
+    const JSONpatient = JSON.stringify(practitioner)
     const blob = new Blob([JSONpatient], { type: "application/json" });
     console.log("created blob");
     const { ciphertext, dataToEncryptHash } = await LitJsSdk.encryptFile(
@@ -155,12 +161,12 @@ const PatientForm: React.FC = () => {
     const encFile = ciphertext;
     console.log("File encrypted with Lit protocol:" + encFile);
     if (encFile != null) {
-      const files = [new File([encFile], "Patient/" + uuid)];
+      const files = [new File([encFile], "Practitioner/" + uuid)];
       //Upload File to IPFS
       const client = makeStorageClient();
       const cid = await client.put(files);
       console.log(cid)
-      const uri = "https://" + cid + ".ipfs.dweb.link/Patient/" + uuid + "?encHash=" + dataToEncryptHash;
+      const uri = "https://" + cid + ".ipfs.dweb.link/Practitioner/" + uuid + "?encHash=" + dataToEncryptHash;
       console.log(uri)
       //create new did registry entry
       console.log("stored files with cid:", cid);
@@ -170,7 +176,7 @@ const PatientForm: React.FC = () => {
       return uri;
     }
   };
-  const downloadJson = (object: Patient, filename: string) => {
+  const downloadJson = (object: Practitioner, filename: string) => {
     const blob = new Blob([JSON.stringify(object)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -220,7 +226,7 @@ const PatientForm: React.FC = () => {
           <input
             type="text"
             name="name.0.given.0"
-            value={patient.name?.[0].given?.[0]}
+            value={practitioner.name?.[0].given?.[0]}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -232,7 +238,7 @@ const PatientForm: React.FC = () => {
           <input
             type="text"
             name="name.0.family"
-            value={patient.name?.[0].family}
+            value={practitioner.name?.[0].family}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -245,7 +251,7 @@ const PatientForm: React.FC = () => {
           </label>
           <select
             name="gender"
-            value={patient.gender}
+            value={practitioner.gender}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           >
@@ -262,7 +268,7 @@ const PatientForm: React.FC = () => {
           <input
             type="date"
             name="birthDate"
-            value={patient.birthDate}
+            value={practitioner.birthDate}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -276,7 +282,7 @@ const PatientForm: React.FC = () => {
           <input
             type="tel"
             name="telecom.1.value"
-            value={patient.telecom?.[1]?.value || ''}
+            value={practitioner.telecom?.[1]?.value || ''}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -288,7 +294,7 @@ const PatientForm: React.FC = () => {
           <input
             type="email"
             name="telecom.2.value"
-            value={patient.telecom?.[2]?.value || ''}
+            value={practitioner.telecom?.[2]?.value || ''}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -302,7 +308,7 @@ const PatientForm: React.FC = () => {
           <input
             type="text"
             name="address.0.line.0"
-            value={patient.address?.[0]?.line?.[0] || ''}
+            value={practitioner.address?.[0]?.line?.[0] || ''}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -314,7 +320,7 @@ const PatientForm: React.FC = () => {
           <input
             type="text"
             name="address.0.city"
-            value={patient.address?.[0]?.city || ''}
+            value={practitioner.address?.[0]?.city || ''}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -326,7 +332,7 @@ const PatientForm: React.FC = () => {
           <input
             type="text"
             name="address.0.state"
-            value={patient.address?.[0]?.state || ''}
+            value={practitioner.address?.[0]?.state || ''}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -338,7 +344,7 @@ const PatientForm: React.FC = () => {
           <input
             type="text"
             name="address.0.postalCode"
-            value={patient.address?.[0]?.postalCode || ''}
+            value={practitioner.address?.[0]?.postalCode || ''}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -350,7 +356,7 @@ const PatientForm: React.FC = () => {
           <input
             type="text"
             name="address.0.country"
-            value={patient.address?.[0]?.country || ''}
+            value={practitioner.address?.[0]?.country || ''}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -363,14 +369,13 @@ const PatientForm: React.FC = () => {
           </label>
           <select
             name="identifier.1.type.coding.0.code"
-            value={patient.identifier?.[1].type?.coding?.[0].code || ''}
+            value={practitioner.identifier?.[1].type?.coding?.[0].code || ''}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           >
             <option value="">Select an identifier type</option>
-            <option value="DL">Driver&apos;s License Number</option>
-            <option value="MR">Medical Record Number</option>
-            <option value="SSN">Social Security Number</option>
+            <option value="DL">NPI</option>
+            <option value="MR">Medical License Number</option>
             {/* Add more options as needed */}
           </select>
 
@@ -378,14 +383,14 @@ const PatientForm: React.FC = () => {
         <div> <input
           type="text"
           name="identifier.1.value"
-          value={patient.identifier?.[1].value || ''}
+          value={practitioner.identifier?.[1].value || ''}
           onChange={handleInputChange}
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
         /></div>
       </div>
       <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            Access Control (Who Can Read your Patient Profile):
+            Access Control (Who Can Read your Practitioner Profile):
           </label>
           <Button
             btnType="submit"
@@ -414,7 +419,7 @@ const PatientForm: React.FC = () => {
         {!hasCreatedProfile && !uri ? (
           <Button
             btnType="submit"
-            title="Create DID Patient"
+            title="Create DID Practitioner"
             styles="bg-[#f71b02] text-white"
             handleClick={() => {
               handleSubmit;

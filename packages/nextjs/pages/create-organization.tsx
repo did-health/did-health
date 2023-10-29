@@ -3,23 +3,17 @@ import React, { useState, useEffect } from 'react';
 import { useScaffoldContractWrite } from "../hooks/scaffold-eth";
 import { makeStorageClient } from "../hooks/useIpfs";
 import { useAccount, useNetwork } from "wagmi";
-import Patient = fhir4.Patient;
-import * as LitJsSdk from "@lit-protocol/lit-node-client";
-import { ethConnect } from '@lit-protocol/lit-node-client';
-import {  Web3Provider } from '@ethersproject/providers';
 import Button from "../components/Button";
 import { v4 } from "uuid";
+import Organization = fhir4.Organization;
+import {  Web3Provider } from '@ethersproject/providers';
+import { ethConnect } from '@lit-protocol/lit-node-client';
 import ShareModal from "lit-share-modal-v3";
-
+import * as LitJsSdk from "@lit-protocol/lit-node-client";
 const PatientForm: React.FC = () => {
-  const [patient, setPatient] = useState<Patient>({
-    resourceType: 'Patient',
-    id: '',
-    name: [{ given: [], family: '' }],
-    gender: 'unknown',
-    birthDate: '',
-    telecom: [{ use: 'home' }, { system: 'phone', value: '' }, { system: 'email', value: '' }],
-    address: [{ line: [], city: '', state: '', postalCode: '', country: '' }],
+  const [organization, setPatient] = useState<Organization>({
+    resourceType: 'Organization',
+    id: '',   
     identifier: [{ system: 'https://www.w3.org/ns/did', value: '' }, { type: { coding: [{ code: '', system: 'http://terminology.hl7.org/CodeSystem/v2-0203' }] } }],
   });
   const account = useAccount();
@@ -43,6 +37,10 @@ const PatientForm: React.FC = () => {
   const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
   client.connect();
   window.LitNodeClient = client;
+
+  useEffect(() => {
+    console.log(organization); // This will log the updated organization state after each render
+  }, [organization]);
   useEffect(() => {
     if (publicKey) {
       generateAuthSig();
@@ -65,13 +63,16 @@ const PatientForm: React.FC = () => {
   }
   const onUnifiedAccessControlConditionsSelected = (shareModalOutput: any) => {
     // Since shareModalOutput is already an object, no need to parse it
+    console.log('ddd', shareModalOutput);
+  
     // Check if shareModalOutput has the property "unifiedAccessControlConditions" and it's an array
     if (shareModalOutput.hasOwnProperty("unifiedAccessControlConditions") && Array.isArray(shareModalOutput.unifiedAccessControlConditions)) {
       setAccessControlConditions(shareModalOutput.unifiedAccessControlConditions);
     } else {
       // Handle the case where "unifiedAccessControlConditions" doesn't exist or isn't an array
       console.error("Invalid shareModalOutput: missing unifiedAccessControlConditions array");
-    }  
+    }
+  
     setShowShareModal(false);
   };  
   const handleDIDChange = (
@@ -117,11 +118,11 @@ const PatientForm: React.FC = () => {
   };
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    if (patient.identifier && patient.identifier[0]) {
-      patient.identifier[0].value = did;
+    if (organization.identifier && organization.identifier[0]) {
+      organization.identifier[0].value = did;
     }
     const uuid = v4();
-    patient.id = uuid;
+    organization.id = uuid;
     //Add the current user to the accessControlCoditions
     const userSelfCondition = {
       chain: "ethereum",
@@ -135,9 +136,9 @@ const PatientForm: React.FC = () => {
     accessControlConditions.push(userSelfCondition); // add rights to decrypt the data yourself
     setAccessControlConditions(accessControlConditions);
     console.log(accessControlConditions)
-    downloadJson(patient, uuid);
+    downloadJson(organization, uuid);
     console.log("downloaded file");
-    const JSONpatient = JSON.stringify(patient)
+    const JSONpatient = JSON.stringify(organization)
     const blob = new Blob([JSONpatient], { type: "application/json" });
     console.log("created blob");
     const { ciphertext, dataToEncryptHash } = await LitJsSdk.encryptFile(
@@ -155,12 +156,12 @@ const PatientForm: React.FC = () => {
     const encFile = ciphertext;
     console.log("File encrypted with Lit protocol:" + encFile);
     if (encFile != null) {
-      const files = [new File([encFile], "Patient/" + uuid)];
+      const files = [new File([encFile], "Organization/" + uuid)];
       //Upload File to IPFS
       const client = makeStorageClient();
       const cid = await client.put(files);
       console.log(cid)
-      const uri = "https://" + cid + ".ipfs.dweb.link/Patient/" + uuid + "?encHash=" + dataToEncryptHash;
+      const uri = "https://" + cid + ".ipfs.dweb.link/Organization/" + uuid + "?encHash=" + dataToEncryptHash;
       console.log(uri)
       //create new did registry entry
       console.log("stored files with cid:", cid);
@@ -170,7 +171,7 @@ const PatientForm: React.FC = () => {
       return uri;
     }
   };
-  const downloadJson = (object: Patient, filename: string) => {
+  const downloadJson = (object: Organization, filename: string) => {
     const blob = new Blob([JSON.stringify(object)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -213,62 +214,38 @@ const PatientForm: React.FC = () => {
         </div>
       </div>
       <div className="form-group">
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            First Name:
-          </label>
-          <input
-            type="text"
-            name="name.0.given.0"
-            value={patient.name?.[0].given?.[0]}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Last Name:
-          </label>
-          <input
-            type="text"
-            name="name.0.family"
-            value={patient.name?.[0].family}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
+      {/* Organization Name */}
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">
+          Organization Name:
+        </label>
+        <input
+          type="text"
+          name="name"
+          value={organization.name || ''}
+          onChange={handleInputChange} // ensure this function is set to handle Organization object updates
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        />
       </div>
-      <div className="form-group">
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Gender:
-          </label>
-          <select
-            name="gender"
-            value={patient.gender}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-            <option value="unknown">Unknown</option>
-          </select>
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Birth Date:
-          </label>
-          <input
-            type="date"
-            name="birthDate"
-            value={patient.birthDate}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
+
+      {/* Organization Type */}
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">
+          Organization Type:
+        </label>
+        <select
+          name="type"
+          value={organization.type?.[0]?.coding?.[0]?.code || ''}
+          onChange={handleInputChange}
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        >
+          <option value="">Select an organization type</option>
+          {/* Populate the dropdown with relevant organization types */}
+        </select>
       </div>
-      <div className="form-group">
+      {/* Organization Telecom (e.g., phone, email) */}
+      {organization.telecom?.map((telecom, index) => (
+        <div className="form-group">
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
             Telephone Number:
@@ -276,7 +253,7 @@ const PatientForm: React.FC = () => {
           <input
             type="tel"
             name="telecom.1.value"
-            value={patient.telecom?.[1]?.value || ''}
+            value={organization.telecom?.[1]?.value || ''}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
@@ -288,104 +265,107 @@ const PatientForm: React.FC = () => {
           <input
             type="email"
             name="telecom.2.value"
-            value={patient.telecom?.[2]?.value || ''}
+            value={organization.telecom?.[2]?.value || ''}
             onChange={handleInputChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           />
         </div>
-      </div>
+        </div>
+      ))}
       <div className="form-group">
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Address Line:
-          </label>
-          <input
-            type="text"
-            name="address.0.line.0"
-            value={patient.address?.[0]?.line?.[0] || ''}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            City:
-          </label>
-          <input
-            type="text"
-            name="address.0.city"
-            value={patient.address?.[0]?.city || ''}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            State:
-          </label>
-          <input
-            type="text"
-            name="address.0.state"
-            value={patient.address?.[0]?.state || ''}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Postal Code:
-          </label>
-          <input
-            type="text"
-            name="address.0.postalCode"
-            value={patient.address?.[0]?.postalCode || ''}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Country:
-          </label>
-          <input
-            type="text"
-            name="address.0.country"
-            value={patient.address?.[0]?.country || ''}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">
+          Address Line:
+        </label>
+        <input
+          type="text"
+          name="address.0.line.0"
+          value={organization.address?.[0]?.line?.[0] || ''}
+          onChange={handleInputChange}
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        />
       </div>
-      <div className="form-group">
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">
+          City:
+        </label>
+        <input
+          type="text"
+          name="address.0.city"
+          value={organization.address?.[0]?.city || ''}
+          onChange={handleInputChange}
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">
+          State:
+        </label>
+        <input
+          type="text"
+          name="address.0.state"
+          value={organization.address?.[0]?.state || ''}
+          onChange={handleInputChange}
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">
+          Postal Code:
+        </label>
+        <input
+          type="text"
+          name="address.0.postalCode"
+          value={organization.address?.[0]?.postalCode || ''}
+          onChange={handleInputChange}
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">
+          Country:
+        </label>
+        <input
+          type="text"
+          name="address.0.country"
+          value={organization.address?.[0]?.country || ''}
+          onChange={handleInputChange}
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        />
+      </div>
+     </div>
+    </div>
+    <div className="form-group">
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
             Identifier Type:
           </label>
           <select
-            name="identifier.1.type.coding.0.code"
-            value={patient.identifier?.[1].type?.coding?.[0].code || ''}
-            onChange={handleInputChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          >
-            <option value="">Select an identifier type</option>
-            <option value="DL">Driver&apos;s License Number</option>
-            <option value="MR">Medical Record Number</option>
-            <option value="SSN">Social Security Number</option>
-            {/* Add more options as needed */}
-          </select>
-
+          name="identifier.1.type.coding.0.code"
+          value={organization.identifier?.[1].type?.coding?.[0].code || ''}
+          onChange={handleInputChange}
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        >
+          <option value="">Select an identifier type</option>
+          <option value="NPI">National Provider Identifier (NPI)</option>
+          <option value="TAX">Taxpayer Identification Number (TIN)</option>
+          <option value="PAYERID">Payer Identifier (PAYERID)</option>
+          <option value="HIN">Health Industry Number (HIN)</option>
+          {/* Add more options as relevant for your use case */}
+        </select>
         </div>
         <div> <input
           type="text"
           name="identifier.1.value"
-          value={patient.identifier?.[1].value || ''}
+          value={organization.identifier?.[1].value || ''}
           onChange={handleInputChange}
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
         /></div>
       </div>
+ 
       <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            Access Control (Who Can Read your Patient Profile):
+            Access Control (Who Can Read your Organization Profile):
           </label>
           <Button
             btnType="submit"
@@ -414,7 +394,7 @@ const PatientForm: React.FC = () => {
         {!hasCreatedProfile && !uri ? (
           <Button
             btnType="submit"
-            title="Create DID Patient"
+            title="Create DID Organization"
             styles="bg-[#f71b02] text-white"
             handleClick={() => {
               handleSubmit;
