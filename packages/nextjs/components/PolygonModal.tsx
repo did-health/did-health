@@ -1,22 +1,6 @@
 import { Dispatch, SetStateAction } from "react";
 import { Fragment, useState } from "react";
 import PolygonIDPrompt from "./PolygonIDPrompt";
-// const PolygonModal: React.FC<IPolygonModal> = ({ closeModal }) => {
-//   const handleClose = () => {
-//     console.log("clicked");
-//     closeModal(false);
-//   };
-//   return (
-//     <div className="absolute z-10 bg-slate-100">
-//       <div className="flex flex-row justify-end">
-//         <AiOutlineClose size={25} color={"black"} onClick={() => closeModal()} />
-//       </div>
-//       <p>Verify With PolygonId App</p>
-//       <PolygonIDPrompt />
-//       <p>Type: KYCAgeCredential</p>
-//     </div>
-//   );
-// };
 import { Dialog, Transition } from "@headlessui/react";
 import { AiOutlineClose } from "react-icons/ai";
 

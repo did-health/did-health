@@ -8,7 +8,7 @@ import { ethConnect } from '@lit-protocol/lit-node-client';
 import { Web3Provider } from '@ethersproject/providers';
 import https from 'https'
 import { URL } from 'url';
-import { convertToDidDocument, getServiceEndpointById, getEncHash } from './api/did/document'
+import { convertToDidDocument, getEncHash } from './api/did/document'
 
 const ViewPatientForm: React.FC = () => {
   const [patient, setPatient] = useState<Patient>({
@@ -16,7 +16,7 @@ const ViewPatientForm: React.FC = () => {
   });
   const account = useAccount(); 
   const { address: publicKey } = useAccount();
-    const { ethereum } = window as any;
+  const { ethereum } = window as any;
   const provider = new Web3Provider(ethereum);
   const { chain, chains } = useNetwork();
   const chainId = chain?.id;
@@ -24,22 +24,15 @@ const ViewPatientForm: React.FC = () => {
   if (chainId && chainId < 100000) {
     chainIdString = String(chainId).padStart(6, "0");
   }
+  const [thisPublicKey] = useState(publicKey);
   const [uri, setUri] = useState("");
   const [didsuffix, setDIDSuffix] = useState<string>("");
   const [inputDID, setInputDID] = useState(""); // State to store the entered DID
   const [didDocument, setDidDocument] = useState<any>(null); // Define the didDocument state
   const [authSig, setAuthSig] = useState({sig:'', derivedVia:'', signedMessage:'', address:''});
-  const [accessControlConditions] = useState([{ chain: "ethereum",
-                                                conditionType: "evmBasic",
-                                                contractAddress: "",
-                                                method: "",
-                                                parameters: [':userAddress'],
-                                                returnValueTest: {
-                                                    comparator: '=', 
-                                                    value: '0x34df838f26565ebf832b7d7c1094d081679e8fe1'
-                                                },
-                                                }]);
+  const [accessControlConditions, setAccessControlConditions] = useState([]);
   const [error, setError] = useState<any>(null);
+
 
   const { data: resolvedDid } = useScaffoldContractRead({
     contractName: "HealthDIDRegistry",
@@ -144,7 +137,22 @@ const ViewPatientForm: React.FC = () => {
         console.log("failed to resolve") 
         setError("failed to get document from IPFS")
         return;
-    }     
+    }
+    //Add the current user to the accessControlCoditions
+    const userSelfCondition = {
+      chain: "ethereum",
+      conditionType: "evmBasic",
+      contractAddress: "",
+      method: "",
+      parameters: [':userAddress'],
+      returnValueTest : {comparator: '=', value: thisPublicKey} ,
+      standardContractType :  ""
+    }
+    if (accessControlConditions.length == 0){
+      accessControlConditions.push(userSelfCondition); // add rights to decrypt the data yourself
+      setAccessControlConditions(accessControlConditions);
+    }
+    console.log(accessControlConditions)
     const chainIdString = "ethereum" 
     console.log("decrypting: " + response)
     const hash = new String(getEncHash(dWebLinkURL))
