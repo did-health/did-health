@@ -40,14 +40,17 @@ const PatientForm: React.FC = () => {
   const [accessControlConditions, setAccessControlConditions] = useState<AccessControlConditions[]>([]);
   const [error, setError] = useState<any>(null);
   let ethereum: ExternalProvider;
-  if (typeof window !== "undefined") {
-    ethereum = (window as any).ethereum;
-    const provider = new Web3Provider(ethereum);
-    setProvider(provider)
-    const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
-    client.connect();
-    window.LitNodeClient = client;
-  }  
+  useEffect(() => {
+    let ethereum: ExternalProvider;
+    if (typeof window !== "undefined") {
+        ethereum = (window as any).ethereum;
+        const providerInstance = new Web3Provider(ethereum);
+        setProvider(providerInstance);
+        const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
+        client.connect();
+        window.LitNodeClient = client;
+    }
+}, []);  // Empty dependency array ensures this runs once after component mounts
 
   useEffect(() => {
     console.log(organization); // This will log the updated organization state after each render
