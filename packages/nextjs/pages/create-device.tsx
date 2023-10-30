@@ -1,5 +1,5 @@
 ///<reference path="../../../node_modules/@types/fhir/index.d.ts"/>
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useScaffoldContractWrite } from "../hooks/scaffold-eth";
 import { makeStorageClient } from "../hooks/useIpfs";
 import { useAccount, useNetwork } from "wagmi";
@@ -10,6 +10,8 @@ import {  Web3Provider } from '@ethersproject/providers';
 import { ethConnect } from '@lit-protocol/lit-node-client';
 import ShareModal from "lit-share-modal-v3";
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
+import { AccessControlConditions, AccsRegularParams } from '@lit-protocol/types'; //Chain, ConditionType, EvmContractConditions, IRelayAuthStatus, JsonRequest, LIT_NETWORKS_KEYS, SolRpcConditions, SymmetricKey, UnifiedAccessControlConditions are also available
+
 const PatientForm: React.FC = () => {
   const [device, setPatient] = useState<Device>({
     resourceType: 'Device',
@@ -18,8 +20,11 @@ const PatientForm: React.FC = () => {
   });
   const account = useAccount();
   const { address: publicKey } = useAccount();
-    const { ethereum } = window as any;
-  const provider = new Web3Provider(ethereum);
+  const { ethereum } = window as any;
+  const provider = useMemo(() => {
+      return new Web3Provider(ethereum);
+  }, [ethereum]);
+  
   const { chain, chains } = useNetwork();
   const chainId = chain?.id;
   let chainIdString = "";
@@ -30,9 +35,10 @@ const PatientForm: React.FC = () => {
   const [uri, setUri] = useState("");
   const [didsuffix, setDIDSuffix] = useState<string>("");
   const [did, setDID] = useState<string>("");
-  const [authSig, setAuthSig] = useState({});
+  const [authSig, setAuthSig] = useState({sig:'', derivedVia:'', signedMessage:'', address:''});
   const [showShareModal, setShowShareModal] = useState(false);
-  const [accessControlConditions, setAccessControlConditions] = useState([]);
+  const [accessControlConditions, setAccessControlConditions] = useState<AccessControlConditions[]>([]);
+  const [thisPublicKey] = useState(publicKey);
   const [error, setError] = useState<any>(null);
   const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
   client.connect();
@@ -41,26 +47,26 @@ const PatientForm: React.FC = () => {
   useEffect(() => {
     console.log(device); // This will log the updated device state after each render
   }, [device]);
+  const generateAuthSig = useCallback(async () => {
+    if (publicKey != null) {
+        const authSig = await ethConnect.signAndSaveAuthMessage({
+            web3: provider,
+            account: publicKey.toLowerCase(),
+            chainId: 5,
+            resources: {},
+            expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+        });
+        setAuthSig(authSig);
+        console.log(authSig);
+    }
+  }, [publicKey, provider, setAuthSig]);
+
   useEffect(() => {
-    if (publicKey) {
-      generateAuthSig();
-    }
-  }, [publicKey, authSig]);
-  async function generateAuthSig() {
-    
-    if (publicKey!=null) {
-      const authSig = await ethConnect.signAndSaveAuthMessage({
-        web3: provider,
-        account: publicKey.toLowerCase(),
-        chainId: 5,
-        resources: {},
-        expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+      if (publicKey) {
+          generateAuthSig();
       }
-      );
-      setAuthSig(authSig) 
-      console.log(authSig)
-    }
-  }
+  }, [publicKey, generateAuthSig]);
+
   const onUnifiedAccessControlConditionsSelected = (shareModalOutput: any) => {
     // Since shareModalOutput is already an object, no need to parse it
     console.log('ddd', shareModalOutput);
@@ -123,52 +129,54 @@ const PatientForm: React.FC = () => {
     }
     const uuid = v4();
     device.id = uuid;
-    //Add the current user to the accessControlCoditions
-    const userSelfCondition = {
-      chain: "ethereum",
-      conditionType: "evmBasic",
-      contractAddress: "",
-      method: "",
-      parameters: [':userAddress'],
-      returnValueTest : {comparator: '=', value: publicKey} ,
-      standardContractType :  ""
-    }
-    accessControlConditions.push(userSelfCondition); // add rights to decrypt the data yourself
-    setAccessControlConditions(accessControlConditions);
-    console.log(accessControlConditions)
-    downloadJson(device, uuid);
-    console.log("downloaded file");
-    const JSONpatient = JSON.stringify(device)
-    const blob = new Blob([JSONpatient], { type: "application/json" });
-    console.log("created blob");
-    const { ciphertext, dataToEncryptHash } = await LitJsSdk.encryptFile(
-      {
-        // accessControlConditions: accessControlConditions,
-        accessControlConditions,
-        authSig: authSig,
-        chain: chainIdString,
-        file: blob,
-      },
-      window.LitNodeClient 
-    );
-    const hash = dataToEncryptHash;
-    console.log("executed encytption with lit:" + hash);
-    const encFile = ciphertext;
-    console.log("File encrypted with Lit protocol:" + encFile);
-    if (encFile != null) {
-      const files = [new File([encFile], "Device/" + uuid)];
-      //Upload File to IPFS
-      const client = makeStorageClient();
-      const cid = await client.put(files);
-      console.log(cid)
-      const uri = "https://" + cid + ".ipfs.dweb.link/Device/" + uuid + "?encHash=" + dataToEncryptHash;
-      console.log(uri)
-      //create new did registry entry
-      console.log("stored files with cid:", cid);
-      console.log("uri:", uri);
-      setHasCreatedProfile(true);
-      setUri(uri);
-      return uri;
+
+    if (thisPublicKey) {
+      //Add the current user to the accessControlCoditions
+      const userSelfCondition : AccessControlConditions = [{
+        chain: "ethereum",
+        conditionType: "evmBasic",
+        contractAddress: "",
+        method: "",
+        parameters: [':userAddress'],
+        returnValueTest : {comparator: '=', value: thisPublicKey} ,
+        standardContractType :  ""
+      }]
+      setAccessControlConditions(prevConditions => [...prevConditions, userSelfCondition]);  
+
+      console.log(accessControlConditions)
+      downloadJson(device, uuid);
+      console.log("downloaded file");
+      const JSONpatient = JSON.stringify(device)
+      const blob = new Blob([JSONpatient], { type: "application/json" });
+      console.log("created blob");
+      const { ciphertext, dataToEncryptHash } = await LitJsSdk.encryptFile(
+        {
+          accessControlConditions: accessControlConditions[0],
+          authSig: authSig,
+          chain: chainIdString,
+          file: blob,
+        },
+        window.LitNodeClient 
+      );
+      const hash = dataToEncryptHash;
+      console.log("executed encytption with lit:" + hash);
+      const encFile = ciphertext;
+      console.log("File encrypted with Lit protocol:" + encFile);
+      if (encFile != null) {
+        const files = [new File([encFile], "Device/" + uuid)];
+        //Upload File to IPFS
+        const client = makeStorageClient();
+        const cid = await client.put(files);
+        console.log(cid)
+        const uri = "https://" + cid + ".ipfs.dweb.link/Device/" + uuid + "?encHash=" + dataToEncryptHash;
+        console.log(uri)
+        //create new did registry entry
+        console.log("stored files with cid:", cid);
+        console.log("uri:", uri);
+        setHasCreatedProfile(true);
+        setUri(uri);
+        return uri;
+      }
     }
   };
   const downloadJson = (object: Device, filename: string) => {
@@ -336,19 +344,7 @@ const PatientForm: React.FC = () => {
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
         />
       </div>
-
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">
-          Device UDI (Unique Device Identifier):
-        </label>
-        <input
-          type="text"
-          name="udiCarrier.carrierHRF"
-          value={device.udiCarrier|| ''}
-          onChange={handleInputChange}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-      </div>      
+  
         <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
               Access Control (Who Can Read your Device Profile):

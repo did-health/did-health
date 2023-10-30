@@ -5673,6 +5673,7 @@ __metadata:
     node-gyp: ^10.0.0
     postcss: ^8.4.16
     prettier: ^2.8.4
+    qr-svg: ^1.1.0
     qrcode: ^1.5.3
     qrcode.react: ^3.1.0
     react: ^18.2.0
@@ -21290,6 +21291,15 @@ __metadata:
   dependencies:
     escape-goat: ^4.0.0
   checksum: 0e4f4ab6bbdce600fa6d23b1833f1af57b2641246ff4cbe10f9d66e4e5479b0de2864a88d5bd629eef59524eda3c6680726acd7f3f873d9ed46b7f095d0bb5f6
+  languageName: node
+  linkType: hard
+
+"qr-svg@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "qr-svg@npm:1.1.0"
+  dependencies:
+    tslib: ^2.1.0
+  checksum: c0224e48245a7dbead0e7bf4a2779fc07c6b55e2214414c998e4e0f5e7941f00ac39c0c86f8920566a4adad7662d0d889d65cae658035c05a51d24f0d645432f
   languageName: node
   linkType: hard
 
