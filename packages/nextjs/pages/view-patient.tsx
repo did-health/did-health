@@ -6,7 +6,7 @@ import Patient = fhir4.Patient;
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
 import { AccessControlConditions, AccsRegularParams } from '@lit-protocol/types'; //Chain, ConditionType, EvmContractConditions, IRelayAuthStatus, JsonRequest, LIT_NETWORKS_KEYS, SolRpcConditions, SymmetricKey, UnifiedAccessControlConditions are also available
 import { ethConnect } from '@lit-protocol/lit-node-client';
-import { Web3Provider } from '@ethersproject/providers';
+import { ExternalProvider, Web3Provider } from '@ethersproject/providers';
 import https from 'https'
 import { URL } from 'url';
 import { convertToDidDocument, getEncHash } from './api/did/document'
@@ -17,10 +17,6 @@ const ViewPatientForm: React.FC = () => {
   });
   const account = useAccount(); 
   const { address: publicKey } = useAccount();
-  const { ethereum } = window as any;
-  const provider = useMemo(() => {
-    return new Web3Provider(ethereum);
-  }, [ethereum]);
 
   const { chain, chains } = useNetwork();
   const chainId = chain?.id;
@@ -31,12 +27,21 @@ const ViewPatientForm: React.FC = () => {
   const [thisPublicKey] = useState(publicKey);
   const [uri, setUri] = useState("");
   const [didsuffix, setDIDSuffix] = useState<string>("");
+  const [provider, setProvider] = useState<Web3Provider>();
   const [inputDID, setInputDID] = useState(""); // State to store the entered DID
   const [didDocument, setDidDocument] = useState<any>(null); // Define the didDocument state
   const [authSig, setAuthSig] = useState({sig:'', derivedVia:'', signedMessage:'', address:''});
   const [accessControlConditions, setAccessControlConditions] = useState<AccessControlConditions[]>([]);
   const [error, setError] = useState<any>(null);
-  
+  let ethereum: ExternalProvider;
+  if (typeof window !== "undefined") {
+    ethereum = (window as any).ethereum;
+    const provider = new Web3Provider(ethereum);
+    setProvider(provider)
+    const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
+    client.connect();
+    window.LitNodeClient = client;
+  }  
 
   const { data: resolvedDid } = useScaffoldContractRead({
     contractName: "HealthDIDRegistry",
@@ -51,7 +56,7 @@ const ViewPatientForm: React.FC = () => {
     }
   }, [resolvedDid]);
   const generateAuthSig = useCallback(async () => {
-    if (publicKey != null) {
+    if (publicKey != null && provider) {
         const authSig = await ethConnect.signAndSaveAuthMessage({
             web3: provider,
             account: publicKey.toLowerCase(),
@@ -127,9 +132,6 @@ const ViewPatientForm: React.FC = () => {
   };
   const DownloadandDecryptFile = async (url: string) => {
   try {
-    const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
-    await client.connect();
-    window.LitNodeClient = client;
     // Specify your access control conditions here
     // Download file from IPFS
     console.log('create ipfs client');

@@ -6,9 +6,14 @@ import { useAccount, useNetwork } from "wagmi";
 import Button from "../components/Button";
 import { v4 } from "uuid";
 import Practitioner = fhir4.Practitioner;
-import {  Web3Provider } from '@ethersproject/providers';
+import {  ExternalProvider, Web3Provider } from '@ethersproject/providers';
 import { ethConnect } from '@lit-protocol/lit-node-client';
-import ShareModal from "lit-share-modal-v3";
+import dynamic from 'next/dynamic';
+
+// Dynamically import the ShareModal component
+const ShareModal = dynamic(() => import('lit-share-modal-v3'), {
+  ssr: false, // This will load the component only on the client side
+});
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
 import { AccessControlConditions, AccsRegularParams } from '@lit-protocol/types'; //Chain, ConditionType, EvmContractConditions, IRelayAuthStatus, JsonRequest, LIT_NETWORKS_KEYS, SolRpcConditions, SymmetricKey, UnifiedAccessControlConditions are also available
 const PatientForm: React.FC = () => {
@@ -24,11 +29,6 @@ const PatientForm: React.FC = () => {
   });
   const account = useAccount();
   const { address: publicKey } = useAccount();
-  const { ethereum } = window as any;
-  const provider = useMemo(() => {
-      return new Web3Provider(ethereum);
-  }, [ethereum]);
-  
   const { chain, chains } = useNetwork();
   const chainId = chain?.id;
   let chainIdString = "";
@@ -38,21 +38,28 @@ const PatientForm: React.FC = () => {
   const [hasCreatedProfile, setHasCreatedProfile] = useState(false);
   const [uri, setUri] = useState("");
   const [didsuffix, setDIDSuffix] = useState<string>("");
+  const [provider, setProvider] = useState<Web3Provider>();
   const [did, setDID] = useState<string>("");
   const [authSig, setAuthSig] = useState({sig: '', derivedVia: '', signedMessage: '', address: ''});
   const [showShareModal, setShowShareModal] = useState(false);
   const [thisPublicKey] = useState(publicKey);
   const [accessControlConditions, setAccessControlConditions] = useState<AccessControlConditions[]>([]);
   const [error, setError] = useState<any>(null);
-  const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
-  client.connect();
-  window.LitNodeClient = client;
+  let ethereum: ExternalProvider;
+  if (typeof window !== "undefined") {
+    ethereum = (window as any).ethereum;
+    const provider = new Web3Provider(ethereum);
+    setProvider(provider)
+    const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
+    client.connect();
+    window.LitNodeClient = client;
+  }  
 
   useEffect(() => {
     console.log(practitioner); // This will log the updated practitioner state after each render
   }, [practitioner]);
   const generateAuthSig = useCallback(async () => {
-    if (publicKey != null) {
+    if (publicKey != null && provider) {
         const authSig = await ethConnect.signAndSaveAuthMessage({
             web3: provider,
             account: publicKey.toLowerCase(),
@@ -407,7 +414,7 @@ const PatientForm: React.FC = () => {
           />
         </div>
       <div>
-        {showShareModal && (
+        {showShareModal &&  (
           <div className={"lit-share-modal"}>
             <ShareModal
               onClose={() => {
