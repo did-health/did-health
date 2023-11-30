@@ -11,10 +11,10 @@ Contributing
 License
 
 ## Features
-- Decentralized Cryptography: Utilizes the LIT Protocol for decentralized threshold cryptography.
-- ChainAgnostic Resolver: Uses the first two hex characters after did:health: to identify the associated blockchain.
+- Decentralized ECDSA Cryptography: Utilizes the LIT Protocol for decentralized threshold cryptography.
+- Chain Agnostic Resolver: Uses the first two hex characters after did:health: to identify the associated blockchain that th DID is registered on.
 - User Control: Empowers users with full control over their identity and associated healthcare data.
-- IPFS Data Storage: All healthcare data is stored on the InterPlanetary File System (IPFS) for decentralized and tamper-proof storage.
+- IPFS Data Storage: All healthcare data is stored in standard Fast Healthcare Interoperability Resources (FHIR) format on the InterPlanetary File System (IPFS) for decentralized and tamper-proof storage.  The IPFS data is linked to your DID Document as a FHIR API service.
 - Installation
 ```
 git clone https://github.com/your-org/did-health.git
