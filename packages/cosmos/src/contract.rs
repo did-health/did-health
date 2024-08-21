@@ -1,44 +1,12 @@
 use cosmwasm_std::{entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, StdError, Addr};
 use cosmwasm_std::to_binary;
-use cw_storage_plus::{Item, Map};
-use serde::{Deserialize, Serialize};
-use schemars::JsonSchema;
+use cw_storage_plus::{Map};
+use crate::msg::{HealthDID, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::error::ContractError;
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct HealthDID {
-    pub owner: Addr,
-    pub delegate_addresses: Vec<Addr>,
-    pub health_did: String,
-    pub ipfs_uri: String,
-    pub alt_ipfs_uris: Vec<String>,
-    pub reputation_score: u8,
-    pub has_world_id: bool,
-    pub has_polygon_id: bool,
-    pub has_social_id: bool,
-}
 
 const DID_OWNER_ADDRESS_REGISTRY: Map<&str, Addr> = Map::new("did_owner_address_registry");
 const ADDRESS_DID_MAPPING: Map<&Addr, HealthDID> = Map::new("address_did_mapping");
 const DELEGATE_ADDRESSES: Map<(&Addr, &str), bool> = Map::new("delegate_addresses");
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct InstantiateMsg {}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub enum ExecuteMsg {
-    RegisterDID { health_did: String, uri: String },
-    UpdateDIDData { health_did: String, uri: String },
-    AddAltData { health_did: String, uris: Vec<String> },
-    AddDelegateAddress { peer_address: Addr, health_did: String },
-    RemoveDelegateAddress { peer_address: Addr, health_did: String },
-    TransferOwnership { new_address: Addr, health_did: String },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub enum QueryMsg {
-    GetHealthDID { health_did: String },
-}
 
 #[entry_point]
 pub fn instantiate(
@@ -78,10 +46,10 @@ fn try_register_did(
         return Err(ContractError::DidAlreadyExists {});
     }
 
-    let chain_id = resolve_chain_id(&health_did)?;
-    if chain_id != get_chain_id() {
-        return Err(ContractError::IncorrectChainId {});
-    }
+    // let chain_id = resolve_chain_id(&health_did)?;
+    // if chain_id != get_chain_id() {
+    //     return Err(ContractError::IncorrectChainId {});
+    // }
 
     DID_OWNER_ADDRESS_REGISTRY.save(deps.storage, &health_did, &info.sender)?;
     let new_did = HealthDID {
