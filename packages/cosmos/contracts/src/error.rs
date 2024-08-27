@@ -20,7 +20,7 @@ pub enum ContractError {
 
     #[error("Cannot transfer ownership to existing owner")]
     CannotTransferToSelf {},
-    
+
     #[error("Input string too short")]
     InputTooShort {},
 
