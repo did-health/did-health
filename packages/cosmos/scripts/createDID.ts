@@ -1,8 +1,8 @@
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { assertIsDeliverTxSuccess, GasPrice } from "@cosmjs/stargate";
+import { GasPrice } from "@cosmjs/stargate";
 
-const contractAddress = "tdh021vhndln95yd7rngslzvf6sax6axcshkxqpmpr886ntelh28p9ghuqcr72sh";
+const contractAddress = "tdh021657pee2jhf4jk8pq6yq64e758ngvum45gl866knmjkd83w6jgn3svzwyq7";
 const mnemonic = ""; // Replace with your mnemonic
 const rpcEndpoint = "https://rpc-testnet.dhealth.dev/"; // Replace with your RPC endpoint
 const walletPrefix = "tdh02"; // Replace with your chain prefix (e.g., "cosmos", "wasm", etc.)
@@ -33,8 +33,7 @@ async function main() {
     executeMsg,
     "auto"
   );
-  assertIsDeliverTxSuccess(executionResult);
-  console.log("Transaction successful:", executionResult);
+  console.log("Transaction result:", executionResult);
 }
 
 main().catch(console.error);

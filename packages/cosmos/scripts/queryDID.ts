@@ -1,6 +1,6 @@
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
-const contractAddress = "tdh021vhndln95yd7rngslzvf6sax6axcshkxqpmpr886ntelh28p9ghuqcr72sh";
+const contractAddress = "tdh021657pee2jhf4jk8pq6yq64e758ngvum45gl866knmjkd83w6jgn3svzwyq7";
 const rpcEndpoint = "https://rpc-testnet.dhealth.dev/"; // Replace with your RPC endpoint
 
 async function main() {

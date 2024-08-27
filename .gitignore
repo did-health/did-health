@@ -12,3 +12,10 @@ node_modules
 .vscode/**
 .DS_Store
 .env.local
+
+# built folders
+# cargo
+Cargo.lock
+dist
+artifacts
+target

@@ -1,0 +1,18 @@
+{
+  "name": "@se-2/cosmos",
+  "type": "module",
+  "scripts": {
+    "compileContract": "sh ./deploy/compile_contract.sh",
+    "compileTS": "rimraf ./dist && tsc",
+    "deploy": "yarn compileContract && yarn compileTS && node ./dist/deploy/deploy"
+  },
+  "dependencies": {
+    "@cosmjs/cosmwasm-stargate": "^0.32.4",
+    "@cosmjs/proto-signing": "^0.32.4",
+    "@cosmjs/stargate": "^0.32.4"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.5.4"
+  }
+}

@@ -1,9 +1,0 @@
-{
-  "name": "scripts",
-  "type": "module",
-  "dependencies": {
-    "@cosmjs/cosmwasm-stargate": "^0.32.4",
-    "@cosmjs/proto-signing": "^0.32.4",
-    "@cosmjs/stargate": "^0.32.4"
-  }
-}
