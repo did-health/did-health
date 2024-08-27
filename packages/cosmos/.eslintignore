@@ -1,0 +1,7 @@
+# folders
+dist
+contracts
+node_modules/
+
+# files
+**/*.json
