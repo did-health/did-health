@@ -9,15 +9,20 @@ const yourAddress = ""; // Replace with your address
 
 async function main() {
   // Step 1: Set up the wallet and client
-  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, { prefix: walletPrefix });
-  const client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, wallet);
+  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
+    prefix: walletPrefix,
+  });
+  const client = await SigningCosmWasmClient.connectWithSigner(
+    rpcEndpoint,
+    wallet
+  );
 
   // Step 2: Instantiate the contract
   const initMsg = {}; // Replace with your initialization message
   const label = "DID-Health";
   const instantiateFee = {
     amount: [{ denom: "utdhp", amount: "50000" }], // Adjust based on your network
-    gas: "200000"
+    gas: "200000",
   };
 
   const instantiateResult = await client.instantiate(
