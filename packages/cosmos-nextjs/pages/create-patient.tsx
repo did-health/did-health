@@ -5,7 +5,6 @@ import Patient = fhir4.Patient;
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
 import Button from "../components/Button";
 import { v4 } from "uuid";
-import ShareModal from "lit-share-modal-v3";
 import { useChain } from '@cosmos-kit/react';
 import { useScaffoldContractWrite } from '~~/hooks/scaffold-cosmos/useScaffoldContractWrite';
 
@@ -38,9 +37,6 @@ const PatientForm: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [accessControlConditions, setAccessControlConditions] = useState([]);
   const [error, setError] = useState<any>(null);
-  const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
-  client.connect();
-  window.LitNodeClient = client;
 
   // useEffect(() => {
   //   if (publicKey) {
@@ -64,6 +60,10 @@ const PatientForm: React.FC = () => {
   // }
 
   useEffect(() => {
+    const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
+    client.connect();
+    window.LitNodeClient = client;
+  
     const fetchPublicKey = async () => {
       if (isWalletConnected) {
         try {

@@ -5,7 +5,6 @@ import { makeStorageClient } from "../hooks/w3up";
 import Button from "../components/Button";
 import { v4 } from "uuid";
 import Organization = fhir4.Organization;
-import ShareModal from "lit-share-modal-v3";
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
 import { useChain, useWallet } from "@cosmos-kit/react";
 
@@ -31,10 +30,12 @@ const PatientForm: React.FC = () => {
   const [authSig, setAuthSig] = useState({});
   const [showShareModal, setShowShareModal] = useState(false);
   const [accessControlConditions, setAccessControlConditions] = useState([]);
-  const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
-  client.connect();
-  window.LitNodeClient = client;
 
+  useEffect(() => {
+    const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
+    client.connect();
+    window.LitNodeClient = client;
+  });
   useEffect(() => {
     const fetchPublicKey = async () => {
       if (isWalletConnected) {
@@ -375,7 +376,7 @@ const PatientForm: React.FC = () => {
             }}
           />
         </div> */}
-      <div>
+      {/* <div>
         {showShareModal && (
           <div className={"lit-share-modal"}>
             <ShareModal
@@ -388,7 +389,7 @@ const PatientForm: React.FC = () => {
             />
           </div>
         )}
-      </div>
+      </div> */}
       <div className="flex justify-center items-center">
         {!hasCreatedProfile && !uri ? (
           <Button

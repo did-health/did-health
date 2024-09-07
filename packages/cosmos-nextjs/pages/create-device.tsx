@@ -32,10 +32,12 @@ const PatientForm: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [accessControlConditions, setAccessControlConditions] = useState([]);
   const [error, setError] = useState<any>(null);
-  const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
-  client.connect();
-  window.LitNodeClient = client;
 
+  useEffect(() => {
+    const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
+    client.connect();
+    window.LitNodeClient = client;
+  });
   useEffect(() => {
     const fetchPublicKey = async () => {
       if (isWalletConnected) {
