@@ -16,7 +16,9 @@ const nextConfig = {
   env: {
     CHAIN: "dhealth",
     CONTRACT_ADDRESS: "dh14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s8py8te",
-    EXPLORER_ADDRESS: "https://ping.pub/dhealth/tx/"
+    EXPLORER_ADDRESS: "https://ping.pub/dhealth/tx/",
+    KEY: "",
+    PROOF: ""
   },
 };
 
