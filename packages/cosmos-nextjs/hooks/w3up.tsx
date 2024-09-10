@@ -17,7 +17,9 @@ export async function makeStorageClient() {
   }
 
   // Add proof that this agent has been delegated capabilities on the space
-  client.setCurrentSpace("did:key:z6MkwJaSkRvU1tv2DpT9mNTuBYYH7njbSLhYJ35BMbyV7R3P");
+  await client.addProof(delegation.ok);
+  const space = await client.addSpace(delegation.ok);
+  await client.setCurrentSpace(space.did());
   return client;
 }
 
