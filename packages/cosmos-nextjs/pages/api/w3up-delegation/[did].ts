@@ -37,7 +37,7 @@ async function delegate(did: string) {
     'space/blob/add',
     'space/index/add',
     'filecoin/offer',
-    'space/upload/add'
+    'upload/add'
   ];
   const expiration = Math.floor(Date.now() / 1000) + (60 * 60 * 24) // 24 hours from now
   const delegation = await client.createDelegation(audience, abilities, { expiration });
