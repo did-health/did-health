@@ -77,10 +77,12 @@ const DidDocumentForm = () => {
           )}
         </div>
       )}
-      <h2>QR Code of Your Did Document</h2>
-      {qrcode && <div>
-        <Image src={qrcode} alt="QR Code" width={300} height={300} />
-      </div>}
+      <div className="p-6">
+        <h2>QR Code of Your Did Document</h2>
+        {qrcode && <div>
+          <Image src={qrcode} alt="QR Code" width={300} height={300} />
+        </div>}
+      </div>
     </div>
   );
 };
