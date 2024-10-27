@@ -17,11 +17,11 @@ const SelectDIDTypeForm: React.FC = () => {
     <div>
       <form onSubmit={handleSubmit}>  
       <div className="form-group">
-        <div className="mb-4">
+        <div className="p-6">
         <label className="block text-gray-700 text-sm font-bold mb-2">
             Select the kind of entity you are:
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 mb-4">
             <Link href="/create-patient" className="col-span-1">
             <button type="button" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline navigation-button">
                 Patient
