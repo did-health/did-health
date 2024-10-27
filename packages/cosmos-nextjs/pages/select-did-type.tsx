@@ -23,22 +23,22 @@ const SelectDIDTypeForm: React.FC = () => {
         </label>
         <div className="grid grid-cols-2 gap-3">
             <Link href="/create-patient" className="col-span-1">
-            <button type="button" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <button type="button" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline navigation-button">
                 Patient
             </button>
             </Link>
             <Link href="/create-practitioner" className="col-span-1">
-            <button type="button" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <button type="button" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline navigation-button">
                 Practitioner
             </button>
             </Link>
             <Link href="/create-organization" className="col-span-1">
-            <button type="button" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <button type="button" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline navigation-button">
                 Organization
             </button>
             </Link>
             <Link href="/create-device" className="col-span-1">
-            <button type="button" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <button type="button" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline navigation-button">
                 Device
             </button>
             </Link>
