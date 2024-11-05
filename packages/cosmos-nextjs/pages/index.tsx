@@ -17,7 +17,7 @@ const Home: NextPage = () => {
           </h1>
           <p className="text-center text-lg">
             did:health is a{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
+            <code className="italic text-base font-bold max-w-full break-words break-all inline-block">
               W3C-compliant Decentralized Identifier (DID) solution
             </code>{" "}
             tailored for the healthcare sector. 
