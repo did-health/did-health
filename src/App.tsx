@@ -1,21 +1,28 @@
-// src/App.tsx
-import { ConnectWallet } from './components/WalletConnect'
-import { ConnectLit } from './components/ConnectLit'
-import { SetupStorage } from './components/SetupStorage'
-import { CreateDIDForm } from './components/CreateDIDForm'
-import { useOnboardingState } from './store/OnboardingState'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Onboarding from './components/Onboarding'
+import PatientForm from './components/fhir/CreatePatientForm'
+import PractitionerForm from './components/fhir/CreatePractitionerForm'
+import OrganizationForm from './components/fhir/CreateOrganizationForm'
+import DeviceForm from './components/fhir/CreateDeviceForm'
+import { SelectDIDForm } from './components/SelectDIDForm'
+import { RegisterDID } from './components/RegisterDID'
 
 function App() {
-  const { walletConnected, litConnected, storageReady } = useOnboardingState()
-
   return (
-    <main className="p-6 space-y-6 max-w-xl mx-auto">
-      <h1 className="text-3xl font-bold">DID:health Onboarding</h1>
-      <ConnectWallet />
-      {walletConnected && <ConnectLit />}
-      {walletConnected && litConnected && <SetupStorage />}
-      {walletConnected && litConnected && storageReady && <CreateDIDForm />}
-    </main>
+    <Routes>
+      <Route path="/" element={<Onboarding />} />
+      <Route path="/create/patient" element={<PatientForm />} />
+      <Route path="/create/practitioner" element={<PractitionerForm />} />
+      <Route path="/create/organization" element={<OrganizationForm />} />
+      <Route path="/create/device" element={<DeviceForm />} />
+      <Route path="/set-did" element={<SelectDIDForm onDIDAvailable={function (did: string): void {
+        throw new Error('Function not implemented.')
+      } } />} />
+      <Route path="/register-did" element={<RegisterDID/>} />
+      
+      <Route path="*" element={<Navigate to="/" />} />
+
+    </Routes>
   )
 }
 

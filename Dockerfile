@@ -1,37 +1,32 @@
-# Build stage
-FROM node:18-alpine AS builder
+# Stage 1: Build Vite app with node 20
+FROM node:20-bookworm AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY tsconfig.json ./
+# Install dependencies for native modules
+RUN apt-get update && apt-get install -y \
+  python3 \
+  make \
+  g++ \
+  && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
+# Copy and install dependencies
+COPY package*.json ./
 RUN npm ci
 
-# Copy source code
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine AS runner
+# Stage 2: Serve with nginx
+# Step 2: Serve the app from Nginx
+FROM nginx:1.19-alpine
 
-WORKDIR /app
+# Replace default config
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Install only production dependencies
-COPY package*.json ./
-RUN npm ci --only=production
+# Copy built site from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy built application from builder stage
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.js ./
-
-# Expose the port Next.js runs on
-EXPOSE 3000
-
-# Start the application
-CMD ["npm", "start"]
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

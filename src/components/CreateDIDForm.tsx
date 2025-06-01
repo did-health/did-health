@@ -1,34 +1,31 @@
-// src/components/CreateDIDForm.tsx
 import { useNavigate } from 'react-router-dom'
-
 export function CreateDIDForm() {
   const navigate = useNavigate()
-
   return (
     <div>
       <h2 className="text-lg font-semibold">Create your DID</h2>
       <p className="text-sm mb-4">Select the kind of entity you are:</p>
       <div className="grid grid-cols-2 gap-3">
         <button
-          onClick={() => navigate('/create-patient')}
+          onClick={() => navigate('/create/patient')}
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight hover:bg-red-50"
         >
           Patient
         </button>
         <button
-          onClick={() => navigate('/create-practitioner')}
+          onClick={() => navigate('/create/practitioner')}
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight hover:bg-red-50"
         >
           Practitioner
         </button>
         <button
-          onClick={() => navigate('/create-organization')}
+          onClick={() => navigate('/create/organization')}
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight hover:bg-red-50"
         >
           Organization
         </button>
         <button
-          onClick={() => navigate('/create-device')}
+          onClick={() => navigate('/create/device')}
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight hover:bg-red-50"
         >
           Device

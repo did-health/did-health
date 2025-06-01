@@ -17,13 +17,18 @@ export function SetupStorage() {
       const client = await create()
       const account = await client.login(email as `${string}@${string}`)
 
-      setStatus('📧 Verification email sent. Please check your inbox.')
+      setStatus('📧 Verification email sent. Please check your inbox...')
 
       await account?.plan.wait()
+
       const space = await client.createSpace('did-health-user-space', { account })
       await client.setCurrentSpace(space.did())
 
-      setStatus('✅ Web3.Storage space is ready')
+      // Store email and space DID
+      localStorage.setItem('didhealth_email', email)
+      localStorage.setItem('didhealth_space_did', space.did())
+
+      setStatus(`✅ Web3.Storage space is ready (DID: ${space.did()})`)
       setStorageReady(true)
     } catch (err) {
       console.error(err)
@@ -37,15 +42,15 @@ export function SetupStorage() {
       <h2 className="text-lg font-semibold">3. Setup Web3.Storage</h2>
       <input
         type="email"
-        className="input"
+        className="input input-bordered w-full"
         placeholder="Enter your email address"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <button className="btn mt-2" onClick={setupStorage}>
+      <button className="btn btn-primary mt-2" onClick={setupStorage}>
         Verify and Setup
       </button>
-      {status && <p className="mt-1 text-sm">{status}</p>}
+      {status && <p className="mt-2 text-sm">{status}</p>}
     </div>
   )
 }
