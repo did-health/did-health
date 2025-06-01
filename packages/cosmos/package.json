@@ -1,0 +1,28 @@
+{
+  "name": "@se-2/cosmos",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore ./deploy/**/*.ts ./scripts/**/*.ts --fix",
+    "lint:staged": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore",
+    "compile:contract": "sh ./deploy/compile_contract.sh",
+    "compile:ts": "rimraf ./dist && tsc",
+    "deploy": "yarn compile:contract && yarn compile:ts && node ./dist/deploy/deploy"
+  },
+  "dependencies": {
+    "@cosmjs/cosmwasm-stargate": "^0.32.4",
+    "@cosmjs/proto-signing": "^0.32.4",
+    "@cosmjs/stargate": "^0.32.4"
+  },
+  "devDependencies": {
+    "@types/eslint": "^8",
+    "@types/prettier": "^2",
+    "@typescript-eslint/eslint-plugin": "latest",
+    "@typescript-eslint/parser": "latest",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.4",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.5.4"
+  }
+}

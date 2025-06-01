@@ -5,7 +5,9 @@
   "workspaces": {
     "packages": [
       "packages/hardhat",
-      "packages/nextjs"
+      "packages/nextjs",
+      "packages/cosmos",
+      "packages/cosmos-nextjs"
     ]
   },
   "scripts": {
@@ -21,6 +23,7 @@
     "hardhat:test": "yarn workspace @se-2/hardhat test",
     "test": "yarn hardhat:test",
     "start": "yarn workspace @se-2/nextjs dev",
+    "start-cosmos": "yarn workspace @se-2/cosmos-nextjs dev",
     "next:lint": "yarn workspace @se-2/nextjs lint",
     "next:format": "yarn workspace @se-2/nextjs format",
     "next:check-types": "yarn workspace @se-2/nextjs check-types",
