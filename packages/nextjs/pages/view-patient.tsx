@@ -1,11 +1,12 @@
 ///<reference path="../../../node_modules/@types/fhir/index.d.ts"/>
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useScaffoldContractRead } from "../hooks/scaffold-eth";
 import { useAccount, useNetwork } from "wagmi";
 import Patient = fhir4.Patient;
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
+import { AccessControlConditions, AccsRegularParams } from '@lit-protocol/types'; //Chain, ConditionType, EvmContractConditions, IRelayAuthStatus, JsonRequest, LIT_NETWORKS_KEYS, SolRpcConditions, SymmetricKey, UnifiedAccessControlConditions are also available
 import { ethConnect } from '@lit-protocol/lit-node-client';
-import { Web3Provider } from '@ethersproject/providers';
+import { ExternalProvider, Web3Provider } from '@ethersproject/providers';
 import https from 'https'
 import { URL } from 'url';
 import { convertToDidDocument, getEncHash } from './api/did/document'
@@ -16,8 +17,7 @@ const ViewPatientForm: React.FC = () => {
   });
   const account = useAccount(); 
   const { address: publicKey } = useAccount();
-  const { ethereum } = window as any;
-  const provider = new Web3Provider(ethereum);
+
   const { chain, chains } = useNetwork();
   const chainId = chain?.id;
   let chainIdString = "";
@@ -27,11 +27,23 @@ const ViewPatientForm: React.FC = () => {
   const [thisPublicKey] = useState(publicKey);
   const [uri, setUri] = useState("");
   const [didsuffix, setDIDSuffix] = useState<string>("");
+  const [provider, setProvider] = useState<Web3Provider>();
   const [inputDID, setInputDID] = useState(""); // State to store the entered DID
   const [didDocument, setDidDocument] = useState<any>(null); // Define the didDocument state
   const [authSig, setAuthSig] = useState({sig:'', derivedVia:'', signedMessage:'', address:''});
-  const [accessControlConditions, setAccessControlConditions] = useState([]);
+  const [accessControlConditions, setAccessControlConditions] = useState<AccessControlConditions[]>([]);
   const [error, setError] = useState<any>(null);
+  useEffect(() => {
+    let ethereum: ExternalProvider;
+    if (typeof window !== "undefined") {
+        ethereum = (window as any).ethereum;
+        const providerInstance = new Web3Provider(ethereum);
+        setProvider(providerInstance);
+        const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
+        client.connect();
+        window.LitNodeClient = client;
+    }
+}, []);  // Empty dependency array ensures this runs once after component mounts
 
 
   const { data: resolvedDid } = useScaffoldContractRead({
@@ -39,31 +51,33 @@ const ViewPatientForm: React.FC = () => {
     functionName: "getHealtDID",
     args: [inputDID],
   });  
-  useEffect(() => {
-    if (publicKey) {
-      generateAuthSig();
-    }
-  }, [publicKey]);
+
   useEffect(() => {
     if (resolvedDid) {
       const document = convertToDidDocument(resolvedDid);
       setDidDocument(document)
     }
   }, [resolvedDid]);
-  async function generateAuthSig() {    
-    if (publicKey!=null) {
-      const authSig = await ethConnect.signAndSaveAuthMessage({
-        web3: provider,
-        account: publicKey.toLowerCase(),
-        chainId: 5,
-        resources: {},
-        expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-      }
-      );
-      setAuthSig(authSig) 
-      console.log(authSig)
+  const generateAuthSig = useCallback(async () => {
+    if (publicKey != null && provider) {
+        const authSig = await ethConnect.signAndSaveAuthMessage({
+            web3: provider,
+            account: publicKey.toLowerCase(),
+            chainId: 5,
+            resources: {},
+            expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+        });
+        setAuthSig(authSig);
+        console.log(authSig);
     }
-  }
+  }, [publicKey, provider, setAuthSig]);
+
+  useEffect(() => {
+      if (publicKey) {
+          generateAuthSig();
+      }
+  }, [publicKey, generateAuthSig]);
+  
   function httpsRequest(url: string | https.RequestOptions | URL) {
   return new Promise((resolve, reject) => {
     https.get(url, (resp) => {
@@ -121,9 +135,6 @@ const ViewPatientForm: React.FC = () => {
   };
   const DownloadandDecryptFile = async (url: string) => {
   try {
-    const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
-    await client.connect();
-    window.LitNodeClient = client;
     // Specify your access control conditions here
     // Download file from IPFS
     console.log('create ipfs client');
@@ -138,42 +149,41 @@ const ViewPatientForm: React.FC = () => {
         setError("failed to get document from IPFS")
         return;
     }
-    //Add the current user to the accessControlCoditions
-    const userSelfCondition = {
-      chain: "ethereum",
-      conditionType: "evmBasic",
-      contractAddress: "",
-      method: "",
-      parameters: [':userAddress'],
-      returnValueTest : {comparator: '=', value: thisPublicKey} ,
-      standardContractType :  ""
+    if (thisPublicKey) {
+      const userSelfCondition : AccessControlConditions = [{
+        chain: "ethereum",
+        conditionType: "evmBasic",
+        contractAddress: "",
+        method: "",
+        parameters: [':userAddress'],
+        returnValueTest : {comparator: '=', value: thisPublicKey} ,
+        standardContractType :  ""
+      }]
+      setAccessControlConditions(prevConditions => [...prevConditions, userSelfCondition]);  
+
+      console.log('xxxxxx' + accessControlConditions)
+      const chainIdString = "ethereum" 
+      console.log("decrypting: " + response)
+      const hash = new String(getEncHash(dWebLinkURL))
+      console.log("Lit encryption Hash: " + hash)
+      if (hash!='null') {
+          const decryptString = await LitJsSdk.decryptToString( {
+              ciphertext: response.toString(),          
+              dataToEncryptHash: hash.toString(),
+              accessControlConditions: accessControlConditions[0],
+              chain: chainIdString ,
+              authSig,
+          },
+          window.LitNodeClient,
+          );
+          console.log('File decrypted with Lit protocol');
+          console.log(decryptString )
+          setPatient(JSON.parse(decryptString)) 
+      } 
+      else{
+          setError('File URL does not have Encryption Hash, Notify Did Owner'); console.log('missing hash');
+      }  
     }
-    if (accessControlConditions.length == 0){
-      accessControlConditions.push(userSelfCondition); // add rights to decrypt the data yourself
-      setAccessControlConditions(accessControlConditions);
-    }
-    console.log(accessControlConditions)
-    const chainIdString = "ethereum" 
-    console.log("decrypting: " + response)
-    const hash = new String(getEncHash(dWebLinkURL))
-    console.log("Lit encryption Hash: " + hash)
-    if (hash!='null') {
-        const decryptString = await LitJsSdk.decryptToString( {
-            ciphertext: response.toString(),          
-            dataToEncryptHash: hash.toString(),
-            accessControlConditions,
-            chain: chainIdString ,
-            authSig,
-        },
-        window.LitNodeClient,
-        );
-        console.log('File decrypted with Lit protocol');
-        console.log(decryptString )
-        setPatient(JSON.parse(decryptString)) 
-    } 
-    else{
-        setError('File URL does not have Encryption Hash, Notify Did Owner'); console.log('missing hash');
-    }  
   }  
   catch (error) {
         setError("failure to encrypt or store file")

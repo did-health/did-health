@@ -1,16 +1,21 @@
 ///<reference path="../../../node_modules/@types/fhir/index.d.ts"/>
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useScaffoldContractWrite } from "../hooks/scaffold-eth";
 import { makeStorageClient } from "../hooks/useIpfs";
 import { useAccount, useNetwork } from "wagmi";
 import Patient = fhir4.Patient;
 import * as LitJsSdk from "@lit-protocol/lit-node-client";
 import { ethConnect } from '@lit-protocol/lit-node-client';
-import {  Web3Provider } from '@ethersproject/providers';
+import {  ExternalProvider, Web3Provider } from '@ethersproject/providers';
 import Button from "../components/Button";
 import { v4 } from "uuid";
-import ShareModal from "lit-share-modal-v3";
+import dynamic from 'next/dynamic';
 
+// Dynamically import the ShareModal component
+const ShareModal = dynamic(() => import('lit-share-modal-v3'), {
+  ssr: false, // This will load the component only on the client side
+});
+import { AccessControlConditions, AccsRegularParams } from '@lit-protocol/types'; //Chain, ConditionType, EvmContractConditions, IRelayAuthStatus, JsonRequest, LIT_NETWORKS_KEYS, SolRpcConditions, SymmetricKey, UnifiedAccessControlConditions are also available
 const PatientForm: React.FC = () => {
   const [patient, setPatient] = useState<Patient>({
     resourceType: 'Patient',
@@ -24,8 +29,6 @@ const PatientForm: React.FC = () => {
   });
   const account = useAccount();
   const { address: publicKey } = useAccount();
-    const { ethereum } = window as any;
-  const provider = new Web3Provider(ethereum);
   const { chain, chains } = useNetwork();
   const chainId = chain?.id;
   let chainIdString = "";
@@ -36,33 +39,45 @@ const PatientForm: React.FC = () => {
   const [uri, setUri] = useState("");
   const [didsuffix, setDIDSuffix] = useState<string>("");
   const [did, setDID] = useState<string>("");
-  const [authSig, setAuthSig] = useState({});
+  const [authSig, setAuthSig] = useState({sig: '', derivedVia: '', signedMessage: '', address: ''});
   const [showShareModal, setShowShareModal] = useState(false);
-  const [accessControlConditions, setAccessControlConditions] = useState([]);
+  const [provider, setProvider] = useState<Web3Provider>();
+  //const [accessControlConditions, setAccessControlConditions] = useState([]);
+  const [thisPublicKey] = useState(publicKey);
+  const [accessControlConditions, setAccessControlConditions] = useState<AccessControlConditions[]>([]);
   const [error, setError] = useState<any>(null);
-  const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
-  client.connect();
-  window.LitNodeClient = client;
   useEffect(() => {
-    if (publicKey) {
-      generateAuthSig();
+    let ethereum: ExternalProvider;
+    if (typeof window !== "undefined") {
+        ethereum = (window as any).ethereum;
+        const providerInstance = new Web3Provider(ethereum);
+        setProvider(providerInstance);
+        const client = new LitJsSdk.LitNodeClient({litNetwork: 'cayenne'});
+        client.connect();
+        window.LitNodeClient = client;
     }
-  }, [publicKey, authSig]);
-  async function generateAuthSig() {
-    
-    if (publicKey!=null) {
-      const authSig = await ethConnect.signAndSaveAuthMessage({
-        web3: provider,
-        account: publicKey.toLowerCase(),
-        chainId: 5,
-        resources: {},
-        expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+}, []);  // Empty dependency array ensures this runs once after component mounts
+
+  
+  const generateAuthSig = useCallback(async () => {
+    if (publicKey != null && provider) {
+        const authSig = await ethConnect.signAndSaveAuthMessage({
+            web3: provider,
+            account: publicKey.toLowerCase(),
+            chainId: 5,
+            resources: {},
+            expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+        });
+        setAuthSig(authSig);
+        console.log(authSig);
+    }
+  }, [publicKey, provider, setAuthSig]);
+
+  useEffect(() => {
+      if (publicKey) {
+          generateAuthSig();
       }
-      );
-      setAuthSig(authSig) 
-      console.log(authSig)
-    }
-  }
+  }, [publicKey, generateAuthSig]);
   const onUnifiedAccessControlConditionsSelected = (shareModalOutput: any) => {
     // Since shareModalOutput is already an object, no need to parse it
     // Check if shareModalOutput has the property "unifiedAccessControlConditions" and it's an array
@@ -117,11 +132,13 @@ const PatientForm: React.FC = () => {
   };
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    if (patient.identifier && patient.identifier[0]) {
-      patient.identifier[0].value = did;
+    const updatedPatient = { ...patient };  // Make a copy
+    if (updatedPatient.identifier && updatedPatient.identifier[0]) {
+        updatedPatient.identifier[0].value = did;
     }
     const uuid = v4();
-    patient.id = uuid;
+    updatedPatient.id = uuid;
+    setPatient(updatedPatient);  // Set the updated state
     //Add the current user to the accessControlCoditions
     const userSelfCondition = {
       chain: "ethereum",
@@ -132,42 +149,53 @@ const PatientForm: React.FC = () => {
       returnValueTest : {comparator: '=', value: publicKey} ,
       standardContractType :  ""
     }
-    accessControlConditions.push(userSelfCondition); // add rights to decrypt the data yourself
-    setAccessControlConditions(accessControlConditions);
-    console.log(accessControlConditions)
-    downloadJson(patient, uuid);
-    console.log("downloaded file");
-    const JSONpatient = JSON.stringify(patient)
-    const blob = new Blob([JSONpatient], { type: "application/json" });
-    console.log("created blob");
-    const { ciphertext, dataToEncryptHash } = await LitJsSdk.encryptFile(
-      {
-        // accessControlConditions: accessControlConditions,
-        accessControlConditions,
-        authSig: authSig,
-        chain: chainIdString,
-        file: blob,
-      },
-      window.LitNodeClient 
-    );
-    const hash = dataToEncryptHash;
-    console.log("executed encytption with lit:" + hash);
-    const encFile = ciphertext;
-    console.log("File encrypted with Lit protocol:" + encFile);
-    if (encFile != null) {
-      const files = [new File([encFile], "Patient/" + uuid)];
-      //Upload File to IPFS
-      const client = makeStorageClient();
-      const cid = await client.put(files);
-      console.log(cid)
-      const uri = "https://" + cid + ".ipfs.dweb.link/Patient/" + uuid + "?encHash=" + dataToEncryptHash;
-      console.log(uri)
-      //create new did registry entry
-      console.log("stored files with cid:", cid);
-      console.log("uri:", uri);
-      setHasCreatedProfile(true);
-      setUri(uri);
-      return uri;
+    if (thisPublicKey) {
+      //Add the current user to the accessControlCoditions
+      const userSelfCondition : AccessControlConditions = [{
+        chain: "ethereum",
+        conditionType: "evmBasic",
+        contractAddress: "",
+        method: "",
+        parameters: [':userAddress'],
+        returnValueTest : {comparator: '=', value: thisPublicKey} ,
+        standardContractType :  ""
+      }]
+      setAccessControlConditions(prevConditions => [...prevConditions, userSelfCondition]);
+      console.log(accessControlConditions)
+      //downloadJson(patient, uuid);
+      console.log("downloaded file");
+      const JSONpatient = JSON.stringify(patient)
+      const blob = new Blob([JSONpatient], { type: "application/json" });
+      console.log("created blob");
+      
+      const { ciphertext, dataToEncryptHash } = await LitJsSdk.encryptFile(
+        {
+          accessControlConditions: accessControlConditions[0],
+          authSig: authSig,
+          chain: chainIdString,
+          file: blob,
+        },
+        window.LitNodeClient 
+      );
+      const hash = dataToEncryptHash;
+      console.log("executed encytption with lit:" + hash);
+      const encFile = ciphertext;
+      console.log("File encrypted with Lit protocol:" + encFile);
+      if (encFile != null) {
+        const files = [new File([encFile], "Patient/" + uuid)];
+        //Upload File to IPFS
+        const client = makeStorageClient();
+        const cid = await client.put(files);
+        console.log(cid)
+        const uri = "https://" + cid + ".ipfs.dweb.link/Patient/" + uuid + "?encHash=" + dataToEncryptHash;
+        console.log(uri)
+        //create new did registry entry
+        console.log("stored files with cid:", cid);
+        console.log("uri:", uri);
+        setHasCreatedProfile(true);
+        setUri(uri);
+        return uri;
+      }
     }
   };
   const downloadJson = (object: Patient, filename: string) => {
@@ -397,12 +425,10 @@ const PatientForm: React.FC = () => {
           />
         </div>
       <div>
-        {showShareModal && (
+        {showShareModal &&  (
           <div className={"lit-share-modal"}>
             <ShareModal
-              onClose={() => {
-                setShowShareModal(false);
-              }}
+              onClose={() => setShowShareModal(false)}
               onUnifiedAccessControlConditionsSelected={
                 onUnifiedAccessControlConditionsSelected
               }
