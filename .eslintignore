@@ -1,0 +1,11 @@
+# folders
+node_modules/
+components-2/
+# files
+**/*.less
+**/*.css
+**/*.scss
+**/*.json
+**/*.png
+**/*.svg
+**/generated/**/*
