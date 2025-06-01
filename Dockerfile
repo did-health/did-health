@@ -3,23 +3,25 @@ FROM node:20-bookworm AS builder
 
 WORKDIR /app
 
-# Install dependencies for native modules
+# Install dependencies for native modules and Yarn
 RUN apt-get update && apt-get install -y \
   python3 \
   make \
   g++ \
+  curl \
+  && corepack enable \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy and install dependencies
-COPY package*.json ./
-RUN npm ci
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
 
+# Copy source and build
 COPY . .
-RUN npm run build
+RUN NODE_OPTIONS="--max-old-space-size=4096" yarn build
 
 # Stage 2: Serve with nginx
-# Step 2: Serve the app from Nginx
-FROM nginx:1.19-alpine
+FROM nginx:1.25-alpine
 
 # Replace default config
 RUN rm /etc/nginx/conf.d/default.conf

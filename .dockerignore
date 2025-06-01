@@ -1,0 +1,34 @@
+# Node modules (will be reinstalled in the container)
+node_modules
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Output directories
+dist
+build
+.next
+out
+
+
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Editor config
+.vscode
+.idea
+*.swp
+
+# Docker files themselves (optional)
+Dockerfile
+docker-compose.yml
