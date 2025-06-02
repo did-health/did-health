@@ -39,7 +39,6 @@ export function SetupStorage() {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold">3. Setup Web3.Storage</h2>
       <input
         type="email"
         className="input input-bordered w-full"

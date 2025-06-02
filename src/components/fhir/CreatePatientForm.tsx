@@ -57,59 +57,187 @@ const CreatePatientForm: React.FC = () => {
 
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="p-6 bg-white rounded shadow">
-      <h2 className="text-xl font-bold mb-4">Create Patient DID</h2>
+return (
+  <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-gray-50 dark:bg-gray-950">
+    <div className="w-full max-w-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+          🧬 Create Patient DID
+        </h2>
 
-      <label className="block mb-2 font-semibold">First Name</label>
-      <input name="name.0.given.0" value={patient.name?.[0]?.given?.[0] || ''} onChange={handleInputChange} className="input" />
+        {/* First Name */}
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+            First Name
+          </label>
+          <input
+            name="name.0.given.0"
+            value={patient.name?.[0]?.given?.[0] || ''}
+            onChange={handleInputChange}
+            className="input"
+          />
+        </div>
 
-      <label className="block mt-4 mb-2 font-semibold">Last Name</label>
-      <input name="name.0.family" value={patient.name?.[0]?.family || ''} onChange={handleInputChange} className="input" />
+        {/* Last Name */}
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+            Last Name
+          </label>
+          <input
+            name="name.0.family"
+            value={patient.name?.[0]?.family || ''}
+            onChange={handleInputChange}
+            className="input"
+          />
+        </div>
 
-      <label className="block mt-4 mb-2 font-semibold">Gender</label>
-      <select name="gender" value={patient.gender} onChange={handleInputChange} className="input">
-        <option value="male">Male</option>
-        <option value="female">Female</option>
-        <option value="other">Other</option>
-        <option value="unknown">Unknown</option>
-      </select>
+        {/* Gender */}
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+            Gender
+          </label>
+          <select
+            name="gender"
+            value={patient.gender}
+            onChange={handleInputChange}
+            className="input"
+          >
+            <option value="">Select...</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        </div>
 
-      <label className="block mt-4 mb-2 font-semibold">Birth Date</label>
-      <input type="date" name="birthDate" value={patient.birthDate || ''} onChange={handleInputChange} className="input" />
+        {/* Birth Date */}
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+            Birth Date
+          </label>
+          <input
+            type="date"
+            name="birthDate"
+            value={patient.birthDate || ''}
+            onChange={handleInputChange}
+            className="input"
+          />
+        </div>
 
-      <label className="block mt-4 mb-2 font-semibold">Phone</label>
-      <input name="telecom.1.value" value={patient.telecom?.[1]?.value || ''} onChange={handleInputChange} className="input" />
+        {/* Contact Info */}
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+            Phone
+          </label>
+          <input
+            name="telecom.1.value"
+            value={patient.telecom?.[1]?.value || ''}
+            onChange={handleInputChange}
+            className="input"
+          />
+        </div>
 
-      <label className="block mt-4 mb-2 font-semibold">Email</label>
-      <input name="telecom.2.value" value={patient.telecom?.[2]?.value || ''} onChange={handleInputChange} className="input" />
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+            Email
+          </label>
+          <input
+            name="telecom.2.value"
+            value={patient.telecom?.[2]?.value || ''}
+            onChange={handleInputChange}
+            className="input"
+          />
+        </div>
 
-      <label className="block mt-4 mb-2 font-semibold">Address</label>
-      <input name="address.0.line.0" placeholder="Street" value={patient.address?.[0]?.line?.[0] || ''} onChange={handleInputChange} className="input" />
-      <input name="address.0.city" placeholder="City" value={patient.address?.[0]?.city || ''} onChange={handleInputChange} className="input mt-2" />
-      <input name="address.0.state" placeholder="State" value={patient.address?.[0]?.state || ''} onChange={handleInputChange} className="input mt-2" />
-      <input name="address.0.postalCode" placeholder="Postal Code" value={patient.address?.[0]?.postalCode || ''} onChange={handleInputChange} className="input mt-2" />
-      <input name="address.0.country" placeholder="Country" value={patient.address?.[0]?.country || ''} onChange={handleInputChange} className="input mt-2" />
+        {/* Address Fields */}
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+            Address
+          </label>
+          <div className="space-y-2">
+            <input
+              name="address.0.line.0"
+              placeholder="Street"
+              value={patient.address?.[0]?.line?.[0] || ''}
+              onChange={handleInputChange}
+              className="input"
+            />
+            <input
+              name="address.0.city"
+              placeholder="City"
+              value={patient.address?.[0]?.city || ''}
+              onChange={handleInputChange}
+              className="input"
+            />
+            <input
+              name="address.0.state"
+              placeholder="State"
+              value={patient.address?.[0]?.state || ''}
+              onChange={handleInputChange}
+              className="input"
+            />
+            <input
+              name="address.0.postalCode"
+              placeholder="Postal Code"
+              value={patient.address?.[0]?.postalCode || ''}
+              onChange={handleInputChange}
+              className="input"
+            />
+            <input
+              name="address.0.country"
+              placeholder="Country"
+              value={patient.address?.[0]?.country || ''}
+              onChange={handleInputChange}
+              className="input"
+            />
+          </div>
+        </div>
 
-      <label className="block mt-4 mb-2 font-semibold">Identifier Type</label>
-      <select
-        name="identifier.1.type.coding.0.code"
-        value={patient.identifier?.[1].type?.coding?.[0]?.code || ''}
-        onChange={handleInputChange}
-        className="input"
-      >
-        <option value="">Select...</option>
-        <option value="DL">Driver License</option>
-        <option value="MR">Medical Record</option>
-        <option value="SSN">Social Security</option>
-      </select>
+        {/* Identifier */}
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+            Identifier Type
+          </label>
+          <select
+            name="identifier.1.type.coding.0.code"
+            value={patient.identifier?.[1].type?.coding?.[0]?.code || ''}
+            onChange={handleInputChange}
+            className="input"
+          >
+            <option value="">Select...</option>
+            <option value="DL">Driver License</option>
+            <option value="MR">Medical Record</option>
+            <option value="SSN">Social Security</option>
+          </select>
+        </div>
 
-      <label className="block mt-4 mb-2 font-semibold">Identifier Value</label>
-      <input name="identifier.1.value" value={patient.identifier?.[1].value || ''} onChange={handleInputChange} className="input" />
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+            Identifier Value
+          </label>
+          <input
+            name="identifier.1.value"
+            value={patient.identifier?.[1].value || ''}
+            onChange={handleInputChange}
+            className="input"
+          />
+        </div>
 
-      <button type="submit" className="mt-6 btn bg-red-600 text-white">Save Patient Record</button>
-    </form>
-  );
+        {/* Submit Button */}
+        <div className="pt-4">
+          <button
+            type="submit"
+            className="btn-primary w-full text-center"
+          >
+            💾 Save Patient Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)
+
+
 };
 
 export default CreatePatientForm;

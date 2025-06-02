@@ -26,8 +26,7 @@ export function ConnectLit() {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold">2. Connect to Lit Protocol</h2>
-      {litConnected ? <p>✅ Connected</p> : <p>Connecting...</p>}
+       {litConnected ? <p>✅ Connected</p> : <p>Connecting...</p>}
     </div>
   )
 }
