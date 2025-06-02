@@ -1,0 +1,17 @@
+{
+      "didHealthOnboarding": "did:health Onboarding",
+  "onboardingInstructions": "Follow the steps below to create your decentralized health identity.",
+  "connectWallet": "Connect Wallet",
+  "connectLit": "Connect to Lit Protocol",
+  "setupStorage": "Setup Storage (Web3.Storage)",
+  "createFHIR": "Create FHIR Resource",
+  "fhirCreated": "FHIR Record Created",
+  "created": "Successfully created:",
+  "chooseDID": "Choose DID Name",
+  "registerDID": "Register DID to Blockchain",
+  "onboarding": {
+    "connectWalletTitle": "Step 1: Connect Your Wallet",
+    "connectWalletDescription": "To begin, please connect a crypto wallet to your identity."
+  }
+  
+}

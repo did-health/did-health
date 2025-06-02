@@ -6,23 +6,32 @@ import OrganizationForm from './components/fhir/CreateOrganizationForm'
 import DeviceForm from './components/fhir/CreateDeviceForm'
 import { SelectDIDForm } from './components/SelectDIDForm'
 import { RegisterDID } from './components/RegisterDID'
+import LanguageSelector from './components/LanguageSelector'
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Onboarding />} />
-      <Route path="/create/patient" element={<PatientForm />} />
-      <Route path="/create/practitioner" element={<PractitionerForm />} />
-      <Route path="/create/organization" element={<OrganizationForm />} />
-      <Route path="/create/device" element={<DeviceForm />} />
-      <Route path="/set-did" element={<SelectDIDForm onDIDAvailable={function (did: string): void {
-        throw new Error('Function not implemented.')
-      } } />} />
-      <Route path="/register-did" element={<RegisterDID/>} />
-      
-      <Route path="*" element={<Navigate to="/" />} />
-
-    </Routes>
+    <div className="relative min-h-screen">
+      <LanguageSelector />
+      <Routes>
+        <Route path="/" element={<Onboarding />} />
+        <Route path="/create/patient" element={<PatientForm />} />
+        <Route path="/create/practitioner" element={<PractitionerForm />} />
+        <Route path="/create/organization" element={<OrganizationForm />} />
+        <Route path="/create/device" element={<DeviceForm />} />
+        <Route
+          path="/set-did"
+          element={
+            <SelectDIDForm
+              onDIDAvailable={(did: string) => {
+                console.log('DID selected:', did)
+              }}
+            />
+          }
+        />
+        <Route path="/register-did" element={<RegisterDID />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
   )
 }
 

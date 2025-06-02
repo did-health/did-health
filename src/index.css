@@ -2,14 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Base body styles */
 body {
-  @apply bg-white text-gray-900;
+  @apply bg-white text-gray-900 font-sans antialiased;
 }
 
+/* Standard buttons */
 button.btn {
-  @apply bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700;
+  @apply bg-red-600 text-white px-4 py-2 rounded-md shadow-sm hover:bg-red-700 transition-colors duration-200 ease-in-out;
 }
 
-input.input {
-  @apply border border-gray-300 px-3 py-2 rounded w-full;
+/* Primary CTA buttons */
+button.btn-primary {
+  @apply bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-md shadow hover:bg-blue-700 transition duration-200;
+}
+
+/* Secondary outline buttons */
+button.btn-outline {
+  @apply border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100;
+}
+
+/* Input fields */
+input.input,
+select.input,
+textarea.input {
+  @apply border border-gray-300 px-3 py-2 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+}
+
+/* Headings */
+h1 {
+  @apply text-3xl font-bold mt-6 mb-4;
+}
+
+h2 {
+  @apply text-2xl font-semibold mt-4 mb-2;
+}
+
+/* Utility classes */
+.card {
+  @apply bg-white shadow-md rounded-lg p-6;
+}
+
+.section {
+  @apply mb-8;
+}
+
+/* Language selector dropdown */
+.language-select {
+  @apply bg-white border border-gray-300 px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500;
 }
