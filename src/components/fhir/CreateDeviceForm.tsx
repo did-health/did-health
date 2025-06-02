@@ -43,38 +43,53 @@ const CreateDeviceForm: React.FC = () => {
 
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="p-4 bg-white rounded shadow-md max-w-xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">Create Device DID</h2>
+return (
+  <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-gray-50 dark:bg-gray-950">
+    <div className="w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+          🛠️ Create Device DID
+        </h2>
 
-      <div className="mb-4">
-        <label className="block font-semibold mb-1">Device Name</label>
-        <input
-          type="text"
-          name="deviceName.0.name"
-          value={device.deviceName?.[0]?.name || ''}
-          onChange={handleInputChange}
-          className="w-full border px-3 py-2 rounded"
-        />
-      </div>
+        {/* Device Name */}
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+            Device Name
+          </label>
+          <input
+            type="text"
+            name="deviceName.0.name"
+            value={device.deviceName?.[0]?.name || ''}
+            onChange={handleInputChange}
+            className="input"
+          />
+        </div>
 
-      <div className="mb-4">
-        <label className="block font-semibold mb-1">Model Number</label>
-        <input
-          type="text"
-          name="modelNumber"
-          value={device.modelNumber || ''}
-          onChange={handleInputChange}
-          className="w-full border px-3 py-2 rounded"
-        />
-      </div>
+        {/* Model Number */}
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+            Model Number
+          </label>
+          <input
+            type="text"
+            name="modelNumber"
+            value={device.modelNumber || ''}
+            onChange={handleInputChange}
+            className="input"
+          />
+        </div>
 
-      <button type="submit" className="bg-[#f71b02] text-white px-4 py-2 rounded">
-        Save Device Record
-      </button>
-\
-    </form>
-  );
+        {/* Submit */}
+        <div className="pt-4">
+          <button type="submit" className="btn-primary w-full">
+            ✅ Save Device Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+);
+
 };
 
 export default CreateDeviceForm;
