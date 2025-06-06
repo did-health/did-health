@@ -1,5 +1,5 @@
 {
-      "didHealthOnboarding": "did:health Onboarding",
+  "didHealthOnboarding": "did:health Onboarding",
   "onboardingInstructions": "Follow the steps below to create your decentralized health identity.",
   "connectWallet": "Connect Wallet",
   "connectLit": "Connect to Lit Protocol",
@@ -9,9 +9,8 @@
   "created": "Successfully created:",
   "chooseDID": "Choose DID Name",
   "registerDID": "Register DID to Blockchain",
+  "setAccessControl": "Set Access Control",
   "onboarding": {
-    "connectWalletTitle": "Step 1: Connect Your Wallet",
     "connectWalletDescription": "To begin, please connect a crypto wallet to your identity."
   }
-  
 }

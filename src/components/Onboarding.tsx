@@ -7,12 +7,14 @@ import { CreateDIDForm } from '../components/CreateDIDForm'
 import { SelectDIDForm } from './SelectDIDForm'
 import { RegisterDID } from './RegisterDID'
 import { useOnboardingState } from '../store/OnboardingState'
+import { SetAccessControl } from './SetAccessControlConditions'
 
 type StepCardProps = {
   step: string
   title: string
   children: React.ReactNode
 }
+
 export default function Onboarding() {
   const { t } = useTranslation()
 
@@ -22,8 +24,10 @@ export default function Onboarding() {
     storageReady,
     fhirResource,
     did,
+    accessControlConditions, // ✅ Add this
     setDID,
   } = useOnboardingState()
+
 
   return (
     <main className="p-6 sm:p-10 max-w-3xl mx-auto text-gray-800 dark:text-white">
@@ -67,17 +71,24 @@ export default function Onboarding() {
           </StepCard>
         )}
 
-        {walletConnected && litConnected && storageReady && fhirResource && !did && (
-          <StepCard step="5" title={t('chooseDID')}>
-            <SelectDIDForm onDIDAvailable={(did) => setDID(did)} />
-          </StepCard>
-        )}
+{walletConnected && litConnected && storageReady && fhirResource && !accessControlConditions && (
+  <StepCard step="5" title={t('setAccessControl')}>
+    <SetAccessControl />
+  </StepCard>
+)}
 
-        {did && (
-          <StepCard step="6" title={t('registerDID')}>
-            <RegisterDID />
-          </StepCard>
-        )}
+{walletConnected && litConnected && storageReady && fhirResource && accessControlConditions && !did && (
+  <StepCard step="6" title={t('chooseDID')}>
+    <SelectDIDForm onDIDAvailable={(did) => setDID(did)} />
+  </StepCard>
+)}
+
+{walletConnected && litConnected && storageReady && fhirResource && accessControlConditions && did && (
+  <StepCard step="7" title={t('registerDID')}>
+    <RegisterDID />
+  </StepCard>
+)}
+
       </div>
     </main>
   )

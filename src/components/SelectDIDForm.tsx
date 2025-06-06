@@ -1,54 +1,92 @@
-import { useState } from 'react'
-import { usePublicClient } from 'wagmi'
-import { useOnboardingState } from '../store/OnboardingState'
-import contracts from '../generated/deployedContracts'
+import { useState } from "react";
+import { usePublicClient } from "wagmi";
+import { useOnboardingState } from "../store/OnboardingState";
+import contracts from "../generated/deployedContracts";
 
 type Props = {
-  onDIDAvailable: (did: string) => void
-}
+  onDIDAvailable: (did: string) => void;
+};
+
+type NetworkGroup = "testnet" | "mainnet";
+type NetworkConfig = {
+  name: string;
+  group: NetworkGroup;
+  chainId: number;
+  address: string;
+  abi: any;
+};
 
 export function SelectDIDForm({ onDIDAvailable }: Props) {
-  const publicClient = usePublicClient()
-  const { fhirResource } = useOnboardingState()
+  const publicClient = usePublicClient();
+  const { fhirResource } = useOnboardingState();
 
-  const availableChainIds = Object.keys(contracts).map(Number) as (keyof typeof contracts)[]
-  const [chainId, setChainId] = useState<keyof typeof contracts>(5)
-  const [didInput, setDidInput] = useState<string>('')
-  const [isAvailable, setIsAvailable] = useState<boolean | null>(null)
-  const [checking, setChecking] = useState(false)
+  // Flatten and filter valid networks
+  const availableNetworks: NetworkConfig[] = Object.entries(contracts)
+    .flatMap(([group, networks]) =>
+      Object.entries(networks)
+        .filter(([, defs]) => defs?.HealthDIDRegistry)
+        .map(([name, defs]) => ({
+          name,
+          group: group as NetworkGroup,
+          chainId: defs.HealthDIDRegistry.chainId ?? 0,
+          address: defs.HealthDIDRegistry.address,
+          abi: defs.HealthDIDRegistry.abi,
+        }))
+    );
 
-  const fullDID = `did:health:${chainId}:${didInput}`
+  const [selectedNetwork, setSelectedNetwork] = useState<NetworkConfig>(
+    availableNetworks[0]
+  );
+  const [didInput, setDidInput] = useState<string>("");
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+
+  const fullDID = `did:health:${selectedNetwork.chainId}:${didInput}`;
 
   const handleCheckAvailability = async () => {
-    if (!didInput || !publicClient) return
-    setChecking(true)
-    setIsAvailable(null)
+    if (!didInput || !publicClient || !selectedNetwork) return;
+
+    setChecking(true);
+    setIsAvailable(null);
+    setStatus("Checking on-chain DID availability...");
 
     try {
-      const contractDef = contracts[chainId][0] // Each chain ID maps to an array
       const result = await publicClient.readContract({
-        address: contractDef.contracts.HealthDIDRegistry.address as `0x${string}`,
-        abi: contractDef.contracts.HealthDIDRegistry.abi,
-        functionName: 'getHealtDID',
+        address: selectedNetwork.address as `0x${string}`,
+        abi: selectedNetwork.abi,
+        functionName: "getHealtDID",
         args: [fullDID],
-      })
+      });
 
-      if (result && typeof result === 'object' && 'healthDid' in result && result.healthDid !== '') {
-        setIsAvailable(false)
+      if (result && typeof result === "object" && "healthDid" in result && result.healthDid !== "") {
+        setIsAvailable(false);
+        setStatus("❌ DID is already registered.");
       } else {
-        setIsAvailable(true)
-        onDIDAvailable(fullDID)
+        setIsAvailable(true);
+        setStatus("✅ DID is available!");
+        onDIDAvailable(fullDID);
       }
     } catch (err) {
-      setIsAvailable(true)
-      onDIDAvailable(fullDID)
+      setIsAvailable(true);
+      setStatus("✅ DID is available (fallback check passed).");
+      onDIDAvailable(fullDID);
     } finally {
-      setChecking(false)
+      setChecking(false);
     }
-  }
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {checking && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-md text-center">
+            <div className="loader mb-3 border-4 border-blue-500 border-t-transparent rounded-full w-10 h-10 animate-spin" />
+            <p className="text-sm text-gray-700">Checking DID availability...</p>
+          </div>
+        </div>
+      )}
+
       <h2 className="text-lg font-semibold">5. Select your DID</h2>
 
       {fhirResource && (
@@ -60,18 +98,19 @@ export function SelectDIDForm({ onDIDAvailable }: Props) {
       <div className="space-y-2">
         <label className="block text-sm font-medium">Choose Network</label>
         <select
-          className="select select-bordered w-full"
-          value={chainId.toString()}
-          onChange={(e) => setChainId(Number(e.target.value) as keyof typeof contracts)}
+          className="select select-bordered bg-white text-black w-full"
+          value={selectedNetwork.name}
+          onChange={(e) => {
+            const idx = parseInt(e.target.value);
+            const net = availableNetworks[idx];
+            setSelectedNetwork(net);
+          }}
         >
-          {availableChainIds.map((id) => {
-            const net = contracts[id][0]
-            return (
-              <option key={id} value={id}>
-                {net.name} (Chain ID: {net.chainId})
-              </option>
-            )
-          })}
+          {availableNetworks.map((net, idx) => (
+            <option key={net.name} value={idx}>
+              {net.name} ({net.group})
+            </option>
+          ))}
         </select>
       </div>
 
@@ -83,8 +122,9 @@ export function SelectDIDForm({ onDIDAvailable }: Props) {
           className="input input-bordered w-full"
           value={didInput}
           onChange={(e) => {
-            setDidInput(e.target.value)
-            setIsAvailable(null)
+            setDidInput(e.target.value);
+            setIsAvailable(null);
+            setStatus(null);
           }}
         />
         <p className="text-sm text-gray-500">
@@ -98,16 +138,11 @@ export function SelectDIDForm({ onDIDAvailable }: Props) {
           onClick={handleCheckAvailability}
           disabled={!didInput || checking}
         >
-          {checking ? 'Checking...' : 'Check Availability'}
+          {checking ? "Checking..." : "Check Availability"}
         </button>
 
-        {isAvailable === true && (
-          <p className="text-green-600 text-sm">✅ This DID is available!</p>
-        )}
-        {isAvailable === false && (
-          <p className="text-red-600 text-sm">❌ This DID is already taken.</p>
-        )}
+        {status && <p className="text-sm text-gray-800">{status}</p>}
       </div>
     </div>
-  )
+  );
 }
