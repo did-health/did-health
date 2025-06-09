@@ -7,8 +7,7 @@ import { CreateDIDForm } from '../components/CreateDIDForm'
 import { SelectDIDForm } from './SelectDIDForm'
 import { RegisterDID } from './RegisterDID'
 import { useOnboardingState } from '../store/OnboardingState'
-import { SetAccessControl } from './SetAccessControlConditions'
-
+import { SetEncryption } from './SetEncryption'
 type StepCardProps = {
   step: string
   title: string
@@ -26,6 +25,7 @@ export default function Onboarding() {
     did,
     accessControlConditions, // ✅ Add this
     setDID,
+    encryptionSkipped, // <-- Add this line
   } = useOnboardingState()
 
 
@@ -71,23 +71,35 @@ export default function Onboarding() {
           </StepCard>
         )}
 
-{walletConnected && litConnected && storageReady && fhirResource && !accessControlConditions && (
-  <StepCard step="5" title={t('setAccessControl')}>
-    <SetAccessControl />
-  </StepCard>
-)}
+      {
+      console.log('🧪 Step 5 Check:', {
+        walletConnected,
+        litConnected,
+        storageReady,
+        fhirResource,
+        accessControlConditions,
+        encryptionSkipped,
+      })
+      }
 
-{walletConnected && litConnected && storageReady && fhirResource && accessControlConditions && !did && (
-  <StepCard step="6" title={t('chooseDID')}>
-    <SelectDIDForm onDIDAvailable={(did) => setDID(did)} />
-  </StepCard>
-)}
+        {walletConnected && litConnected && storageReady && fhirResource && !accessControlConditions && (
+          <StepCard step="5" title={t('setAccessControl')}>
+            <SetEncryption />
+          </StepCard>
+        )}
 
-{walletConnected && litConnected && storageReady && fhirResource && accessControlConditions && did && (
-  <StepCard step="7" title={t('registerDID')}>
-    <RegisterDID />
-  </StepCard>
-)}
+
+        {walletConnected && litConnected && storageReady && fhirResource && accessControlConditions && !did && (
+          <StepCard step="6" title={t('chooseDID')}>
+            <SelectDIDForm onDIDAvailable={(did) => setDID(did)} />
+          </StepCard>
+        )}
+
+        {walletConnected && litConnected && storageReady && fhirResource && accessControlConditions && did && (
+          <StepCard step="7" title={t('registerDID')}>
+            <RegisterDID />
+          </StepCard>
+        )}
 
       </div>
     </main>
