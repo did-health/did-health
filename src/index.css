@@ -56,3 +56,16 @@ h2 {
 .language-select {
   @apply bg-white border border-gray-300 px-3 py-2 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500;
 }
+
+.lit-share-modal {
+  width: 500px;
+  height: 700px;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  z-index: 1000;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
