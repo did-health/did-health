@@ -79,17 +79,54 @@ export default function Onboarding() {
         fhirResource,
         accessControlConditions,
         encryptionSkipped,
+        did
       })
       }
 
-        {walletConnected && litConnected && storageReady && fhirResource && !accessControlConditions && (
-          <StepCard step="5" title={t('setAccessControl')}>
-            <SetEncryption />
-          </StepCard>
-        )}
+{walletConnected && litConnected && storageReady && fhirResource && !accessControlConditions && !encryptionSkipped && (
+  <StepCard step="5" title={t('setAccessControl')}>
+    <SetEncryption />
+  </StepCard>
+)}
 
 
-        {walletConnected && litConnected && storageReady && fhirResource && accessControlConditions && !did && (
+{walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
+  <StepCard step="5" title="Access Control Configured">
+    {encryptionSkipped ? (
+      <>
+        <p className="text-yellow-600 font-medium mb-4">⚠️ Encryption was skipped for this resource type.</p>
+        <button
+          onClick={() => {
+            useOnboardingState.getState().setEncryptionSkipped(false)
+            useOnboardingState.getState().setAccessControlConditions(null)
+          }}
+          className="btn btn-outline btn-warning"
+        >
+          🔄 Change Encryption Decision
+        </button>
+      </>
+    ) : (
+      <>
+        <p className="text-green-600 font-medium mb-2">✅ Access Control Conditions have been set.</p>
+        <pre className="bg-gray-900 text-white text-xs p-3 rounded max-h-64 overflow-auto mb-4">
+          {JSON.stringify(accessControlConditions, null, 2)}
+        </pre>
+        <button
+          onClick={() => {
+            useOnboardingState.getState().setAccessControlConditions(null)
+          }}
+          className="btn btn-outline btn-accent"
+        >
+          🔄 Edit Access Control
+        </button>
+      </>
+    )}
+  </StepCard>
+)}
+
+
+
+        {walletConnected && litConnected && storageReady && fhirResource && accessControlConditions  && (
           <StepCard step="6" title={t('chooseDID')}>
             <SelectDIDForm onDIDAvailable={(did) => setDID(did)} />
           </StepCard>

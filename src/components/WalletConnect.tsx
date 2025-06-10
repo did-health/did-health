@@ -5,13 +5,14 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useTranslation } from 'react-i18next'
 
 export function ConnectWallet() {
-  const { isConnected } = useAccount()
-  const { setWalletConnected } = useOnboardingState()
+  const { isConnected, address } = useAccount()
+  const { setWalletConnected , setWalletAddress} = useOnboardingState()
   const { t } = useTranslation()
 
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && address) {
       setWalletConnected(true)
+      setWalletAddress(address)
     }
   }, [isConnected, setWalletConnected])
 

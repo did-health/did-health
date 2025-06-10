@@ -7,6 +7,7 @@ const deployedContracts = {
     scrollSepolia: {},
     sepolia: {
       HealthDIDRegistry: {
+        chainId: 11155111,
         address: "0x2C11DABB2644aBC84a235669544C2b2FfB889C1f",
         abi: [
           {
