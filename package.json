@@ -9,6 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.4",
+    "@heroicons/react": "^2.2.0",
+    "@lit-protocol/access-control-conditions": "^7.1.3",
     "@lit-protocol/encryption": "^7.1.3",
     "@lit-protocol/lit-node-client": "^7.1.3",
     "@rainbow-me/rainbowkit": "^2.2.5",

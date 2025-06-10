@@ -10,11 +10,23 @@ export default function ShowDIDPage() {
 
   useEffect(() => {
     if (did && ipfsUri) {
-      const doc = convertToDidDocument({ healthDid: did, ipfsUri })
+      const doc = convertToDidDocument({
+        owner: '', // TODO: Replace with actual owner value if available
+        delegateAddresses: [],
+        healthDid: did,
+        ipfsUri: ipfsUri,
+        altIpfsUris: [],
+        reputationScore: 0,
+        hasWorldId: false,
+        hasPolygonId: false,
+        hasSocialId: false
+      })
       setDidDoc(doc)
 
       generateQRCode(JSON.stringify(doc))
-        .then(setQrcode)
+        .then(result => {
+          if (result !== undefined) setQrcode(result)
+        })
         .catch(err => console.error('QR Code generation failed', err))
     }
   }, [did, ipfsUri])
@@ -35,7 +47,7 @@ export default function ShowDIDPage() {
       {qrcode && (
         <div>
           <h2 className="text-lg font-semibold">DID Document QR Code</h2>
-          <Image src={qrcode} alt="QR Code" width={300} height={300} />
+          <img src={qrcode} alt="QR Code" width={300} height={300} />
         </div>
       )}
     </main>
