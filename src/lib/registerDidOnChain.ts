@@ -8,10 +8,6 @@ type RegisterDIDParams = {
   chainId: number
 }
 
-/**
- * Registers a DID to the HealthDIDRegistry smart contract.
- * Throws a user-friendly error if the DID is already registered or wallet is misconfigured.
- */
 export async function registerDid({
   did,
   ipfsUri,
@@ -38,19 +34,36 @@ export async function registerDid({
 
   const [account] = await walletClient.getAddresses()
 
+  // Hardcoded $5 fee in ETH assuming ETH = $2500 => 0.002 ETH
+  const registrationFeeInWei = BigInt('2000000000000000') // 0.002 ETH
+
+  // ✅ LOGGING INPUTS
+  console.log('🧾 Registering DID with the following values:')
+  console.log('📛 DID:', did)
+  console.log('📦 IPFS URI:', ipfsUri)
+  console.log('🔗 Chain ID:', chainId)
+  console.log('💰 Fee (wei):', registrationFeeInWei.toString())
+  console.log('👤 Account:', account)
+  console.log('🏦 Contract address:', contractInfo.address)
+
   try {
+    // Patch: Convert hex chain to decimal format for contract
+const decimalDid = `${chainId}:${did.split(':').pop()}`;
+
     const txHash = await walletClient.writeContract({
       address: contractInfo.address as `0x${string}`,
       abi: contractInfo.abi,
       functionName: 'registerDID',
-      args: [did, ipfsUri],
+      args: [decimalDid, ipfsUri],
       account,
+      value: registrationFeeInWei,
     })
 
+    console.log('📤 TX hash:', txHash)
     return txHash
   } catch (err: any) {
     const message = parseRevertReason(err)
-    if (message?.toLowerCase().includes('already registered')) {
+    if (message?.toLowerCase().includes('already exists')) {
       throw new Error(`❌ This DID is already registered on-chain.`)
     }
 
@@ -59,15 +72,12 @@ export async function registerDid({
   }
 }
 
-/**
- * Resolves the HealthDIDRegistry contract address + ABI by chainId from deployedContracts
- */
 function resolveContractByChainId(chainId: number): { address: string; abi: any } | null {
   for (const networkGroup of Object.values(contracts)) {
     for (const network of Object.values(networkGroup)) {
       const registry =
         (network as any)?.contracts?.HealthDIDRegistry ??
-        (network as any)?.HealthDIDRegistry; // <-- also check flat structure
+        (network as any)?.HealthDIDRegistry;
 
       if (registry?.chainId === chainId) {
         return {
@@ -80,10 +90,6 @@ function resolveContractByChainId(chainId: number): { address: string; abi: any 
   return null;
 }
 
-
-/**
- * Parses common revert reasons from Viem/Wagmi-style error messages
- */
 function parseRevertReason(err: unknown): string | null {
   const message = typeof err === 'object' && err !== null ? (err as any).message : null
 

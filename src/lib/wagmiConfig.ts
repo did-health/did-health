@@ -154,7 +154,7 @@ const polygon: Chain = {
 }
 
 
-const chains = [
+export const chains = [
   sepolia,
   baseSepolia,
   scrollSepolia,
@@ -180,4 +180,5 @@ export const wagmiConfig = createConfig({
     chains.map((chain) => [chain.id, http(chain.rpcUrls.default.http[0])])
   ),
   ssr: false,
+  
 })

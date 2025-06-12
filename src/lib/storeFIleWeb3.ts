@@ -1,6 +1,19 @@
 import { create as createW3Client } from '@web3-storage/w3up-client'
 import { useOnboardingState } from '../store/OnboardingState'
 
+let w3Client: Awaited<ReturnType<typeof createW3Client>> | null = null
+
+export async function getW3Client(email: string) {
+  if (!w3Client) {
+    w3Client = await createW3Client()
+  }
+
+  const account = await w3Client.login(email as `${string}@${string}`)
+  await account?.plan.wait()
+  return w3Client
+}
+
+
 export async function storeEncryptedFileByHash(
   encryptedBlob: Blob,
   fileHash: string,
@@ -12,8 +25,7 @@ export async function storeEncryptedFileByHash(
     throw new Error('Missing Web3.Storage credentials in Zustand state')
   }
 
-  const client = await createW3Client()
-  await client.login(email as `${string}@${string}`)
+  const client = await getW3Client(email)
   // If you have a space object, use its did() method:
   // await client.setCurrentSpace(space.did())
 
@@ -61,4 +73,21 @@ export async function storePlainFHIRFile(
   const directoryCid = await client.uploadDirectory([file])
 
   return `https://w3s.link/ipfs/${directoryCid}/${resourceType}/${fileName}.json`
+}
+
+export async function getFromIPFS(url: string): Promise<any> {
+  const res = await fetch(url)
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch IPFS content: ${res.statusText}`)
+  }
+
+  const contentType = res.headers.get('content-type') || ''
+  if (contentType.includes('application/json')) {
+    return await res.json()
+  } else if (contentType.startsWith('text/')) {
+    return await res.text()
+  } else {
+    return await res.blob()
+  }
 }

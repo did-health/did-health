@@ -1,19 +1,31 @@
 const deployedContracts = {
   testnet: {
     arbitrumSepolia: {},
-    baseSepolia: {},
-    lineaSepolia: {},
-    polygonMumbai: {},
-    scrollSepolia: {},
-    sepolia: {
+    baseSepolia: {
       HealthDIDRegistry: {
-        chainId: 11155111,
-        address: "0x2C11DABB2644aBC84a235669544C2b2FfB889C1f",
+        address: "0x78A73c626bEb45713862d6B4eBA97476431D3c71",
         abi: [
           {
             type: "constructor",
             inputs: [],
             stateMutability: "nonpayable",
+          },
+          {
+            type: "receive",
+            stateMutability: "payable",
+          },
+          {
+            type: "function",
+            name: "REGISTRATION_FEE_WEI",
+            inputs: [],
+            outputs: [
+              {
+                name: "",
+                type: "uint256",
+                internalType: "uint256",
+              },
+            ],
+            stateMutability: "view",
           },
           {
             type: "function",
@@ -90,11 +102,6 @@ const deployedContracts = {
                 internalType: "string",
               },
               {
-                name: "reputationScore",
-                type: "uint8",
-                internalType: "uint8",
-              },
-              {
                 name: "hasWorldId",
                 type: "bool",
                 internalType: "bool",
@@ -108,6 +115,24 @@ const deployedContracts = {
                 name: "hasSocialId",
                 type: "bool",
                 internalType: "bool",
+              },
+              {
+                name: "reputationScore",
+                type: "uint256",
+                internalType: "uint256",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "contractOwner",
+            inputs: [],
+            outputs: [
+              {
+                name: "",
+                type: "address",
+                internalType: "address",
               },
             ],
             stateMutability: "view",
@@ -151,7 +176,7 @@ const deployedContracts = {
           },
           {
             type: "function",
-            name: "getHealtDID",
+            name: "getHealthDID",
             inputs: [
               {
                 name: "_healthDid",
@@ -163,17 +188,12 @@ const deployedContracts = {
               {
                 name: "",
                 type: "tuple",
-                internalType: "struct Structs.HealthDID",
+                internalType: "struct HealthDID",
                 components: [
                   {
                     name: "owner",
                     type: "address",
                     internalType: "address",
-                  },
-                  {
-                    name: "delegateAddresses",
-                    type: "address[]",
-                    internalType: "address[]",
                   },
                   {
                     name: "healthDid",
@@ -191,11 +211,6 @@ const deployedContracts = {
                     internalType: "string[]",
                   },
                   {
-                    name: "reputationScore",
-                    type: "uint8",
-                    internalType: "uint8",
-                  },
-                  {
                     name: "hasWorldId",
                     type: "bool",
                     internalType: "bool",
@@ -209,6 +224,11 @@ const deployedContracts = {
                     name: "hasSocialId",
                     type: "bool",
                     internalType: "bool",
+                  },
+                  {
+                    name: "reputationScore",
+                    type: "uint256",
+                    internalType: "uint256",
                   },
                 ],
               },
@@ -237,7 +257,7 @@ const deployedContracts = {
                 internalType: "bool",
               },
             ],
-            stateMutability: "nonpayable",
+            stateMutability: "payable",
           },
           {
             type: "function",
@@ -284,29 +304,10 @@ const deployedContracts = {
           },
           {
             type: "function",
-            name: "stringToBytes32",
-            inputs: [
-              {
-                name: "_source",
-                type: "string",
-                internalType: "string",
-              },
-            ],
-            outputs: [
-              {
-                name: "_result",
-                type: "bytes32",
-                internalType: "bytes32",
-              },
-            ],
-            stateMutability: "pure",
-          },
-          {
-            type: "function",
             name: "transferOwnership",
             inputs: [
               {
-                name: "_newAddress",
+                name: "_newOwner",
                 type: "address",
                 internalType: "address",
               },
@@ -349,25 +350,26 @@ const deployedContracts = {
             ],
             stateMutability: "nonpayable",
           },
+          {
+            type: "function",
+            name: "withdraw",
+            inputs: [],
+            outputs: [],
+            stateMutability: "nonpayable",
+          },
         ],
+        chainId: 84532,
       },
-      YourContract: {
-        address: "0x3c74907fa27891122bd166F5DEcBe0b59252Ee23",
+    },
+    lineaSepolia: {},
+    polygonMumbai: {},
+    scrollSepolia: {
+      HealthDIDRegistry: {
+        address: "0x78A73c626bEb45713862d6B4eBA97476431D3c71",
         abi: [
           {
             type: "constructor",
-            inputs: [
-              {
-                name: "_owner",
-                type: "address",
-                internalType: "address",
-              },
-              {
-                name: "_registrationFeeInWei",
-                type: "uint256",
-                internalType: "uint256",
-              },
-            ],
+            inputs: [],
             stateMutability: "nonpayable",
           },
           {
@@ -376,7 +378,7 @@ const deployedContracts = {
           },
           {
             type: "function",
-            name: "FEE_USD",
+            name: "REGISTRATION_FEE_WEI",
             inputs: [],
             outputs: [
               {
@@ -389,7 +391,55 @@ const deployedContracts = {
           },
           {
             type: "function",
-            name: "dids",
+            name: "addAltData",
+            inputs: [
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "_uris",
+                type: "string[]",
+                internalType: "string[]",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "addDelegateAddress",
+            inputs: [
+              {
+                name: "_peerAddress",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "addressDidMapping",
             inputs: [
               {
                 name: "",
@@ -399,21 +449,69 @@ const deployedContracts = {
             ],
             outputs: [
               {
-                name: "",
+                name: "owner",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "healthDid",
                 type: "string",
                 internalType: "string",
+              },
+              {
+                name: "ipfsUri",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "hasWorldId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasPolygonId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasSocialId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "reputationScore",
+                type: "uint256",
+                internalType: "uint256",
               },
             ],
             stateMutability: "view",
           },
           {
             type: "function",
-            name: "isPremium",
+            name: "contractOwner",
+            inputs: [],
+            outputs: [
+              {
+                name: "",
+                type: "address",
+                internalType: "address",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "delegateAddresses",
             inputs: [
               {
                 name: "",
                 type: "address",
                 internalType: "address",
+              },
+              {
+                name: "",
+                type: "string",
+                internalType: "string",
               },
             ],
             outputs: [
@@ -427,13 +525,74 @@ const deployedContracts = {
           },
           {
             type: "function",
-            name: "owner",
+            name: "getChainID",
             inputs: [],
             outputs: [
               {
                 name: "",
-                type: "address",
-                internalType: "address",
+                type: "uint256",
+                internalType: "uint256",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "getHealthDID",
+            inputs: [
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "tuple",
+                internalType: "struct HealthDID",
+                components: [
+                  {
+                    name: "owner",
+                    type: "address",
+                    internalType: "address",
+                  },
+                  {
+                    name: "healthDid",
+                    type: "string",
+                    internalType: "string",
+                  },
+                  {
+                    name: "ipfsUri",
+                    type: "string",
+                    internalType: "string",
+                  },
+                  {
+                    name: "altIpfsUris",
+                    type: "string[]",
+                    internalType: "string[]",
+                  },
+                  {
+                    name: "hasWorldId",
+                    type: "bool",
+                    internalType: "bool",
+                  },
+                  {
+                    name: "hasPolygonId",
+                    type: "bool",
+                    internalType: "bool",
+                  },
+                  {
+                    name: "hasSocialId",
+                    type: "bool",
+                    internalType: "bool",
+                  },
+                  {
+                    name: "reputationScore",
+                    type: "uint256",
+                    internalType: "uint256",
+                  },
+                ],
               },
             ],
             stateMutability: "view",
@@ -443,44 +602,59 @@ const deployedContracts = {
             name: "registerDID",
             inputs: [
               {
-                name: "_greeting",
+                name: "_healthDID",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "_uri",
                 type: "string",
                 internalType: "string",
               },
             ],
-            outputs: [],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
             stateMutability: "payable",
           },
           {
             type: "function",
-            name: "registrationFee",
-            inputs: [],
+            name: "removeDelegateAddress",
+            inputs: [
+              {
+                name: "_peerAddress",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+            ],
             outputs: [
               {
                 name: "",
-                type: "uint256",
-                internalType: "uint256",
+                type: "bool",
+                internalType: "bool",
               },
             ],
-            stateMutability: "view",
-          },
-          {
-            type: "function",
-            name: "setRegistrationFee",
-            inputs: [
-              {
-                name: "_newFee",
-                type: "uint256",
-                internalType: "uint256",
-              },
-            ],
-            outputs: [],
             stateMutability: "nonpayable",
           },
           {
             type: "function",
-            name: "totalCounter",
-            inputs: [],
+            name: "resolveChainId",
+            inputs: [
+              {
+                name: "did",
+                type: "string",
+                internalType: "string",
+              },
+            ],
             outputs: [
               {
                 name: "",
@@ -488,7 +662,55 @@ const deployedContracts = {
                 internalType: "uint256",
               },
             ],
-            stateMutability: "view",
+            stateMutability: "pure",
+          },
+          {
+            type: "function",
+            name: "transferOwnership",
+            inputs: [
+              {
+                name: "_newOwner",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "updateDIDData",
+            inputs: [
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "_uri",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
           },
           {
             type: "function",
@@ -497,43 +719,732 @@ const deployedContracts = {
             outputs: [],
             stateMutability: "nonpayable",
           },
+        ],
+        chainId: 534351,
+      },
+    },
+    sepolia: {
+      HealthDIDRegistry: {
+        address: "0x07360b10e0AA1562c01991AFbbac3006495A22D0",
+        abi: [
           {
-            type: "event",
-            name: "DIDRegistered",
-            inputs: [
+            type: "constructor",
+            inputs: [],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "receive",
+            stateMutability: "payable",
+          },
+          {
+            type: "function",
+            name: "REGISTRATION_FEE_WEI",
+            inputs: [],
+            outputs: [
               {
-                name: "user",
-                type: "address",
-                indexed: true,
-                internalType: "address",
-              },
-              {
-                name: "greeting",
-                type: "string",
-                indexed: false,
-                internalType: "string",
-              },
-              {
-                name: "paid",
+                name: "",
                 type: "uint256",
-                indexed: false,
                 internalType: "uint256",
               },
             ],
-            anonymous: false,
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "addAltData",
+            inputs: [
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "_uris",
+                type: "string[]",
+                internalType: "string[]",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "addDelegateAddress",
+            inputs: [
+              {
+                name: "_peerAddress",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "addressDidMapping",
+            inputs: [
+              {
+                name: "",
+                type: "address",
+                internalType: "address",
+              },
+            ],
+            outputs: [
+              {
+                name: "owner",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "ipfsUri",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "hasWorldId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasPolygonId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasSocialId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "reputationScore",
+                type: "uint256",
+                internalType: "uint256",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "contractOwner",
+            inputs: [],
+            outputs: [
+              {
+                name: "",
+                type: "address",
+                internalType: "address",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "delegateAddresses",
+            inputs: [
+              {
+                name: "",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "getChainID",
+            inputs: [],
+            outputs: [
+              {
+                name: "",
+                type: "uint256",
+                internalType: "uint256",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "getHealthDID",
+            inputs: [
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "tuple",
+                internalType: "struct HealthDID",
+                components: [
+                  {
+                    name: "owner",
+                    type: "address",
+                    internalType: "address",
+                  },
+                  {
+                    name: "healthDid",
+                    type: "string",
+                    internalType: "string",
+                  },
+                  {
+                    name: "ipfsUri",
+                    type: "string",
+                    internalType: "string",
+                  },
+                  {
+                    name: "altIpfsUris",
+                    type: "string[]",
+                    internalType: "string[]",
+                  },
+                  {
+                    name: "hasWorldId",
+                    type: "bool",
+                    internalType: "bool",
+                  },
+                  {
+                    name: "hasPolygonId",
+                    type: "bool",
+                    internalType: "bool",
+                  },
+                  {
+                    name: "hasSocialId",
+                    type: "bool",
+                    internalType: "bool",
+                  },
+                  {
+                    name: "reputationScore",
+                    type: "uint256",
+                    internalType: "uint256",
+                  },
+                ],
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "registerDID",
+            inputs: [
+              {
+                name: "_healthDID",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "_uri",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "payable",
+          },
+          {
+            type: "function",
+            name: "removeDelegateAddress",
+            inputs: [
+              {
+                name: "_peerAddress",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "resolveChainId",
+            inputs: [
+              {
+                name: "did",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "uint256",
+                internalType: "uint256",
+              },
+            ],
+            stateMutability: "pure",
+          },
+          {
+            type: "function",
+            name: "transferOwnership",
+            inputs: [
+              {
+                name: "_newOwner",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "updateDIDData",
+            inputs: [
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "_uri",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "withdraw",
+            inputs: [],
+            outputs: [],
+            stateMutability: "nonpayable",
           },
         ],
+        chainId: 11155111,
+      },
+    },
+    zksyncSepolia: {
+      HealthDIDRegistry: {
+        address: "0x87C42075f13312d723D38fFdB3B39E1FB23470c0",
+        abi: [
+          {
+            type: "constructor",
+            inputs: [],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "receive",
+            stateMutability: "payable",
+          },
+          {
+            type: "function",
+            name: "REGISTRATION_FEE_WEI",
+            inputs: [],
+            outputs: [
+              {
+                name: "",
+                type: "uint256",
+                internalType: "uint256",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "addAltData",
+            inputs: [
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "_uris",
+                type: "string[]",
+                internalType: "string[]",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "addDelegateAddress",
+            inputs: [
+              {
+                name: "_peerAddress",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "addressDidMapping",
+            inputs: [
+              {
+                name: "",
+                type: "address",
+                internalType: "address",
+              },
+            ],
+            outputs: [
+              {
+                name: "owner",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "ipfsUri",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "hasWorldId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasPolygonId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasSocialId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "reputationScore",
+                type: "uint256",
+                internalType: "uint256",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "contractOwner",
+            inputs: [],
+            outputs: [
+              {
+                name: "",
+                type: "address",
+                internalType: "address",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "delegateAddresses",
+            inputs: [
+              {
+                name: "",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "getChainID",
+            inputs: [],
+            outputs: [
+              {
+                name: "",
+                type: "uint256",
+                internalType: "uint256",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "getHealthDID",
+            inputs: [
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "tuple",
+                internalType: "struct HealthDID",
+                components: [
+                  {
+                    name: "owner",
+                    type: "address",
+                    internalType: "address",
+                  },
+                  {
+                    name: "healthDid",
+                    type: "string",
+                    internalType: "string",
+                  },
+                  {
+                    name: "ipfsUri",
+                    type: "string",
+                    internalType: "string",
+                  },
+                  {
+                    name: "altIpfsUris",
+                    type: "string[]",
+                    internalType: "string[]",
+                  },
+                  {
+                    name: "hasWorldId",
+                    type: "bool",
+                    internalType: "bool",
+                  },
+                  {
+                    name: "hasPolygonId",
+                    type: "bool",
+                    internalType: "bool",
+                  },
+                  {
+                    name: "hasSocialId",
+                    type: "bool",
+                    internalType: "bool",
+                  },
+                  {
+                    name: "reputationScore",
+                    type: "uint256",
+                    internalType: "uint256",
+                  },
+                ],
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "registerDID",
+            inputs: [
+              {
+                name: "_healthDID",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "_uri",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "payable",
+          },
+          {
+            type: "function",
+            name: "removeDelegateAddress",
+            inputs: [
+              {
+                name: "_peerAddress",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "resolveChainId",
+            inputs: [
+              {
+                name: "did",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "uint256",
+                internalType: "uint256",
+              },
+            ],
+            stateMutability: "pure",
+          },
+          {
+            type: "function",
+            name: "transferOwnership",
+            inputs: [
+              {
+                name: "_newOwner",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "updateDIDData",
+            inputs: [
+              {
+                name: "_healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "_uri",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "withdraw",
+            inputs: [],
+            outputs: [],
+            stateMutability: "nonpayable",
+          },
+        ],
+        chainId: 300,
       },
     },
   },
-  mainnet: {
-    arbitrum: {},
-    base: {},
-    ethereum: {},
-    linea: {},
-    polygon: {},
-    scroll: {},
-  },
+  mainnet: {},
 } as const;
 
 export default deployedContracts;

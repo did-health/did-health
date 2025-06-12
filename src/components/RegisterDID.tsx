@@ -5,18 +5,7 @@ import { registerDid } from '../lib/registerDidOnChain'
 import { useOnboardingState } from '../store/OnboardingState'
 import { Dialog } from '@headlessui/react'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
-
-function getExplorerTxUrl(chainId: number, txHash: string): string {
-  const map: Record<number, string> = {
-    11155111: 'https://sepolia.etherscan.io',
-    1: 'https://etherscan.io',
-    8453: 'https://basescan.org',
-    42161: 'https://arbiscan.io',
-    137: 'https://polygonscan.com',
-  }
-  const base = map[chainId] ?? 'https://etherscan.io'
-  return `${base}/tx/${txHash}`
-}
+import { usePublicClient } from 'wagmi'
 
 export function RegisterDID() {
   const {
@@ -30,16 +19,19 @@ export function RegisterDID() {
     setIpfsUri,
   } = useOnboardingState()
 
+  const publicClient = usePublicClient()
   const [open, setOpen] = useState(false)
   const [activeStep, setActiveStep] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [txHash, setTxHash] = useState<string | null>(null)
+  const [finalDid, setFinalDid] = useState<string | null>(null)
 
   const steps = [
     'Validating FHIR Resource',
     encryptionSkipped ? 'Skipping Encryption' : 'Encrypting with Lit Protocol',
     'Uploading to Web3.Storage',
     'Executing Smart Contract',
+    'Registering DID',
   ]
 
   const handleRegister = async () => {
@@ -48,15 +40,22 @@ export function RegisterDID() {
       return
     }
 
+    const parts = did.split(':')
+    if (parts.length !== 4 || !/^[a-z0-9-]+$/.test(parts[3])) {
+      setError('Invalid DID format. Use only lowercase letters, numbers, and dashes')
+      return
+    }
+
+    const shortDid = `${parts[2]}:${parts[3]}`
+    const chainIdDecimal = parseInt(parts[2])
+
     setOpen(true)
     setError(null)
 
     try {
       setActiveStep(0)
 
-      const chainId = parseInt(did.split(':')[2])
       let finalIpfsUri = ipfsUri
-
       if (!finalIpfsUri) {
         const resourceJson = JSON.stringify(fhirResource, null, 2)
         const resourceBlob = new Blob([resourceJson], { type: 'application/json' })
@@ -73,32 +72,45 @@ export function RegisterDID() {
             chain: 'ethereum',
             accessControlConditions,
           })
+
           const encryptedBlob = new Blob([encryptedJSON], { type: 'application/json' })
           setActiveStep(2)
           finalIpfsUri = await storeEncryptedFileByHash(encryptedBlob, hash, fhirResource.resourceType)
         }
 
-        if (!finalIpfsUri) {
-          throw new Error('Failed to upload file to Web3.Storage')
-        }
-
-        console.log('✅ File uploaded to Web3.Storage:', finalIpfsUri)
+        if (!finalIpfsUri) throw new Error('Failed to upload file to Web3.Storage')
         setIpfsUri(finalIpfsUri)
-      } else {
-        console.log('ℹ️ Skipping upload — using existing IPFS URI:', finalIpfsUri)
       }
 
       setActiveStep(3)
-      const tx = await registerDid({ did, ipfsUri: finalIpfsUri, chainId })
-      console.log('✅ DID registered:', tx)
-      setTxHash(tx)
+      
+      const tx = await registerDid({ did: shortDid, ipfsUri: finalIpfsUri, chainId: chainIdDecimal })
+      console.log('📤 TX sent:', tx)
+
+      if (!publicClient) throw new Error('Public client is not available')
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: tx })
+      console.log('🧾 TX Receipt:', receipt)
+
+      if (receipt.status !== 'success') throw new Error('Transaction failed or reverted')
 
       setActiveStep(4)
+      setTxHash(tx)
+      setFinalDid(did)
       setDID(did)
     } catch (err: any) {
       console.error('❌ Registration error:', err)
       setError(err.message || '❌ Registration failed. See console for details.')
     }
+  }
+
+  const getExplorerLink = (txHash: string): string => {
+    const chainSegment = did?.split(':')[2]
+    if (chainSegment === '1') return `https://etherscan.io/tx/${txHash}`
+    if (chainSegment === '11155111') return `https://sepolia.etherscan.io/tx/${txHash}`
+    if (chainSegment === '84532') return `https://sepolia.basescan.org/tx/${txHash}`
+    if (chainSegment === '534351') return `https://sepolia.scrollscan.com/tx/${txHash}`
+    if (chainSegment === '421614') return `https://sepolia.arbiscan.io/tx/${txHash}`
+    return `https://etherscan.io/tx/${txHash}`
   }
 
   return (
@@ -144,42 +156,20 @@ export function RegisterDID() {
               ))}
             </ol>
 
-            {activeStep === steps.length  && !error && (
-              <div className="mt-6 space-y-4 text-sm text-gray-800">
-                <div>
-                  ✅ <strong>DID registered:</strong><br />
-                  <code className="text-xs break-all">{did}</code>
-                </div>
-                {ipfsUri && (
-                  <div>
-                    📦 <strong>FHIR File:</strong>{' '}
-                    <a
-                      href={`${ipfsUri}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      View on IPFS
-                    </a>
-                  </div>
-                )}
-                {txHash && (
-                  <div>
-                    🔗 <strong>Transaction:</strong>{' '}
-                    <a
-                      href={did ? getExplorerTxUrl(parseInt(did.split(':')[2]), txHash) : '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      View on Explorer
-                    </a>
-                  </div>
-                )}
+            {error && <p className="text-red-600 mt-4 text-sm">{error}</p>}
+
+            {activeStep === 4 && txHash && (
+              <div className="mt-6 text-sm space-y-2">
+                <p><strong>DID:</strong> <code>{finalDid}</code></p>
+                <p><strong>IPFS:</strong> <a href={ipfsUri ?? ''} className="text-blue-600 underline" target="_blank">{ipfsUri}</a></p>
+                <p>
+                  <strong>Transaction:</strong>{' '}
+                  <a href={getExplorerLink(txHash)} className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">
+                    View on Block Explorer ↗
+                  </a>
+                </p>
               </div>
             )}
-
-            {error && <p className="text-red-600 mt-4 text-sm">{error}</p>}
 
             <div className="mt-6 text-center">
               <button className="btn btn-sm btn-outline" onClick={() => setOpen(false)}>

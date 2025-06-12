@@ -7,12 +7,13 @@ import DeviceForm from './components/fhir/CreateDeviceForm'
 import { SelectDIDForm } from './components/SelectDIDForm'
 import { RegisterDID } from './components/RegisterDID'
 import LanguageSelector from './components/LanguageSelector'
-
+import ShowDIDPage from './components/ShowDIDPage'
 function App() {
   return (
     <div className="relative min-h-screen">
       <LanguageSelector />
       <Routes>
+        <Route path="/did" element={<ShowDIDPage />} />
         <Route path="/" element={<Onboarding />} />
         <Route path="/create/patient" element={<PatientForm />} />
         <Route path="/create/practitioner" element={<PractitionerForm />} />

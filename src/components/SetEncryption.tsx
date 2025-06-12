@@ -3,6 +3,8 @@ import { useOnboardingState } from '../store/OnboardingState'
 import {
   hashAccessControlConditions, validateAccessControlConditionsSchema
 } from '@lit-protocol/access-control-conditions'
+import { useChainId } from 'wagmi'
+import { chainIdToLitChain } from '../lib/getChains'
 
 
 
@@ -21,7 +23,10 @@ export function SetEncryption() {
 
   const [shareAddress, setShareAddress] = useState('')
   const [shareError, setShareError] = useState<string | null>(null)
-
+const chainId = useChainId()
+console.log('🔗 Connected Chain ID:', chainId)
+const litChain = chainIdToLitChain[chainId] ?? 'ethereum' // default fallback
+console.log('🔗 Lit Chain:', litChain)
   useEffect(() => {
     console.table({
       walletConnected,
@@ -83,13 +88,16 @@ export function SetEncryption() {
     setShareError(null)
   }
 
+
+
   const handleSelfOnly = async () => {
     if (!walletAddress) return
+    
     const acc = [
       {
         contractAddress: '',
         standardContractType: '',
-        chain: 'ethereum',
+        chain: litChain,
         method: 'eth_getBalance',
         parameters: [':userAddress'],
         returnValueTest: {
@@ -103,14 +111,14 @@ export function SetEncryption() {
 
   const handleShareWithOther = async () => {
     if (!shareAddress || !/^0x[a-fA-F0-9]{40}$/.test(shareAddress)) {
-      setShareError('Please enter a valid Ethereum address.')
+      setShareError('Please enter a valid Wallet address.')
       return
     }
     const acc = [
       {
         contractAddress: '',
         standardContractType: '',
-        chain: 'ethereum',
+        chain: litChain,
         method: 'eth_getBalance',
         parameters: [':userAddress'],
         returnValueTest: {
@@ -128,7 +136,7 @@ export function SetEncryption() {
       {
         contractAddress: DID_HEALTH_DAO_ADDRESS,
         standardContractType: 'ERC721', // adjust if DAO uses different standard
-        chain: 'ethereum',
+        chain: litChain,
         method: 'balanceOf',
         parameters: [':userAddress'],
         returnValueTest: {
