@@ -1,9 +1,9 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ConnectWallet } from '../components/WalletConnect'
-import { ConnectLit } from '../components/ConnectLit'
-import { SetupStorage } from '../components/SetupStorage'
-import { CreateDIDForm } from '../components/CreateDIDForm'
+import { ConnectWallet } from './WalletConnect'
+import { ConnectLit } from './ConnectLit'
+import { SetupStorage } from './SetupStorage'
+import { CreateDIDForm } from './CreateDIDForm'
 import { SelectDIDForm } from './SelectDIDForm'
 import { RegisterDID } from './RegisterDID'
 import { useOnboardingState } from '../store/OnboardingState'
@@ -14,7 +14,7 @@ type StepCardProps = {
   children: React.ReactNode
 }
 
-export default function Onboarding() {
+export default function OnboardingEth() {
   const { t } = useTranslation()
 
   const {

@@ -10,6 +10,7 @@ export function WelcomePage({ onNext }: { onNext: () => void }) {
         organizations, and devices. Before creating a DID, you'll need to:
       </p>
       <ol className="text-left text-gray-800 list-decimal list-inside mb-6">
+        <li>Select a Blockchain</li>
         <li>Connect your wallet</li>
         <li>Connect to the Lit Protocol network</li>
         <li>Set up a Web3.Storage account or local IPFS node</li>
