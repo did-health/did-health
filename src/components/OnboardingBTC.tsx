@@ -4,7 +4,7 @@ import { useOnboardingState } from '../store/OnboardingState'
 import { CreateDIDForm } from './CreateDIDForm'
 import { SelectDIDForm } from './SelectDIDForm'
 import { SetEncryption } from './SetEncryption'
-import { RegisterDID } from './RegisterDID'
+import { RegisterDID } from './RegisterDIDETH'
 
 export default function OnboardBitcoin() {
   const { t } = useTranslation()
