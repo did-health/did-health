@@ -39,7 +39,7 @@ const CreateDeviceForm: React.FC = () => {
     const newDevice = { ...device, id };
     console.log('FHIR Device Resource:', newDevice);
     setFHIRResource(device) // or org, practitioner, etc.
-    navigate('/select-did')
+    navigate('/onboarding/ethereum')
 
   };
 

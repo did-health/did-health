@@ -1,68 +1,49 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useOnboardingState } from "../store/OnboardingState";
-import { usePublicClient } from "wagmi";
-import { switchNetwork } from "wagmi/actions";
-import contracts from "../generated/deployedContracts";
+import { useConfig, useChainId } from "wagmi";
+import { switchChain } from "wagmi/actions";
+import { createPublicClient, http, defineChain } from "viem";
+import deployedContracts from "../generated/deployedContracts";
+import { getChainIdHex } from "../lib/getChains"; // adjust path if needed
+
 
 type Props = {
   onDIDAvailable: (did: string) => void;
 };
 
-type NetworkGroup = "testnet" | "mainnet";
-type NetworkConfig = {
-  name: string;
-  group: NetworkGroup;
-  chainId: number;
-  address: string;
-  abi: any;
-};
-
-const chainIdMap: Record<string, number> = {
-  sepolia: 11155111,
-  baseSepolia: 84532,
-  scrollSepolia: 534351,
-  arbitrumSepolia: 421614,
-  polygonMumbai: 80001,
-  polygonAmoy: 80002,
-  mainnet: 1,
-  base: 8453,
-  scroll: 534352,
-  arbitrum: 42161,
-  polygon: 137,
-};
-
 export function SelectDIDForm({ onDIDAvailable }: Props) {
+  const config = useConfig();
+  const chainId = useChainId();
   const { fhirResource, did } = useOnboardingState();
-  const publicClient = usePublicClient();
-
-  const availableNetworks: NetworkConfig[] = useMemo(() => {
-    return Object.entries(contracts)
-      .flatMap(([group, networks]) =>
-        Object.entries(networks)
-          .filter(([, defs]) => typeof defs === "object" && defs !== null && "HealthDIDRegistry" in defs)
-          .map(([name, defs]) => ({
-            name,
-            group: group as NetworkGroup,
-            chainId: chainIdMap[name] ?? 0,
-            address: (defs as any).HealthDIDRegistry.address,
-            abi: (defs as any).HealthDIDRegistry.abi,
-          }))
-      );
-  }, []);
-
-  const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const selectedNetwork = availableNetworks[selectedIndex];
 
   const [didInput, setDidInput] = useState("");
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  const fullDID = `did:health:0x${selectedNetwork.chainId.toString(16)}:${didInput}`;
-  const didSuffix = `${selectedNetwork.chainId}:${didInput}`;
+//  const fullDID = `did:health:${chainId}:${didInput}`;
 
+  const fullDID = `did:health:${getChainIdHex(chainId)}:${didInput}`;
+
+  function getChainNameForDID(did: string): string {
+  const chainIdStr = did.split(":")[2];
+  const chainIdNum = parseInt(chainIdStr);
+  for (const env of Object.values(deployedContracts)) {
+    for (const [networkKey, contracts] of Object.entries(env)) {
+      if (
+        contracts &&
+        typeof contracts === "object" &&
+        "HealthDIDRegistry" in contracts &&
+        (contracts as any).HealthDIDRegistry?.chainId === chainIdNum
+      ) {
+        return networkKey;
+      }
+    }
+  }
+  return `Chain ${chainIdStr}`;
+}
   const handleCheckAvailability = async () => {
-    if (!didInput || !publicClient || !selectedNetwork) return;
+    if (!didInput || !chainId) return;
 
     if (!/^[a-z0-9-]+$/.test(didInput.trim())) {
       setStatus("❌ Invalid DID: only lowercase letters, numbers, and dashes allowed.");
@@ -74,16 +55,70 @@ export function SelectDIDForm({ onDIDAvailable }: Props) {
     setStatus("Checking on-chain DID availability...");
 
     try {
-      await switchNetwork({ chainId: selectedNetwork.chainId });
+      await switchChain(config, { chainId });
 
-      const result = await publicClient.readContract({
-        address: selectedNetwork.address as `0x${string}`,
-        abi: selectedNetwork.abi,
-        functionName: "getHealthDID",
-        args: [didSuffix],
+      // 🔍 Find matching contract + RPC for this chainId
+      let contractInfo: any = null;
+      let chainName = "Unknown Chain";
+      let rpcUrl = "http://localhost:8545";
+
+      for (const env of Object.values(deployedContracts)) {
+        for (const [networkKey, contracts] of Object.entries(env)) {
+          if (
+            contracts &&
+            typeof contracts === "object" &&
+            "HealthDIDRegistry" in contracts
+          ) {
+            const contract = (contracts as any).HealthDIDRegistry;
+            if (contract?.chainId === chainId) {
+              contractInfo = contract;
+              chainName = networkKey;
+              rpcUrl = contract.rpcUrl || rpcUrl;
+              break;
+            }
+          }
+        }
+        if (contractInfo) break;
+      }
+
+      if (!contractInfo?.address || !contractInfo?.abi) {
+        throw new Error(`❌ No HealthDIDRegistry deployed for chainId: ${chainId}`);
+      }
+
+      const client = createPublicClient({
+        chain: defineChain({
+          id: chainId,
+          name: chainName,
+          rpcUrls: { default: { http: [rpcUrl] } },
+          nativeCurrency: {
+            name: "ETH",
+            symbol: "ETH",
+            decimals: 18,
+          },
+        }),
+        transport: http(),
       });
 
-      if (result && typeof result === "object" && "healthDid" in result && result.healthDid !== "") {
+      type HealthDIDResult = { owner: string };
+      let result: HealthDIDResult | undefined;
+      try {
+        result = await client.readContract({
+          address: contractInfo.address as `0x${string}`,
+          abi: contractInfo.abi,
+          functionName: "getHealthDID",
+          args: [`${chainId}:${didInput}`],
+        }) as HealthDIDResult;
+      } catch (err: any) {
+        if (err.message?.includes("revert") || err.message?.includes("execution reverted")) {
+          setIsAvailable(true);
+          setStatus("✅ DID is available!");
+          onDIDAvailable(fullDID);
+          return;
+        }
+        throw err;
+      }
+
+      if (result?.owner && result.owner !== "0x0000000000000000000000000000000000000000") {
         setIsAvailable(false);
         setStatus("❌ DID is already registered.");
       } else {
@@ -91,11 +126,10 @@ export function SelectDIDForm({ onDIDAvailable }: Props) {
         setStatus("✅ DID is available!");
         onDIDAvailable(fullDID);
       }
-    } catch (err) {
-      console.warn("⚠️ DID check failed, assuming available", err);
-      setIsAvailable(true);
-      setStatus("✅ DID is available (fallback check passed).");
-      onDIDAvailable(fullDID);
+    } catch (err: any) {
+      console.error("❌ Error during DID availability check", err);
+      setIsAvailable(null);
+      setStatus(`⚠️ Could not verify DID availability: ${err.message}`);
     } finally {
       setChecking(false);
     }
@@ -112,46 +146,15 @@ export function SelectDIDForm({ onDIDAvailable }: Props) {
         </div>
       )}
 
-      <h2 className="text-lg font-semibold">5. Select your DID</h2>
-
       {fhirResource && (
         <div className="bg-green-100 text-green-800 text-sm p-3 rounded shadow">
           ✅ FHIR record created: <strong>{fhirResource.resourceType}</strong>
         </div>
       )}
 
-      {did && (
-        <div className="bg-blue-100 text-blue-800 text-sm p-3 rounded shadow">
-          ℹ️ Existing DID: <code>{did}</code>
-        </div>
-      )}
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium">Choose Network</label>
-        <select
-          className="select select-bordered bg-white text-black w-full"
-          value={selectedIndex}
-          onChange={async (e) => {
-            const idx = parseInt(e.target.value);
-            setSelectedIndex(idx);
-            try {
-              await switchNetwork(publicClient!.config, { chainId: availableNetworks[idx].chainId });
-            } catch (err) {
-              console.warn("⚠️ Wallet refused to switch network", err);
-            }
-          }}
-        >
-          {availableNetworks.map((net, idx) => (
-            <option key={net.name} value={idx}>
-              {net.name} ({net.group})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Enter your DID name</label>
-        <input
+       <input
           type="text"
           placeholder="e.g. johndoe123"
           className="input input-bordered w-full"

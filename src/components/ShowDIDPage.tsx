@@ -6,6 +6,7 @@ import { ConnectLit } from './ConnectLit'
 import { generateQRCode } from '../lib/QRCodeGeneration'
 import { getLitDecryptedFHIR } from '../lib/litSessionSigs'
 import { resolveDidHealthAcrossChains } from '../lib/DIDDocument'
+import FHIRResource from './FHIRResource'
 
 export default function ShowDIDPage() {
   const { litClient, litConnected } = useOnboardingState()
@@ -15,6 +16,7 @@ export default function ShowDIDPage() {
   const [didDoc, setDidDoc] = useState<any | null>(null)
   const [fhir, setFhir] = useState<any | null>(null)
   const [qrCode, setQrCode] = useState<string>('')
+  const [accessControlConditions, setAccessControlConditions] = useState<any | null>(null)
   const [resolvedChainName, setResolvedChainName] = useState<string>('')
 
   const handleResolve = async () => {
@@ -62,6 +64,7 @@ export default function ShowDIDPage() {
 
       if (isEncrypted) {
         setStatus('🔐 Decrypting with Lit Protocol...')
+        setAccessControlConditions(json.accessControlConditions || null)
         const decrypted = await getLitDecryptedFHIR(json, litClient)
         setFhir(decrypted)
         setStatus('✅ Decrypted FHIR resource loaded!')
@@ -100,29 +103,43 @@ export default function ShowDIDPage() {
         </div>
       )}
 
-      {didDoc?.id && (
-        <>
-          <div className="mt-4">
-            <p className="font-semibold">Resolved DID:</p>
-            <code className="block p-2 bg-gray-100 rounded break-words">{didDoc.id}</code>
-            <p className="text-sm text-gray-500 mt-1">🧠 Found on: {resolvedChainName}</p>
-          </div>
+{didDoc?.id && (
+  <>
+    <div className="mt-4">
+      <p className="font-semibold">Resolved DID:</p>
+      <code className="block p-2 bg-gray-100 rounded break-words">{didDoc.id}</code>
+      <p className="text-sm text-gray-500 mt-1">🧠 Found on: {resolvedChainName}</p>
+    </div>
 
-          {qrCode && (
-            <div className="mt-4">
-              <h2 className="text-lg font-semibold">DID Document QR Code</h2>
-              <img src={qrCode} alt="QR Code" width={300} height={300} />
-            </div>
-          )}
+    {qrCode && (
+      <div className="mt-4">
+        <h2 className="text-lg font-semibold">DID Document QR Code</h2>
+        <img src={qrCode} alt="QR Code" width={300} height={300} />
+      </div>
+    )}
 
-          {fhir && (
-            <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[400px]">
-              <h2 className="text-lg font-semibold mb-2">FHIR Resource</h2>
-              <pre>{JSON.stringify(fhir, null, 2)}</pre>
-            </div>
-          )}
-        </>
-      )}
+    <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[400px]">
+      <h2 className="text-lg font-semibold mb-2">📄 Resolved DID Document</h2>
+      <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(didDoc, null, 2)}</pre>
+    </div>
+
+    {accessControlConditions && (
+      <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[400px]">
+        <h2 className="text-lg font-semibold mb-2">🔐 Access Control Conditions</h2>
+        <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(accessControlConditions, null, 2)}</pre>
+      </div>
+    )}
+
+    {fhir && (
+      <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[600px]">
+        <h2 className="text-lg font-semibold mb-2">🧾 FHIR Resource</h2>
+        <FHIRResource resource={fhir} />
+        <pre className="mt-4 text-xs whitespace-pre-wrap break-words">{JSON.stringify(fhir, null, 2)}</pre>
+      </div>
+    )}
+  </>
+)}
+
     </main>
   )
 }

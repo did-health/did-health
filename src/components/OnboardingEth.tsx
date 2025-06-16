@@ -126,13 +126,13 @@ export default function OnboardingEth() {
 
 
 
-        {walletConnected && litConnected && storageReady && fhirResource && accessControlConditions  && (
+        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped)  && (
           <StepCard step="6" title={t('chooseDID')}>
             <SelectDIDForm onDIDAvailable={(did) => setDID(did)} />
           </StepCard>
         )}
 
-        {walletConnected && litConnected && storageReady && fhirResource && accessControlConditions && did && (
+        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
           <StepCard step="7" title={t('registerDID')}>
             <RegisterDID />
           </StepCard>

@@ -58,7 +58,7 @@ const CreatePractitionerForm: React.FC = () => {
     e.preventDefault();
     const newPractitioner = { ...practitioner, id: uuidv4() };
     setFHIRResource(newPractitioner) // or org, practitioner, etc.
-    navigate('/select-did')
+    navigate('/onboarding/ethereum')
   };
 
 return (

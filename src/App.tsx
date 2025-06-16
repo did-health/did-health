@@ -10,6 +10,7 @@ import { SelectDIDForm } from './components/SelectDIDForm'
 import LanguageSelector from './components/LanguageSelector'
 import ShowDIDPage from './components/ShowDIDPage'
 import ShowDIDBTC from './components/ShowDIDBTC'
+import XMTPChatClient from './components/XMTPChatClient'
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
       <LanguageSelector />
       <Routes>
         <Route path="/" element={<SelectBlockChain />} />
+        <Route path="/chat" element={<XMTPChatClient />} />
         <Route path="/ethereum/did" element={<ShowDIDPage />} />
         <Route path="/btc/did" element={<ShowDIDBTC />} />        
         <Route path="/onboarding/ethereum" element={<OnboardingEth />} />

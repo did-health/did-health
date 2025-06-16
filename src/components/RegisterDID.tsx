@@ -5,7 +5,8 @@ import { registerDid } from '../lib/registerDidOnChain'
 import { useOnboardingState } from '../store/OnboardingState'
 import { Dialog } from '@headlessui/react'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
-import { usePublicClient } from 'wagmi'
+import { usePublicClient, useChainId } from 'wagmi'
+import { chainIdToLitChain } from '../lib/getChains'
 
 export function RegisterDID() {
   const {
@@ -25,7 +26,10 @@ export function RegisterDID() {
   const [error, setError] = useState<string | null>(null)
   const [txHash, setTxHash] = useState<string | null>(null)
   const [finalDid, setFinalDid] = useState<string | null>(null)
-
+  const chainId = useChainId()
+  console.log('🔗 Connected Chain ID:', chainId)
+  const litChain = chainIdToLitChain[chainId] ?? 'ethereum' // default fallback
+  console.log('🔗 Lit Chain:', litChain)
   const steps = [
     'Validating FHIR Resource',
     encryptionSkipped ? 'Skipping Encryption' : 'Encrypting with Lit Protocol',
@@ -55,7 +59,8 @@ export function RegisterDID() {
     try {
       setActiveStep(0)
 
-      let finalIpfsUri = ipfsUri
+      //let finalIpfsUri = ipfsUri
+      let finalIpfsUri = null
       if (!finalIpfsUri) {
         const resourceJson = JSON.stringify(fhirResource, null, 2)
         const resourceBlob = new Blob([resourceJson], { type: 'application/json' })
@@ -66,10 +71,11 @@ export function RegisterDID() {
           finalIpfsUri = await storePlainFHIRFile(fhirResource, fileName, fhirResource.resourceType)
         } else {
           setActiveStep(1)
+
           const { encryptedJSON, hash } = await encryptFHIRFile({
             file: resourceBlob,
             litClient: litClient!,
-            chain: 'ethereum',
+            chain: litChain,
             accessControlConditions,
           })
 
@@ -83,7 +89,7 @@ export function RegisterDID() {
       }
 
       setActiveStep(3)
-      
+
       const tx = await registerDid({ did: shortDid, ipfsUri: finalIpfsUri, chainId: chainIdDecimal })
       console.log('📤 TX sent:', tx)
 
@@ -114,71 +120,103 @@ export function RegisterDID() {
   }
 
   return (
-    <div className="space-y-4">
-      <button className="btn btn-primary" onClick={handleRegister}>
-        Register DID
-      </button>
+    did && (
+      <div className="space-y-4">
+        <button className="btn btn-primary" onClick={handleRegister}>
+          Register DID
+        </button>
 
-      <Dialog open={open} onClose={() => setOpen(false)} className="relative z-50">
-        <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="mx-auto w-full max-w-md rounded bg-white p-6 shadow">
-            <Dialog.Title className="text-lg font-bold mb-4">Registering DID</Dialog.Title>
+        <Dialog open={open} onClose={() => setOpen(false)} className="relative z-50">
+          <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog.Panel className="mx-auto w-full max-w-md rounded bg-white p-6 shadow">
+              <Dialog.Title className="text-lg font-bold mb-4">Registering DID</Dialog.Title>
+              <ol className="space-y-3">
+                {steps.map((step, index) => (
+                  <li key={index} className="flex items-center space-x-3">
+                    {index < activeStep ? (
+                      <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                    ) : index === activeStep ? (
+                      activeStep === 5 ? (
+                        <div className="h-5 w-5 rounded-full border border-blue-300 bg-blue-100" /> // non-animated dot
+                      ) : (
+                        <svg className="animate-spin h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4l3-3-3-3v4a10 10 0 1010 10h-4l3 3 3-3h-4a8 8 0 01-8 8z"
+                          />
+                        </svg>
+                      )
+                    ) : (
+                      <div className="h-5 w-5 rounded-full border border-gray-300" />
+                    )}
+                    <span className={index === activeStep ? "font-semibold" : "text-gray-500"}>
+                      {step}
+                    </span>
+                  </li>
+                ))}
+              </ol>
 
-            <ol className="space-y-3">
-              {steps.map((step, index) => (
-                <li key={index} className="flex items-center space-x-3">
-                  {index < activeStep ? (
-                    <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                  ) : index === activeStep ? (
-                    <svg className="animate-spin h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a10 10 0 1010 10h-4l3 3 3-3h-4a8 8 0 01-8 8z"
-                      />
-                    </svg>
-                  ) : (
-                    <div className="h-5 w-5 rounded-full border border-gray-300" />
-                  )}
-                  <span className={index === activeStep ? 'font-semibold' : 'text-gray-500'}>
-                    {step}
-                  </span>
-                </li>
-              ))}
-            </ol>
 
-            {error && <p className="text-red-600 mt-4 text-sm">{error}</p>}
+              {error && <p className="text-red-600 mt-4 text-sm">{error}</p>}
 
-            {activeStep === 4 && txHash && (
-              <div className="mt-6 text-sm space-y-2">
-                <p><strong>DID:</strong> <code>{finalDid}</code></p>
-                <p><strong>IPFS:</strong> <a href={ipfsUri ?? ''} className="text-blue-600 underline" target="_blank">{ipfsUri}</a></p>
-                <p>
-                  <strong>Transaction:</strong>{' '}
-                  <a href={getExplorerLink(txHash)} className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">
-                    View on Block Explorer ↗
-                  </a>
-                </p>
+              {activeStep === 4 && txHash && (
+                <div className="mt-6 space-y-4">
+                  <div className="bg-gray-100 rounded-lg p-4 shadow-sm text-sm space-y-2">
+                    <p><strong>DID:</strong> <code className="break-all">{finalDid}</code></p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    {ipfsUri && (
+                      <a
+                        href={ipfsUri}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                      >
+                        🌐 View IPFS
+                      </a>
+                    )}
+
+                    <a
+                      href={getExplorerLink(txHash)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                    >
+                      🔎 View Transaction
+                    </a>
+
+                    <button
+                      onClick={() => finalDid && navigator.clipboard.writeText(finalDid)}
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
+                    >
+                      📋 Copy DID
+                    </button>
+                  </div>
+                </div>
+              )}
+
+
+              <div className="mt-6 text-center">
+                <button className="btn btn-sm btn-outline" onClick={() => setOpen(false)}>
+                  Close
+                </button>
               </div>
-            )}
-
-            <div className="mt-6 text-center">
-              <button className="btn btn-sm btn-outline" onClick={() => setOpen(false)}>
-                Close
-              </button>
-            </div>
-          </Dialog.Panel>
-        </div>
-      </Dialog>
-    </div>
-  )
+            </Dialog.Panel>
+          </div>
+        </Dialog>
+      </div>
+    ))
 }
+
+

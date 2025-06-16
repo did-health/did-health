@@ -14,7 +14,6 @@ type ResolvedDID = {
   hasPolygonId: boolean
   hasSocialId: boolean
 }
-
 export function convertToDidDocument({
   owner,
   healthDid,
@@ -53,9 +52,6 @@ export function convertToDidDocument({
     },
   }
 }
-
-
-
 export async function resolveDidHealth(chainId: number, address: string) {
   const env = 'testnet'
 
@@ -114,4 +110,28 @@ return convertToDidDocument({
     reputationScore: Number(result.reputationScore),
 
   })
+}
+
+/**
+ * Attempts to resolve a did:health identifier across all supported chains.
+ * Returns the DID document and chain info if found.
+ */
+
+
+export async function resolveDidHealthAcrossChains(walletAddress: string) {
+  const supportedChains = chains
+
+  for (const chainInfo of supportedChains) {
+    console.log(`🔍 Checking "${chainInfo.name}" for DID`)
+    try {
+      const doc = await resolveDidHealth(chainInfo.id, walletAddress)
+      if (doc?.id && doc.id !== 'did:health:') {
+        return { doc, chainName: chainInfo.name }
+      }
+    } catch (err: any) {
+      console.warn(`⚠️ DID lookup failed on chain ${chainInfo.name}`, err.message)
+    }
+  }
+
+  return null
 }

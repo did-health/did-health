@@ -98,10 +98,10 @@ console.log('🔗 Lit Chain:', litChain)
         contractAddress: '',
         standardContractType: '',
         chain: litChain,
-        method: 'eth_getBalance',
+        method: '',
         parameters: [':userAddress'],
         returnValueTest: {
-          comparator: '>=',
+          comparator: '=',
           value: walletAddress,
         },
       },
@@ -119,13 +119,12 @@ console.log('🔗 Lit Chain:', litChain)
         contractAddress: '',
         standardContractType: '',
         chain: litChain,
-        method: 'eth_getBalance',
+        method: '',
         parameters: [':userAddress'],
         returnValueTest: {
-          comparator: '>=',
-          value: '0',
+          comparator: '=',
+          value: shareAddress,
         },
-        walletAddress: shareAddress,
       },
     ]
     await applyAccessControl(acc)
