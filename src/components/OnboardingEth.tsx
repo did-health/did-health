@@ -26,6 +26,7 @@ export default function OnboardingEth() {
     accessControlConditions, // ✅ Add this
     setDID,
     encryptionSkipped, // <-- Add this line
+    walletAddress, // <-- Add this line to get walletAddress from state
   } = useOnboardingState()
 
 
@@ -71,62 +72,95 @@ export default function OnboardingEth() {
           </StepCard>
         )}
 
-      {
-      console.log('🧪 Step 5 Check:', {
-        walletConnected,
-        litConnected,
-        storageReady,
-        fhirResource,
-        accessControlConditions,
-        encryptionSkipped,
-        did
-      })
-      }
+        {
+          console.log('🧪 Step 5 Check:', {
+            walletConnected,
+            litConnected,
+            storageReady,
+            fhirResource,
+            accessControlConditions,
+            encryptionSkipped,
+            did
+          })
+        }
 
-{walletConnected && litConnected && storageReady && fhirResource && !accessControlConditions && !encryptionSkipped && (
-  <StepCard step="5" title={t('setAccessControl')}>
-    <SetEncryption />
-  </StepCard>
-)}
-
-
-{walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
-  <StepCard step="5" title="Access Control Configured">
-    {encryptionSkipped ? (
-      <>
-        <p className="text-yellow-600 font-medium mb-4">⚠️ Encryption was skipped for this resource type.</p>
-        <button
-          onClick={() => {
-            useOnboardingState.getState().setEncryptionSkipped(false)
-            useOnboardingState.getState().setAccessControlConditions(null)
-          }}
-          className="btn btn-outline btn-warning"
-        >
-          🔄 Change Encryption Decision
-        </button>
-      </>
-    ) : (
-      <>
-        <p className="text-green-600 font-medium mb-2">✅ Access Control Conditions have been set.</p>
-        <pre className="bg-gray-900 text-white text-xs p-3 rounded max-h-64 overflow-auto mb-4">
-          {JSON.stringify(accessControlConditions, null, 2)}
-        </pre>
-        <button
-          onClick={() => {
-            useOnboardingState.getState().setAccessControlConditions(null)
-          }}
-          className="btn btn-outline btn-accent"
-        >
-          🔄 Edit Access Control
-        </button>
-      </>
-    )}
-  </StepCard>
-)}
+        {walletConnected && litConnected && storageReady && fhirResource && !accessControlConditions && !encryptionSkipped && (
+          <StepCard step="5" title={t('setAccessControl')}>
+            <SetEncryption />
+          </StepCard>
+        )}
 
 
+        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
+          <StepCard step="5" title="Access Control Configured">
+            {encryptionSkipped ? (
+              <>
+                <p className="text-yellow-600 font-medium mb-4">⚠️ Encryption was skipped for this resource type.</p>
+                <button
+                  onClick={() => {
+                    useOnboardingState.getState().setEncryptionSkipped(false)
+                    useOnboardingState.getState().setAccessControlConditions(null)
+                  }}
+                  className="btn btn-outline btn-warning"
+                >
+                  🔄 Change Encryption Decision
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-green-600 font-medium mb-2">✅ Access Control Conditions have been set.</p>
+{accessControlConditions.map((cond: any, idx: number) => {
+  const isSelfOnly =
+    cond.returnValueTest?.comparator === '=' &&
+    String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase();
 
-        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped)  && (
+  return (
+    <div key={idx} className="bg-gray-100 rounded p-4 shadow">
+      <p className="font-semibold text-gray-700 mb-1">Condition #{idx + 1}</p>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <div>
+          <span className="font-medium text-gray-600">Chain:</span>{' '}
+          {String(cond.chain ?? 'N/A')}
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Parameters:</span>{' '}
+          {Array.isArray(cond.parameters)
+            ? cond.parameters.map((p: unknown) => String(p)).join(', ')
+            : 'N/A'}
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Return Value Test:</span>
+          <div className="ml-2">
+            Who Can View it: 
+            <br />
+            {isSelfOnly && (
+              <p className="mt-2 text-green-600 font-medium">
+                ✅ Only viewable by <span className="underline">you</span>.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+})}
+
+                <button
+                  onClick={() => {
+                    useOnboardingState.getState().setAccessControlConditions(null)
+                  }}
+                  className="btn btn-outline btn-accent"
+                >
+                  🔄 Edit Access Control
+                </button>
+              </>
+            )}
+          </StepCard>
+        )}
+
+
+
+        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
           <StepCard step="6" title={t('chooseDID')}>
             <SelectDIDForm onDIDAvailable={(did) => setDID(did)} />
           </StepCard>

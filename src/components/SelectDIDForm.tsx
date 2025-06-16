@@ -21,9 +21,9 @@ export function SelectDIDForm({ onDIDAvailable }: Props) {
   const [checking, setChecking] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-//  const fullDID = `did:health:${chainId}:${didInput}`;
+  const fullDID = `did:health:${chainId}:${didInput}`;
 
-  const fullDID = `did:health:${getChainIdHex(chainId)}:${didInput}`;
+  //const fullDID = `did:health:${getChainIdHex(chainId)}:${didInput}`;
 
   function getChainNameForDID(did: string): string {
   const chainIdStr = did.split(":")[2];
