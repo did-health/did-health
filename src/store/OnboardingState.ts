@@ -15,10 +15,11 @@ type State = {
   litClient: LitNodeClient | null
   email: string | null
   web3SpaceDid: string | null
-
+  sessionSigs?: any | null
   accessControlConditions: any | null
   encryptionSkipped: boolean
   ipfsUri: string | null
+  chainId: number | null
 
   setWalletConnected: (value: boolean) => void
   setWalletAddress: (address: string) => void
@@ -29,10 +30,10 @@ type State = {
   setLitClient: (client: LitNodeClient) => void
   setEmail: (email: string) => void
   setWeb3SpaceDid: (did: string) => void
-
   setAccessControlConditions: (value: any) => void
   setEncryptionSkipped: (value: boolean) => void
   setIpfsUri: (uri: string | null) => void
+  setChainId: (chainId: number | null) => void
 }
 
 export const useOnboardingState = create<State>()(
@@ -50,6 +51,7 @@ export const useOnboardingState = create<State>()(
       accessControlConditions: null,
       encryptionSkipped: false,
       ipfsUri: null,
+      chainId: null,
 
       setWalletConnected: (walletConnected) => set({ walletConnected }),
       setWalletAddress: (walletAddress) => set({ walletAddress }),
@@ -63,6 +65,7 @@ export const useOnboardingState = create<State>()(
       setAccessControlConditions: (accessControlConditions) => set({ accessControlConditions }),
       setEncryptionSkipped: (encryptionSkipped) => set({ encryptionSkipped }),
       setIpfsUri: (ipfsUri) => set({ ipfsUri }),
+      setChainId: (chainId) => set({ chainId }),
     }),
     {
       name: 'didhealth-onboarding',
