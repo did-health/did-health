@@ -4,8 +4,6 @@ import { useConfig, useChainId } from "wagmi";
 import { switchChain } from "wagmi/actions";
 import { createPublicClient, http, defineChain } from "viem";
 import deployedContracts from "../generated/deployedContracts";
-import { getChainIdHex } from "../lib/getChains"; // adjust path if needed
-
 
 type Props = {
   onDIDAvailable: (did: string) => void;
@@ -25,23 +23,6 @@ export function SelectDIDForm({ onDIDAvailable }: Props) {
 
   //const fullDID = `did:health:${getChainIdHex(chainId)}:${didInput}`;
 
-  function getChainNameForDID(did: string): string {
-  const chainIdStr = did.split(":")[2];
-  const chainIdNum = parseInt(chainIdStr);
-  for (const env of Object.values(deployedContracts)) {
-    for (const [networkKey, contracts] of Object.entries(env)) {
-      if (
-        contracts &&
-        typeof contracts === "object" &&
-        "HealthDIDRegistry" in contracts &&
-        (contracts as any).HealthDIDRegistry?.chainId === chainIdNum
-      ) {
-        return networkKey;
-      }
-    }
-  }
-  return `Chain ${chainIdStr}`;
-}
   const handleCheckAvailability = async () => {
     if (!didInput || !chainId) return;
 

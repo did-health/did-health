@@ -2,14 +2,13 @@ import { useEffect, useState } from 'react';
 import _get from 'lodash/get';
 import {
   formatLabel,
-  Loader,
   loadExtensionStructureDefinition,
   renderElement,
   resolveDefinitionUrl
 } from '../lib/utils';
-import type { ElementDefinition } from '../types';
+import type { ElementDefinition } from 'fhir/r4';
 import type { FHIRResourceProps } from '../types';
-import type { StructureDefinitionMap } from '../types';
+import type { StructureDefinitionMap } from '../types/fhir/StructureDefintion';
 import type { StructureDefinition } from 'fhir/r4';
 
 const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences }) => {
@@ -46,7 +45,9 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
     fetchStructureDefs();
   }, [resourceType]);
 
-  if (!mainStructureDef) return <Loader />;
+    if (!mainStructureDef) {
+        return <div>Loading structure definitions...</div>;
+    }
 
   const topLevelElements = [
     ...new Map(
