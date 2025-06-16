@@ -1,13 +1,15 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { ConnectWallet } from './WalletConnect'
 import { ConnectLit } from './ConnectLit'
 import { SetupStorage } from './SetupStorage'
 import { CreateDIDForm } from './CreateDIDForm'
 import { SelectDIDForm } from './SelectDIDForm'
-import { RegisterDID } from './RegisterDID'
+import { RegisterDID } from './RegisterDIDETH'
 import { useOnboardingState } from '../store/OnboardingState'
 import { SetEncryption } from './SetEncryption'
+import logo from '../assets/did-health.png'
 type StepCardProps = {
   step: string
   title: string
@@ -29,17 +31,26 @@ export default function OnboardingEth() {
     walletAddress, // <-- Add this line to get walletAddress from state
   } = useOnboardingState()
 
-
+console.log(did)
   return (
     <main className="p-6 sm:p-10 max-w-3xl mx-auto text-gray-800 dark:text-white">
-      <div className="mb-8">
-        <h1 className="text-4xl font-extrabold tracking-tight mb-2">
-          🚀 {t('didHealthOnboarding')}
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          {t('onboardingInstructions')}
-        </p>
-      </div>
+<div className="mb-8 text-center flex flex-col items-center">
+  <div className="w-24 h-24 rounded-full overflow-hidden shadow-md bg-white/10 backdrop-blur-sm ring-2 ring-indigo-400/30 mb-4">
+    <img
+      src={logo}
+      alt="did:health Logo"
+      className="w-full h-full object-contain transition-transform duration-300 hover:scale-110"
+    />
+  </div>
+
+  <h1 className="text-4xl font-extrabold tracking-tight mb-2">
+    🚀 {t('didHealthOnboarding')}
+  </h1>
+  <p className="text-gray-600 dark:text-gray-400 max-w-xl">
+    {t('onboardingInstructions')}
+  </p>
+</div>
+
 
       <div className="space-y-8">
         <StepCard step="1" title={t('connectWallet')}>
@@ -63,14 +74,22 @@ export default function OnboardingEth() {
             <CreateDIDForm />
           </StepCard>
         )}
+{fhirResource && (
+  <StepCard step="4" title={t('fhirCreated')}>
+    <p className="text-green-600 dark:text-green-400 font-medium">
+      ✅ {t('created')} <strong>{fhirResource.resourceType}</strong>
+    </p>
+    <div className="mt-2">
+      <Link
+        to={`/create/${fhirResource.resourceType.toLowerCase()}`}
+        className="inline-flex items-center text-sm text-blue-600 hover:underline dark:text-blue-400"
+      >
+        ✏️ {t('edit')} {fhirResource.resourceType}
+      </Link>
+    </div>
+  </StepCard>
+)}
 
-        {fhirResource && (
-          <StepCard step="4" title={t('fhirCreated')}>
-            <p className="text-green-600 dark:text-green-400 font-medium">
-              ✅ {t('created')} <strong>{fhirResource.resourceType}</strong>
-            </p>
-          </StepCard>
-        )}
 
         {
           console.log('🧪 Step 5 Check:', {
@@ -109,41 +128,41 @@ export default function OnboardingEth() {
             ) : (
               <>
                 <p className="text-green-600 font-medium mb-2">✅ Access Control Conditions have been set.</p>
-{accessControlConditions.map((cond: any, idx: number) => {
-  const isSelfOnly =
-    cond.returnValueTest?.comparator === '=' &&
-    String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase();
+                {accessControlConditions.map((cond: any, idx: number) => {
+                  const isSelfOnly =
+                    cond.returnValueTest?.comparator === '=' &&
+                    String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase();
 
-  return (
-    <div key={idx} className="bg-gray-100 rounded p-4 shadow">
-      <p className="font-semibold text-gray-700 mb-1">Condition #{idx + 1}</p>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-        <div>
-          <span className="font-medium text-gray-600">Chain:</span>{' '}
-          {String(cond.chain ?? 'N/A')}
-        </div>
-        <div>
-          <span className="font-medium text-gray-600">Parameters:</span>{' '}
-          {Array.isArray(cond.parameters)
-            ? cond.parameters.map((p: unknown) => String(p)).join(', ')
-            : 'N/A'}
-        </div>
-        <div>
-          <span className="font-medium text-gray-600">Return Value Test:</span>
-          <div className="ml-2">
-            Who Can View it: 
-            <br />
-            {isSelfOnly && (
-              <p className="mt-2 text-green-600 font-medium">
-                ✅ Only viewable by <span className="underline">you</span>.
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-})}
+                  return (
+                    <div key={idx} className="bg-gray-100 rounded p-4 shadow">
+                      <p className="font-semibold text-gray-700 mb-1">Condition #{idx + 1}</p>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <div>
+                          <span className="font-medium text-gray-600">Chain:</span>{' '}
+                          {String(cond.chain ?? 'N/A')}
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Parameters:</span>{' '}
+                          {Array.isArray(cond.parameters)
+                            ? cond.parameters.map((p: unknown) => String(p)).join(', ')
+                            : 'N/A'}
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Return Value Test:</span>
+                          <div className="ml-2">
+                            Who Can View it:
+                            <br />
+                            {isSelfOnly && (
+                              <p className="mt-2 text-green-600 font-medium">
+                                ✅ Only viewable by <span className="underline">you</span>.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
 
                 <button
                   onClick={() => {
@@ -158,13 +177,17 @@ export default function OnboardingEth() {
           </StepCard>
         )}
 
-
-
-        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
+        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && !did && (
           <StepCard step="6" title={t('chooseDID')}>
             <SelectDIDForm onDIDAvailable={(did) => setDID(did)} />
           </StepCard>
         )}
+        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
+          <StepCard step="6" title={t('chooseDID')}>
+            {did}
+          </StepCard>
+        )}
+
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
           <StepCard step="7" title={t('registerDID')}>

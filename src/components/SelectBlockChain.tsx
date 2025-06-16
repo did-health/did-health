@@ -5,7 +5,7 @@ import EthereumLogo from '../assets/ethereum-eth-logo.svg'
 import BitcoinLogo from '../assets/bitcoin-btc-logo.svg'
 import SolanaLogo from '../assets/solana-sol-logo.svg'
 import CosmosLogo from '../assets/cosmos-atom-logo.svg'
-
+import logo from '../assets/did-health.png'
 export default function SelectBlockchain() {
   const navigate = useNavigate()
 
@@ -39,9 +39,25 @@ export default function SelectBlockchain() {
   return (
     <div className="min-h-screen px-6 py-10 bg-white dark:bg-gray-950 text-gray-900 dark:text-white">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-center">
-          Choose Your Blockchain to Create Your <span className="text-red-600">did:health</span>
-        </h1>
+<div className="flex flex-col items-center text-center mb-10">
+  <div className="w-28 h-28 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-red-400/40 mb-4">
+    <img
+      src={logo}
+      alt="did:health Logo"
+      className="w-full h-full object-contain scale-110 transition-transform duration-300 hover:scale-125"
+    />
+  </div>
+
+  <h1 className="text-3xl font-bold leading-snug">
+    <span className="block bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 bg-clip-text text-transparent bg-[length:200%_200%] animate-gradient">
+      Choose Your Blockchain
+    </span>
+    <span className="text-red-600 dark:text-red-400">
+      to Create Your did:health
+    </span>
+  </h1>
+</div>
+
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-10">
           {options.map((option) => (

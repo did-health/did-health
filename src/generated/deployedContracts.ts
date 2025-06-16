@@ -1458,7 +1458,7 @@ const deployedContracts = {
     },
     sepolia: {
       HealthDIDRegistry: {
-        address: "0x916C6b14234a691962176E980714979789dBc993",
+        address: "0xa54e4ac0D2DE3F7c34349b80256eEE76bC648c07",
         abi: [
           {
             type: "constructor",
