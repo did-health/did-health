@@ -1,5 +1,5 @@
 # Stage 1: Build Vite app with node 20
-FROM node:20-bookworm AS builder
+FROM node:21-bookworm AS builder
 
 WORKDIR /app
 
@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y \
 
 # Copy and install dependencies
 COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
-
+#RUN yarn install --frozen-lockfile
+RUN yarn install
 # Copy source and build
 COPY . .
 RUN NODE_OPTIONS="--max-old-space-size=4096" yarn build

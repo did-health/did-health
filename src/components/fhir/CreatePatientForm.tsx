@@ -53,7 +53,7 @@ const CreatePatientForm: React.FC = () => {
     const newPatient = { ...patient, id: uuidv4() };
     console.log('FHIR Patient Resource:', newPatient);
     setFHIRResource(patient) // or org, practitioner, etc.
-    navigate('/select-did')
+    navigate('/onboarding/ethereum')
 
   };
 

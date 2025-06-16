@@ -26,7 +26,7 @@ export function ConnectLit() {
 
   return (
     <div>
-       {litConnected ? <p>✅ Connected</p> : <p>Connecting...</p>}
+       {litConnected ? <p>✅ Connected to Lit</p> : <p>Connecting...</p>}
     </div>
   )
 }

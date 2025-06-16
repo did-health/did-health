@@ -53,7 +53,7 @@ const CreateOrganizationForm: React.FC = () => {
     const uuid = uuidv4()
     organization.id = uuid
     setFHIRResource(organization) // or org, practitioner, etc.
-    navigate('/select-did')
+    navigate('/onboarding/ethereum')
   }
 
 return (

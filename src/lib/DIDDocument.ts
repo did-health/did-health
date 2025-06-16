@@ -1,71 +1,137 @@
+import { ethers, JsonRpcProvider } from "ethers";
+import deployedContracts from "../generated/deployedContracts";
+import {chains}  from '../lib/wagmiConfig' // adjust this path if needed
 
-export function getServiceEndpointById (services: any[], serviceId: any) {
-    // Find the service with the matching ID
-    console.log('***********************' + services[0])
-    console.log('***********************' + serviceId)
-    const service = services.find((service) => service.id === serviceId);  
-    console.log('***********************' + service.serviceEndpoint)
-    // If found, return the service endpoint, otherwise return null
-    return service ? service.serviceEndpoint : null;
-  };
-export function convertToDidDocument (resolvedDid: { owner: string; delegateAddresses: readonly string[]; healthDid: string; ipfsUri: string; altIpfsUris: readonly string[]; reputationScore: number; hasWorldId: boolean; hasPolygonId: boolean; hasSocialId: boolean; }){
-    if (!resolvedDid || !resolvedDid.healthDid) return null;
 
-    return {
-      "@context": "https://www.w3.org/ns/did/v1",
-      "id": `did:health:${resolvedDid.healthDid}`,
-      "verificationMethod": [
-        {
-          "id": `did:health:${resolvedDid.healthDid}#keys-1`,
-          "type": "EcdsaSecp256k1RecoveryMethod2020",
-          "controller": `did:health:${resolvedDid.healthDid}`,
-          "publicKeyBase58": resolvedDid.owner,
-          "threshold": {
-            "n": 5,
-            "t": 3
-          }
-        }
-      ],
-      "authentication": [
-        `did:health:${resolvedDid.healthDid}#keys-1`
-      ],
-      "assertionMethod": [
-        `did:health:${resolvedDid.healthDid}#keys-1`
-      ],
-      "capabilityInvocation": [
-        `did:health:${resolvedDid.healthDid}#keys-1`
-      ],
-      "capabilityDelegation": [
-        `did:health:${resolvedDid.healthDid}#keys-1`
-      ],
-      "keyAgreement": [
-        {
-          "id": `did:health:${resolvedDid.healthDid}#keys-2`,
-          "type": "EcdsaSecp256k1RecoveryMethod2020",
-          "controller": `did:health:${resolvedDid.healthDid}`,
-          "publicKeyBase58": resolvedDid.owner,
-          "threshold": {
-            "n": 5,
-            "t": 3
-          }
-        }
-      ],
-      "service": [
-        {
-          "id": `did:health:${resolvedDid.healthDid}#patient`,
-          "type": "Patient", // Assuming this is the type
-          "serviceEndpoint": resolvedDid.ipfsUri,
-          "description": "Access to the Pateint Demographics secured by LIT Protocol and stored on IPFS."
-        }
-      ]
-    };
+type ResolvedDID = {
+  owner: string
+  delegateAddresses: readonly string[]
+  healthDid: string
+  ipfsUri: string
+  altIpfsUris: readonly string[]
+  reputationScore: number
+  hasWorldId: boolean
+  hasPolygonId: boolean
+  hasSocialId: boolean
+}
+export function convertToDidDocument({
+  owner,
+  healthDid,
+  ipfsUri,
+  altIpfsUris,
+  hasWorldId,
+  hasPolygonId,
+  hasSocialId,
+  reputationScore,
+}: {
+  owner: string,
+  healthDid: string,
+  ipfsUri: string,
+  altIpfsUris?: string[],
+  hasWorldId: boolean,
+  hasPolygonId: boolean,
+  hasSocialId: boolean,
+  reputationScore: number,
+}) {
+  return {
+    id: `did:health:${healthDid}`,
+    controller: owner,
+    service: [
+      {
+        id: `did:health:${healthDid}#fhir`,
+        type: 'FHIRResource',
+        serviceEndpoint: ipfsUri,
+      },
+    ],
+    verificationMethod: [], // optional
+    reputationScore,
+    credentials: {
+      hasWorldId,
+      hasPolygonId,
+      hasSocialId,
+    },
+  }
+}
+export async function resolveDidHealth(chainId: number, address: string) {
+  const env = 'testnet'
 
-  };
-export function getEncHash(url: string | URL) {
-    const urlObj = new URL(url);  
-    const queryString = urlObj.search;  
-    const params = new URLSearchParams(queryString);  
-    const encHash = params.get("encHash");  
-    console.log(encHash)
-    return encHash;
-  }  
+  console.log('🔍 resolveDidHealth: chainId =', chainId)
+
+  const contractEntry = Object.entries(deployedContracts[env] || {}).find(
+    ([key, value]) => {
+      if (!value || typeof value !== 'object' || !('HealthDIDRegistry' in value)) {
+        return false
+      }
+      const info = (value as { HealthDIDRegistry: any }).HealthDIDRegistry
+      const match =
+        info?.chainId === chainId &&
+        typeof info?.address === 'string' &&
+        Array.isArray(info?.abi) &&
+        info.abi.length > 0
+
+      console.log(`🔍 Checking "${key}": chainId=${info?.chainId}, match=${match}`)
+      return match
+    }
+  )
+
+  if (!contractEntry) {
+    throw new Error(`❌ No HealthDIDRegistry deployed for chainId: ${chainId}`)
+  }
+
+  const [chainKey, chainContracts] = contractEntry
+  if (!('HealthDIDRegistry' in chainContracts)) {
+    throw new Error(`❌ HealthDIDRegistry not found in chainContracts for chainId: ${chainId}`)
+  }
+  const registryInfo = (chainContracts as { HealthDIDRegistry: any }).HealthDIDRegistry
+
+  // Get the RPC from your wagmi chain definitions
+  const chain = chains.find((c) => c.id === chainId)
+  if (!chain) throw new Error(`❌ Chain config not found for chainId: ${chainId}`)
+
+  const rpcUrl = chain.rpcUrls.default.http[0]
+  if (!rpcUrl) throw new Error(`❌ No RPC URL for chain "${chain.name}"`)
+
+  const provider = new JsonRpcProvider(rpcUrl)
+  const contract = new ethers.Contract(registryInfo.address, registryInfo.abi, provider)
+
+const result = await contract.addressDidMapping(address.toLowerCase())
+console.log('📦 Mapping result:', result)
+
+//const result = await contract.getHealthDID(did)
+
+return convertToDidDocument({
+  owner: result.owner,
+  healthDid: result.healthDid, 
+    ipfsUri: result.ipfsUri,
+    altIpfsUris: result.altIpfsUris,
+    hasWorldId: result.hasWorldId,
+    hasPolygonId: result.hasPolygonId,
+    hasSocialId: result.hasSocialId,
+    reputationScore: Number(result.reputationScore),
+
+  })
+}
+
+/**
+ * Attempts to resolve a did:health identifier across all supported chains.
+ * Returns the DID document and chain info if found.
+ */
+
+
+export async function resolveDidHealthAcrossChains(walletAddress: string) {
+  const supportedChains = chains
+
+  for (const chainInfo of supportedChains) {
+    console.log(`🔍 Checking "${chainInfo.name}" for DID`)
+    try {
+      const doc = await resolveDidHealth(chainInfo.id, walletAddress)
+      if (doc?.id && doc.id !== 'did:health:') {
+        return { doc, chainName: chainInfo.name }
+      }
+    } catch (err: any) {
+      console.warn(`⚠️ DID lookup failed on chain ${chainInfo.name}`, err.message)
+    }
+  }
+
+  return null
+}
