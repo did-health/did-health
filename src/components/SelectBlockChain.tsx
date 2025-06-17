@@ -20,19 +20,20 @@ export default function SelectBlockchain() {
       name: 'Bitcoin',
       description: 'Coming Soon: Register your DID using Bitcoin and Ordinals',
       image: BitcoinLogo,
-      
+      route: '/onboarding/bitcoin',
     },
     {
       name: 'Solana',
       description: 'Coming Son : Create a DID on the fast and scalable Solana blockchain',
       image: SolanaLogo,
+      route: '/onboarding/solana',
       
     },
     {
       name: 'Cosmos',
       description: 'Coming Soon : Use Cosmos chains like Osmosis, Juno, or Stargaze',
       image: CosmosLogo,
-      
+      route: '/onboarding/cosmos',
     },
   ]
 
