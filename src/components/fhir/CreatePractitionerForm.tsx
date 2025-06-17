@@ -8,36 +8,26 @@ const CreatePractitionerForm: React.FC = () => {
   const navigate = useNavigate()
   const { fhirResource, setFHIRResource } = useOnboardingState()
 
-  const [practitioner, setPractitioner] = useState<Practitioner>({
-    resourceType: 'Practitioner',
-    id: '',
-    name: [{ given: [''], family: '' }],
-    gender: 'unknown',
-    birthDate: '',
-    telecom: [
-      { use: 'home', system: 'phone', value: '' },
-      { system: 'email', value: '' },
-    ],
-    address: [
-      { line: [''], city: '', state: '', postalCode: '', country: '' },
-    ],
-    identifier: [
-      { system: 'https://www.w3.org/ns/did', value: '' },
-      {
-        type: {
-          coding: [
-            { code: '', system: 'http://terminology.hl7.org/CodeSystem/v2-0203' },
-          ],
-        },
-        value: '',
-      },
-    ],
-  })
+  const [practitioner, setPractitioner] = useState<Practitioner | null>(null)
 
-  // Prefill if editing
   useEffect(() => {
     if (fhirResource?.resourceType === 'Practitioner') {
       setPractitioner(fhirResource as Practitioner)
+    } else {
+      setPractitioner({
+        resourceType: 'Practitioner',
+        identifier: [
+          { system: 'https://www.w3.org/ns/did', value: '' },
+          {
+            type: {
+              coding: [
+                { code: '', system: 'http://terminology.hl7.org/CodeSystem/v2-0203' },
+              ],
+            },
+            value: '',
+          },
+        ],
+      })
     }
   }, [fhirResource])
 
@@ -46,45 +36,37 @@ const CreatePractitionerForm: React.FC = () => {
   ) => {
     const { name, value } = e.target
     setPractitioner((prev) => {
-      const updated = { ...prev }
+      if (!prev) return prev
+      const updated: any = { ...prev }
       const keys = name.split('.')
-      let current: any = updated
-
+      let ref = updated
       for (let i = 0; i < keys.length - 1; i++) {
-        const key = keys[i]
-        if (!current[key]) {
-          current[key] = /^\d+$/.test(keys[i + 1]) ? [] : {}
+        if (!ref[keys[i]]) {
+          ref[keys[i]] = /^\d+$/.test(keys[i + 1]) ? [] : {}
         }
-        current = current[key]
+        ref = ref[keys[i]]
       }
-
-      const lastKey = keys[keys.length - 1]
-      if (Array.isArray(current[lastKey])) {
-        current[lastKey] = [value]
-      } else {
-        current[lastKey] = value
-      }
-
+      ref[keys[keys.length - 1]] = value
       return updated
     })
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-
+    if (!practitioner) return
     const updatedPractitioner = { ...practitioner }
-
     if (!updatedPractitioner.id) {
       updatedPractitioner.id = uuidv4()
     }
-
     setFHIRResource(updatedPractitioner)
     navigate('/onboarding/ethereum')
   }
 
+  if (!practitioner) return null
+
   return (
-    <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-gray-50 dark:bg-gray-950">
-      <div className="w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
+    <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-background">
+      <div className="w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
             🩺 {practitioner.id ? 'Edit' : 'Create'} Practitioner DID Resource
