@@ -245,8 +245,10 @@ export default function ShowDIDPage() {
             <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[600px]">
               <h2 className="text-lg font-semibold mb-2">🧾 FHIR Resource</h2>
               <FHIRResource resource={fhir} />
-              <pre className="mt-4 text-xs whitespace-pre-wrap break-words">{JSON.stringify(fhir, null, 2)}</pre>
-            </div>
+              <pre className="mt-4 bg-white p-2 rounded text-xs overflow-x-auto">
+                <code>{JSON.stringify(fhir, null, 2)}</code>
+              </pre>
+             </div>
           )}
         </>
       )}
