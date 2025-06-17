@@ -18,21 +18,21 @@ export default function SelectBlockchain() {
     },
     {
       name: 'Bitcoin',
-      description: 'Register your DID using Bitcoin and Ordinals',
+      description: 'Coming Soon: Register your DID using Bitcoin and Ordinals',
       image: BitcoinLogo,
-      route: '/onboarding/bitcoin',
+      
     },
     {
       name: 'Solana',
-      description: 'Create a DID on the fast and scalable Solana blockchain',
+      description: 'Coming Son : Create a DID on the fast and scalable Solana blockchain',
       image: SolanaLogo,
-      route: '/onboarding/solana',
+      
     },
     {
       name: 'Cosmos',
-      description: 'Use Cosmos chains like Osmosis, Juno, or Stargaze',
+      description: 'Coming Soon : Use Cosmos chains like Osmosis, Juno, or Stargaze',
       image: CosmosLogo,
-      route: '/onboarding/cosmos',
+      
     },
   ]
 
@@ -63,7 +63,7 @@ export default function SelectBlockchain() {
           {options.map((option) => (
             <div
               key={option.name}
-              onClick={() => navigate(option.route)}
+              onClick={() => option.route && navigate(option.route)}
               className="card cursor-pointer hover:shadow-lg transition-shadow duration-200 hover:bg-gray-50 dark:hover:bg-gray-900"
             >
               <div className="flex flex-col items-center space-y-4">

@@ -1,4 +1,4 @@
-import { ethers, JsonRpcProvider } from "ethers";
+import { ethers, JsonRpcProvider} from "ethers";
 import deployedContracts from "../generated/deployedContracts";
 import {chains}  from '../lib/wagmiConfig' // adjust this path if needed
 
@@ -120,7 +120,7 @@ return convertToDidDocument({
 
 export async function resolveDidHealthAcrossChains(walletAddress: string) {
   const supportedChains = chains
-
+  console.log(`🔍 Resolving DID for wallet address: ${walletAddress}`)
   for (const chainInfo of supportedChains) {
     console.log(`🔍 Checking "${chainInfo.name}" for DID`)
     try {
@@ -134,4 +134,72 @@ export async function resolveDidHealthAcrossChains(walletAddress: string) {
   }
 
   return null
+}
+
+export async function resolveDidHealthByDidNameAcrossChains(fullDid: string) {
+  const didParts = fullDid.split(':')
+  const didName = didParts[didParts.length - 1] // just "didhealth" or "fhirfly3"
+  console.log(`🔍 Resolving DID name across chains: ${didName}`)
+
+  const env = 'testnet'
+
+  for (const chainInfo of chains) {
+    try {
+      const networkKey = Object.keys(deployedContracts[env] || {}).find((key) => {
+        const info = (deployedContracts[env] as any)[key]?.HealthDIDRegistry
+        return info?.chainId === chainInfo.id
+      })
+
+      if (!networkKey) continue
+
+      const registry = (deployedContracts[env] as any)[networkKey]?.HealthDIDRegistry
+      if (!registry) continue
+
+      const provider = new JsonRpcProvider(chainInfo.rpcUrls.default.http[0])
+      const contract = new ethers.Contract(registry.address, registry.abi, provider)
+
+      const result = await contract.getHealthDID(didName)
+      const owner = result.owner
+
+      console.log(`📦 ${chainInfo.name}: owner=${owner}`)
+
+      if (owner && owner !== ethers.ZeroAddress) {
+        return {
+          doc: convertToDidDocument({
+            owner: result.owner,
+            healthDid: result.healthDid,
+            ipfsUri: result.ipfsUri,
+            altIpfsUris: result.altIpfsUris,
+            hasWorldId: result.hasWorldId,
+            hasPolygonId: result.hasPolygonId,
+            hasSocialId: result.hasSocialId,
+            reputationScore: Number(result.reputationScore),
+          }),
+          chainName: chainInfo.name,
+        }
+      }
+    } catch (err: any) {
+      console.warn(`❌ DID lookup failed on ${chainInfo.name}: ${err.message}`)
+    }
+  }
+
+  return null
+}
+/**
+ * Returns a list of chainIds that have HealthDIDRegistry contracts deployed.
+ */
+export const getSupportedChains = (): { chainId: number; name: string }[] => {
+  const testnets = deployedContracts.testnet || {}
+  const mainnets = deployedContracts.mainnet || {}
+
+  const result: { chainId: number; name: string }[] = []
+
+  for (const [name, contracts] of Object.entries({ ...testnets, ...mainnets })) {
+    const registry = (contracts as any).HealthDIDRegistry
+    if (registry?.chainId) {
+      result.push({ chainId: registry.chainId, name })
+    }
+  }
+
+  return result
 }

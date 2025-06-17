@@ -35,7 +35,7 @@ export function RegisterDID() {
     encryptionSkipped ? 'Skipping Encryption' : 'Encrypting with Lit Protocol',
     'Uploading to Web3.Storage',
     'Executing Smart Contract',
-    'Registering DID',
+    'Registered Successfully',
   ]
 
   const handleRegister = async () => {
@@ -62,8 +62,28 @@ export function RegisterDID() {
       //let finalIpfsUri = ipfsUri
       let finalIpfsUri = null
       if (!finalIpfsUri) {
-        const resourceJson = JSON.stringify(fhirResource, null, 2)
+        // Inject the DID into the FHIR resource's identifier using the correct system
+        const didIdentifier = {
+          system: 'https://www.w3.org/ns/did',
+          value: did,
+        };
+
+const fhirWithDid = {
+  ...fhirResource,
+  identifier: Array.isArray(fhirResource.identifier)
+    ? fhirResource.identifier.some(id => id.system === 'https://www.w3.org/ns/did')
+      ? fhirResource.identifier.map(id =>
+          id.system === 'https://www.w3.org/ns/did' ? { ...id, value: didIdentifier.value } : id
+        )
+      : [...fhirResource.identifier, didIdentifier]
+    : [didIdentifier],
+};
+
+        console.log('🔗 FHIR Resource with DID:', fhirWithDid)
+
+        const resourceJson = JSON.stringify(fhirWithDid, null, 2);
         const resourceBlob = new Blob([resourceJson], { type: 'application/json' })
+
 
         if (encryptionSkipped) {
           setActiveStep(1)
@@ -176,14 +196,14 @@ export function RegisterDID() {
                   </div>
 
                   <div className="flex flex-wrap gap-3">
-                      <a
-                        href={'/ethereum/did'}
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                      >
-                        🌐 View DID
-                      </a>
-                    
+                    <a
+                      href={'/ethereum/did'}
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    >
+                      🌐 View DID
+                    </a>
+
                     {ipfsUri && (
                       <a
                         href={ipfsUri}
