@@ -4,23 +4,24 @@ import type { Organization } from 'fhir/r4'
 import { v4 as uuidv4 } from 'uuid'
 import { useOnboardingState } from '../../store/OnboardingState'
 import logo from '../../assets/did-health.png'
+
 const CreateOrganizationForm: React.FC = () => {
   const navigate = useNavigate()
   const { fhirResource, setFHIRResource } = useOnboardingState()
 
-  const [organization, setOrganization] = useState<Organization>({
-    resourceType: 'Organization',
-    id: '',
-    identifier: [
-      { system: 'https://www.w3.org/ns/did', value: '' },
-      { type: { coding: [{ code: '', system: 'http://terminology.hl7.org/CodeSystem/v2-0203' }] } },
-    ],
-  })
+  const [organization, setOrganization] = useState<Organization | null>(null)
 
-  // Prefill form if editing
   useEffect(() => {
     if (fhirResource?.resourceType === 'Organization') {
       setOrganization(fhirResource as Organization)
+    } else {
+      setOrganization({
+        resourceType: 'Organization',
+        identifier: [
+          { system: 'https://www.w3.org/ns/did', value: '' },
+          { type: { coding: [{ code: '', system: 'http://terminology.hl7.org/CodeSystem/v2-0203' }] }, value: '' },
+        ],
+      })
     }
   }, [fhirResource])
 
@@ -28,6 +29,7 @@ const CreateOrganizationForm: React.FC = () => {
     const { name, value } = e.target
 
     setOrganization((prev) => {
+      if (!prev) return prev
       const updated = { ...prev }
       const keys = name.split('.')
       let current: any = updated
@@ -56,6 +58,7 @@ const CreateOrganizationForm: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!organization) return
     const updatedOrg = { ...organization }
 
     if (!updatedOrg.id) {
@@ -66,10 +69,12 @@ const CreateOrganizationForm: React.FC = () => {
     navigate('/onboarding/ethereum')
   }
 
+  if (!organization) return null
+
   return (
     <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-gray-50 dark:bg-gray-950">
       <div className="w-full max-w-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
-                <div className="flex justify-center items-center h-24 mb-6">
+        <div className="flex justify-center items-center h-24 mb-6">
           <div className="w-24 h-24 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
             <img
               src={logo}
@@ -120,6 +125,34 @@ const CreateOrganizationForm: React.FC = () => {
               type="text"
               name="address.0.city"
               value={organization.address?.[0]?.city || ''}
+              onChange={handleInputChange}
+              className="input"
+            />
+          </div>
+
+          {/* State */}
+          <div>
+            <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+              State
+            </label>
+            <input
+              type="text"
+              name="address.0.state"
+              value={organization.address?.[0]?.state || ''}
+              onChange={handleInputChange}
+              className="input"
+            />
+          </div>
+
+          {/* Postal Code */}
+          <div>
+            <label className="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">
+              Postal Code
+            </label>
+            <input
+              type="text"
+              name="address.0.postalCode"
+              value={organization.address?.[0]?.postalCode || ''}
               onChange={handleInputChange}
               className="input"
             />
