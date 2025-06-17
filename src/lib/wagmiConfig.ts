@@ -1,17 +1,25 @@
 import { createConfig, http } from 'wagmi';
-import {
-  walletConnect,
-  injected,
-  coinbaseWallet,
-} from 'wagmi/connectors';
 import type { Chain } from 'viem/chains';
 
-import { loadFullChainMetadata } from './getChains'; // adjust the path as needed
+import { connectorsForWallets } from '@rainbow-me/rainbowkit';
+import {
+  metaMaskWallet,
+  rainbowWallet,
+  walletConnectWallet,
+  coinbaseWallet,
+  braveWallet,
+  ledgerWallet,
+  omniWallet,
+  safeWallet,
+  injectedWallet,
+} from '@rainbow-me/rainbowkit/wallets';
 
-//const ALCHEMY_KEY = import.meta.env.VITE_ALCHEMY_KEY as string;
+import { loadFullChainMetadata } from './getChains';
+
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string;
+if (!projectId) throw new Error('❌ WalletConnect Project ID missing from .env');
 
-// Build Viem-style `Chain` objects from dynamic chain metadata
+// ✅ Build wagmi-compatible chains from your deployedContracts
 function buildChains(): readonly [Chain, ...Chain[]] {
   const networks = loadFullChainMetadata();
 
@@ -19,7 +27,7 @@ function buildChains(): readonly [Chain, ...Chain[]] {
     id: net.chainId,
     name: net.name,
     nativeCurrency: {
-      name: 'ETH', // Adjust if different per network
+      name: 'Ether',
       symbol: 'ETH',
       decimals: 18,
     },
@@ -30,13 +38,13 @@ function buildChains(): readonly [Chain, ...Chain[]] {
     blockExplorers: {
       default: {
         name: `${net.name} Explorer`,
-        url: `https://${net.name}.etherscan.io`, // optionally adjust per-chain if you store it
+        url: `https://${net.name}.etherscan.io`,
       },
     },
   }));
 
   if (chains.length === 0) {
-    throw new Error('No chains found in deployedContracts');
+    throw new Error('❌ No chains found in deployedContracts');
   }
 
   return chains as [Chain, ...Chain[]];
@@ -44,13 +52,34 @@ function buildChains(): readonly [Chain, ...Chain[]] {
 
 export const chains = buildChains();
 
-export const wagmiConfig = createConfig({
-  chains,
-  connectors: [
-    injected(),
-    coinbaseWallet({ appName: 'DID:health' }),
-    walletConnect({ projectId, showQrModal: true }),
+// ✅ Pass wallet factories (not instances) and shared config to connectorsForWallets
+const connectors = connectorsForWallets(
+  [
+    {
+      groupName: 'Popular',
+      wallets: [
+        metaMaskWallet,
+        rainbowWallet,
+        walletConnectWallet,
+        coinbaseWallet,
+        braveWallet,
+        ledgerWallet,
+        omniWallet,
+        safeWallet,
+        injectedWallet,
+      ],
+    },
   ],
+  {
+    appName: 'did:health',
+    projectId,
+  }
+);
+
+// ✅ Final wagmi config export
+export const wagmiConfig = createConfig({
+  connectors,
+  chains,
   transports: Object.fromEntries(
     chains.map((chain) => [chain.id, http(chain.rpcUrls.default.http[0])])
   ),

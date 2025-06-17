@@ -6,7 +6,7 @@ import { ConnectLit } from './ConnectLit'
 import { generateQRCode } from '../lib/QRCodeGeneration'
 import { getLitDecryptedFHIR } from '../lib/litSessionSigs'
 import { resolveDidHealthAcrossChains } from '../lib/DIDDocument'
-import FHIRResource from './FHIRResource'
+import FHIRResource from './FHIRResourceView'
 import logo from '../assets/did-health.png'
 
 export default function ShowDIDPage() {
@@ -141,7 +141,7 @@ export default function ShowDIDPage() {
                 </div>
 
                 <div>
-                  <span className="font-medium text-gray-600">Controller (Owned by Wallet):</span>{' '}
+                  <span className="font-medium text-gray-600">Wallet Address:</span>{' '}
                   <code className="bg-white px-2 py-1 rounded">{didDoc.controller}</code>
                 </div>
 

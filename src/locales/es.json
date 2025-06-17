@@ -1,13 +1,15 @@
-"didHealthOnboarding": "Incorporación a did:health",
-"onboardingInstructions": "Sigue los pasos a continuación para crear tu identidad de salud descentralizada.",
-"connectWallet": "Conectar Billetera",
-"connectLit": "Conectar con el Protocolo Lit",
-"setupStorage": "Configurar Almacenamiento (Web3.Storage)",
-"createFHIR": "Crear Recurso FHIR",
-"fhirCreated": "Registro FHIR Creado",
-"created": "Creado con éxito:",
-"chooseDID": "Elegir Nombre DID",
-"registerDID": "Registrar DID en la Blockchain",
-"onboarding": {
-  "connectWalletDescription": "Para comenzar, conecta una billetera criptográfica a tu identidad."
+{
+  "didHealthOnboarding": "Incorporación a did:health",
+  "onboardingInstructions": "Sigue los pasos a continuación para crear tu identidad de salud descentralizada.",
+  "connectWallet": "Conectar Billetera",
+  "connectLit": "Conectar con el Protocolo Lit",
+  "setupStorage": "Configurar Almacenamiento (Web3.Storage)",
+  "createFHIR": "Crear Recurso FHIR",
+  "fhirCreated": "Registro FHIR Creado",
+  "created": "Creado con éxito:",
+  "chooseDID": "Elegir Nombre DID",
+  "registerDID": "Registrar DID en la Blockchain",
+  "onboarding": {
+    "connectWalletDescription": "Para comenzar, conecta una billetera criptográfica a tu identidad."
+  }
 }

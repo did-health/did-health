@@ -11,6 +11,7 @@ import LanguageSelector from './components/LanguageSelector'
 import ShowDIDPage from './components/ShowDIDPage'
 import ShowDIDBTC from './components/ShowDIDBTC'
 import XMTPChatClient from './components/XMTPChatClient'
+import OnboardingSolana from './components/OnboardingSolana'
 
 function App() {
   return (
@@ -23,6 +24,8 @@ function App() {
         <Route path="/btc/did" element={<ShowDIDBTC />} />        
         <Route path="/onboarding/ethereum" element={<OnboardingEth />} />
         <Route path="/onboarding/bitcoin" element={<OnboardingBTC />} />
+        <Route path="/onboarding/solana" element={<OnboardingSolana />} />
+        <Route path="/onboarding/cosmis" element={<OnboardingBTC />} />        
         <Route path="/create/patient" element={<PatientForm />} />
         <Route path="/create/practitioner" element={<PractitionerForm />} />
         <Route path="/create/organization" element={<OrganizationForm />} />

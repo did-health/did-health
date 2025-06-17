@@ -1,13 +1,15 @@
-"didHealthOnboarding": "Intégration did:health",
-"onboardingInstructions": "Suivez les étapes ci-dessous pour créer votre identité de santé décentralisée.",
-"connectWallet": "Connecter le Portefeuille",
-"connectLit": "Se Connecter au Protocole Lit",
-"setupStorage": "Configurer le Stockage (Web3.Storage)",
-"createFHIR": "Créer une Ressource FHIR",
-"fhirCreated": "Enregistrement FHIR Créé",
-"created": "Créé avec succès :",
-"chooseDID": "Choisir un Nom DID",
-"registerDID": "Enregistrer le DID sur la Blockchain",
-"onboarding": {
-  "connectWalletDescription": "Pour commencer, connectez un portefeuille crypto à votre identité."
+{
+  "didHealthOnboarding": "Intégration did:health",
+  "onboardingInstructions": "Suivez les étapes ci-dessous pour créer votre identité de santé décentralisée.",
+  "connectWallet": "Connecter le Portefeuille",
+  "connectLit": "Se Connecter au Protocole Lit",
+  "setupStorage": "Configurer le Stockage (Web3.Storage)",
+  "createFHIR": "Créer une Ressource FHIR",
+  "fhirCreated": "Enregistrement FHIR Créé",
+  "created": "Créé avec succès :",
+  "chooseDID": "Choisir un Nom DID",
+  "registerDID": "Enregistrer le DID sur la Blockchain",
+  "onboarding": {
+    "connectWalletDescription": "Pour commencer, connectez un portefeuille crypto à votre identité."
+  }
 }
