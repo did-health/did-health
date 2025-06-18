@@ -5,10 +5,10 @@ import {
   loadExtensionStructureDefinition,
   renderElement,
   resolveDefinitionUrl
-} from '../lib/utils';
+} from '../../lib/utils';
 import type { ElementDefinition } from 'fhir/r4';
-import type { FHIRResourceProps } from '../types';
-import type { StructureDefinitionMap } from '../types/fhir/StructureDefintion';
+import type { FHIRResourceProps } from '../../types';
+import type { StructureDefinitionMap } from '../../types/fhir/StructureDefintion';
 import type { StructureDefinition } from 'fhir/r4';
 
 const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences }) => {

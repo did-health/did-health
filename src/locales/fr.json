@@ -11,5 +11,29 @@
   "registerDID": "Enregistrer le DID sur la Blockchain",
   "onboarding": {
     "connectWalletDescription": "Pour commencer, connectez un portefeuille crypto à votre identité."
+  },
+  
+  "selectBlockchain": {
+    "title": "Choisissez Votre Blockchain",
+    "subtitle": "pour Créer votre did:health",
+    "checkDid": "Vérifier le DID"
+  },
+  "blockchain": {
+    "ethereum": {
+      "name": "Ethereum",
+      "description": "Utilisez Ethereum ou des L2 comme Base, Arbitrum et Optimism"
+    },
+    "bitcoin": {
+      "name": "Bitcoin",
+      "description": "Bientôt disponible : Enregistrez votre DID avec Bitcoin et Ordinals"
+    },
+    "solana": {
+      "name": "Solana",
+      "description": "Bientôt disponible : Créez un DID sur la blockchain rapide et évolutive Solana"
+    },
+    "cosmos": {
+      "name": "Cosmos",
+      "description": "Bientôt disponible : Utilisez les chaînes Cosmos comme Osmosis, Juno ou Stargaze"
+    }
   }
 }

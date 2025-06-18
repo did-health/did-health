@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useOnboardingState } from '../store/OnboardingState'
+import { useOnboardingState } from '../../store/OnboardingState'
 import {
   hashAccessControlConditions, validateAccessControlConditionsSchema
 } from '@lit-protocol/access-control-conditions'
 import { useChainId } from 'wagmi'
-import { chainIdToLitChain } from '../lib/getChains'
+import { chainIdToLitChain } from '../../lib/getChains'
 
 
 

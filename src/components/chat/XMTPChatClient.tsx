@@ -7,11 +7,11 @@ import { LitNodeClient } from '@lit-protocol/lit-node-client'
 import { LIT_NETWORK } from '@lit-protocol/constants'
 import { checkAndSignAuthMessage } from '@lit-protocol/auth-browser'
 
-import { useOnboardingState } from '../store/OnboardingState'
-import { encryptFHIRFile, decryptFromLitJson } from '../lib/litEncryptFile'
-import { storeEncryptedFileByHash } from '../lib/storeFIleWeb3'
-import { resolveDidHealthAcrossChains } from '../lib/DIDDocument'
-import { resolveDidHealthByDidNameAcrossChains } from '../lib/DIDDocument'
+import { useOnboardingState } from '../..//store/OnboardingState'
+import { encryptFHIRFile, decryptFromLitJson } from '../../lib/litEncryptFile'
+import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3'
+import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
+import { resolveDidHealthByDidNameAcrossChains } from '../../lib/DIDDocument'
 
 export default function XMTPChatClient() {
   const { address, isConnected } = useAccount()

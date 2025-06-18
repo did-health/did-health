@@ -1,15 +1,15 @@
 import { useState } from "react";
-import { useOnboardingState } from "../store/OnboardingState";
+import { useOnboardingState } from "../../store/OnboardingState";
 import { useConfig, useChainId } from "wagmi";
 import { switchChain } from "wagmi/actions";
 import { createPublicClient, http, defineChain } from "viem";
-import deployedContracts from "../generated/deployedContracts";
+import deployedContracts from "../../generated/deployedContracts";
 
 type Props = {
   onDIDAvailable: (did: string) => void;
 };
 
-export function SelectDIDForm({ onDIDAvailable }: Props) {
+export function SelectDIDFormETH({ onDIDAvailable }: Props) {
   const config = useConfig();
   const chainId = useChainId();
   const { fhirResource, did } = useOnboardingState();

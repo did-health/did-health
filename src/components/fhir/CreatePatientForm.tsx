@@ -85,7 +85,7 @@ const webcamRef = useRef<Webcam | null>(null)
        
 <form onSubmit={handleSubmit} className="space-y-6">
   <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
-    🧬 {patient?.id ? 'Edit' : 'Create'} Patient Record
+    🧬 {patient?.id ? 'Edit' : 'Create'} did:health Patient Record
   </h2>
 
   {/* Demographics */}

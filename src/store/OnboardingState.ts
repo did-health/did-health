@@ -19,7 +19,7 @@ type State = {
   accessControlConditions: any | null
   encryptionSkipped: boolean
   ipfsUri: string | null
-  chainId: number | null
+  chainId: number | string | null
 
   setWalletConnected: (value: boolean) => void
   setWalletAddress: (address: string) => void
@@ -33,7 +33,7 @@ type State = {
   setAccessControlConditions: (value: any) => void
   setEncryptionSkipped: (value: boolean) => void
   setIpfsUri: (uri: string | null) => void
-  setChainId: (chainId: number | null) => void
+  setChainId: (chainId: number | string | null) => void
 }
 
 export const useOnboardingState = create<State>()(

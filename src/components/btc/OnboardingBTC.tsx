@@ -1,15 +1,16 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ConnectWallet } from './WalletConnect'
-import { ConnectLit } from './ConnectLit'
-import { SetupStorage } from './SetupStorage'
-import { CreateDIDForm } from './CreateDIDForm'
-import { SelectDIDForm } from './SelectDIDForm'
-import { RegisterDID } from './RegisterDIDETH'
-import { useOnboardingState } from '../store/OnboardingState'
-import { SetEncryption } from './SetEncryption'
-import logo from '../assets/did-health.png'
+import { ConnectWalletBTC } from './WalletConnectBTC'
+import { ConnectLit } from '../lit/ConnectLit'
+import { SetupStorage } from '../SetupStorage'
+import { CreateDIDForm } from '../fhir/CreateDIDType'
+import { SelectDIDFormBTC } from './SelectDIDFormBTC'
+import { RegisterDIDBTC } from './RegisterDIDBTC'
+import { useOnboardingState } from '../../store/OnboardingState'
+import { SetEncryption } from '../lit/SetEncryption'
+import logo from '../../assets/did-health.png'
+import btclogo from '../../assets/bitcoin-btc-logo.svg' // Replace with actual path to Bitcoin logo
 type StepCardProps = {
   step: string
   title: string
@@ -25,26 +26,42 @@ export default function OnboardingEth() {
     storageReady,
     fhirResource,
     did,
-    accessControlConditions, // ✅ Add this
+    accessControlConditions,
     setDID,
-    encryptionSkipped, // <-- Add this line
-    walletAddress, // <-- Add this line to get walletAddress from state
+    encryptionSkipped,
+    walletAddress,
   } = useOnboardingState()
 
-console.log(did)
   return (
     <main className="p-6 sm:p-10 max-w-3xl mx-auto text-gray-800 dark:text-white">
-<div className="mb-8 text-center flex flex-col items-center">
-  <div className="w-24 h-24 rounded-full overflow-hidden shadow-md bg-white/10 backdrop-blur-sm ring-2 ring-indigo-400/30 mb-4">
-    <img
-      src={logo}
-      alt="did:health Logo"
-      className="w-full h-full object-contain transition-transform duration-300 hover:scale-110"
-    />
+      <div className="mb-8 text-center flex flex-col items-center">
+  {/* Logos Row */}
+  <div className="flex items-center gap-4 mb-6">
+    {/* DID:Health Logo */}
+    <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-red-400/40 hover:scale-105 transition-transform duration-300">
+      <img
+        src={logo}
+        alt="did:health Logo"
+        className="w-full h-full object-contain"
+      />
+    </div>
+
+    {/* + Symbol */}
+    <div className="text-3xl font-bold text-gray-500 dark:text-gray-400">+</div>
+
+    {/* Chain Logo */}
+    <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-yellow-400/30 hover:rotate-6 hover:scale-110 transition-all duration-300">
+      <img
+        src={btclogo} // or ethlogo, btclogo, etc.
+        alt="Cosmos Logo"
+        className="w-full h-full object-contain"
+      />
+    </div>
   </div>
 
+  {/* Header and Description */}
   <h1 className="text-4xl font-extrabold tracking-tight mb-2">
-    🚀 {t('didHealthOnboarding')}
+    🚀 {t('didHealthBTCOnboarding')}
   </h1>
   <p className="text-gray-600 dark:text-gray-400 max-w-xl">
     {t('onboardingInstructions')}
@@ -54,7 +71,7 @@ console.log(did)
 
       <div className="space-y-8">
         <StepCard step="1" title={t('connectWallet')}>
-          <ConnectWallet />
+          <ConnectWalletBTC />
         </StepCard>
 
         {walletConnected && (
@@ -74,41 +91,28 @@ console.log(did)
             <CreateDIDForm />
           </StepCard>
         )}
-{fhirResource && (
-  <StepCard step="4" title={t('fhirCreated')}>
-    <p className="text-green-600 dark:text-green-400 font-medium">
-      ✅ {t('created')} <strong>{fhirResource.resourceType}</strong>
-    </p>
-    <div className="mt-2">
-      <Link
-        to={`/create/${fhirResource.resourceType.toLowerCase()}`}
-        className="inline-flex items-center text-sm text-blue-600 hover:underline dark:text-blue-400"
-      >
-        ✏️ {t('edit')} {fhirResource.resourceType}
-      </Link>
-    </div>
-  </StepCard>
-)}
 
-
-        {
-          console.log('🧪 Step 5 Check:', {
-            walletConnected,
-            litConnected,
-            storageReady,
-            fhirResource,
-            accessControlConditions,
-            encryptionSkipped,
-            did
-          })
-        }
+        {fhirResource && (
+          <StepCard step="4" title={t('fhirCreated')}>
+            <p className="text-green-600 dark:text-green-400 font-medium">
+              ✅ {t('created')} <strong>{fhirResource.resourceType}</strong>
+            </p>
+            <div className="mt-2">
+              <Link
+                to={`/create/${fhirResource.resourceType.toLowerCase()}`}
+                className="inline-flex items-center text-sm text-blue-600 hover:underline dark:text-blue-400"
+              >
+                ✏️ {t('edit')} {fhirResource.resourceType}
+              </Link>
+            </div>
+          </StepCard>
+        )}
 
         {walletConnected && litConnected && storageReady && fhirResource && !accessControlConditions && !encryptionSkipped && (
           <StepCard step="5" title={t('setAccessControl')}>
             <SetEncryption />
           </StepCard>
         )}
-
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
           <StepCard step="5" title="Access Control Configured">
@@ -131,21 +135,20 @@ console.log(did)
                 {accessControlConditions.map((cond: any, idx: number) => {
                   const isSelfOnly =
                     cond.returnValueTest?.comparator === '=' &&
-                    String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase();
+                    String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase()
 
                   return (
                     <div key={idx} className="bg-gray-100 rounded p-4 shadow">
                       <p className="font-semibold text-gray-700 mb-1">Condition #{idx + 1}</p>
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                         <div>
-                          <span className="font-medium text-gray-600">Chain:</span>{' '}
-                          {String(cond.chain ?? 'N/A')}
+                          <span className="font-medium text-gray-600">Chain:</span> {String(cond.chain ?? 'N/A')}
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Parameters:</span>{' '}
-                          {Array.isArray(cond.parameters)
-                            ? cond.parameters.map((p: unknown) => String(p)).join(', ')
-                            : 'N/A'}
+                          <span className="font-medium text-gray-600">Parameters:</span> {
+                            Array.isArray(cond.parameters)
+                              ? cond.parameters.map((p: unknown) => String(p)).join(', ')
+                              : 'N/A'}
                         </div>
                         <div>
                           <span className="font-medium text-gray-600">Return Value Test:</span>
@@ -161,7 +164,7 @@ console.log(did)
                         </div>
                       </div>
                     </div>
-                  );
+                  )
                 })}
 
                 <button
@@ -178,9 +181,9 @@ console.log(did)
         )}
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && !did && (
-          <StepCard step="6" title={t('chooseDID')}>
-            <SelectDIDForm onDIDAvailable={(did) => setDID(did)} />
-          </StepCard>
+            <StepCard step="6" title={t('chooseDID')}>
+            <SelectDIDFormBTC onDIDAvailable={(did: string) => setDID(did)} />
+            </StepCard>
         )}
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
           <StepCard step="6" title={t('chooseDID')}>
@@ -188,13 +191,11 @@ console.log(did)
           </StepCard>
         )}
 
-
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
           <StepCard step="7" title={t('registerDID')}>
-            <RegisterDID />
+            <RegisterDIDBTC />
           </StepCard>
         )}
-
       </div>
     </main>
   )

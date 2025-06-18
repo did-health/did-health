@@ -1,4 +1,5 @@
-import { Connection, PublicKey } from '@solana/web3.js'
+import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
+import type { Cluster } from '@solana/web3.js';
 
 /**
  * Resolves a did:health DID on Solana.
@@ -7,28 +8,27 @@ import { Connection, PublicKey } from '@solana/web3.js'
  */
 export async function resolveDIDHealthSolana(
   did: string,
-  solanaRpcUrl = 'https://api.mainnet-beta.solana.com'
+  cluster: Cluster = 'testnet' // 'mainnet-beta' | 'devnet' | 'testnet'
 ): Promise<any> {
-  // Example DID: did:health:solana:3v1t8k... (base58 pubkey)
-  const parts = did.split(':')
+  const parts = did.split(':');
   if (parts.length !== 4 || parts[0] !== 'did' || parts[1] !== 'health' || parts[2] !== 'solana') {
-    throw new Error('Invalid did:health:solana DID format')
+    throw new Error('Invalid did:health:solana DID format');
   }
-  const pubkeyStr = parts[3]
-  const pubkey = new PublicKey(pubkeyStr)
-  const connection = new Connection(solanaRpcUrl)
 
-  // Fetch account info (assumes DID doc is stored as UTF-8 JSON in account data)
-  const accountInfo = await connection.getAccountInfo(pubkey)
+  const pubkeyStr = parts[3];
+  const pubkey = new PublicKey(pubkeyStr);
+  const rpcUrl = clusterApiUrl(cluster);
+  const connection = new Connection(rpcUrl, 'confirmed');
+
+  const accountInfo = await connection.getAccountInfo(pubkey);
   if (!accountInfo || !accountInfo.data) {
-    throw new Error('No account data found for this DID')
+    throw new Error(`No account data found for this DID on ${cluster}`);
   }
 
-  // Try to decode as UTF-8 JSON
   try {
-    const jsonStr = accountInfo.data.toString('utf8')
-    return JSON.parse(jsonStr)
+    const jsonStr = accountInfo.data.toString('utf8');
+    return JSON.parse(jsonStr);
   } catch (err) {
-    throw new Error('Failed to decode DID document from account data')
+    throw new Error('Failed to decode DID document from account data');
   }
 }

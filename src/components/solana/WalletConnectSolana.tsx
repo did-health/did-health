@@ -8,7 +8,7 @@ import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
 
 import { useTranslation } from 'react-i18next';
-import { useOnboardingState } from '../store/OnboardingState';
+import { useOnboardingState } from '../../store/OnboardingState';
 
 /**
  * Deep-link helper for Phantom Mobile on iOS
