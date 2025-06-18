@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
   curl \
   && corepack enable \
   && rm -rf /var/lib/apt/lists/*
-
+# Copy env and lockfiles first
+COPY .env .env
 # Copy and install dependencies
 COPY package.json yarn.lock ./
 #RUN yarn install --frozen-lockfile
@@ -31,4 +32,4 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]a
