@@ -1,5 +1,9 @@
 {
   "didHealthOnboarding": "did:health Onboarding",
+  "didHealthCosmosOnboarding": "did:health Cosmos Onboarding",
+  "didHealthBTCOnboarding": "did:health Bitcoin Onboarding",
+  "didHealthETHOnboarding": "did:health Ethereum Onboarding",
+  "didHealthSolanaOnboarding": "did:health Solana Onboarding",
   "onboardingInstructions": "Follow the steps below to create your decentralized health identity.",
   "connectWallet": "Connect Wallet",
   "connectLit": "Connect to Lit Protocol",

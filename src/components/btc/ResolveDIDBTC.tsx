@@ -1,31 +1,34 @@
 import React, { useState, useEffect } from 'react'
-import { ConnectWallet } from './WalletConnect'
-import { generateQRCode } from '../lib/QRCodeGeneration'
-import { useOnboardingState } from '../store/OnboardingState'
-import { resolveDidHealthSolana } from '../lib/resolveDidHealthSolana'
+import { ConnectWallet } from '../eth/WalletConnectETH'
+import { generateQRCode } from '../../lib/QRCodeGeneration'
+import { resolveDidHealthBtc } from '../../lib/resolveDidHealthBtc'
+import { useOnboardingState } from '../../store/OnboardingState'
 
-export default function ShowSolanaDIDPage() {
+export default function ResolveDIDBitcoin() {
   const { walletAddress } = useOnboardingState()
   const [status, setStatus] = useState('')
   const [didDoc, setDidDoc] = useState<any | null>(null)
   const [qrCode, setQrCode] = useState<string>('')
   const [fhir, setFhir] = useState<any | null>(null)
 
-  const solDid = walletAddress ? `did:health:sol:${walletAddress}` : null
+  const btcDid = walletAddress ? `did:health:btc:${walletAddress.split(':').pop()}` : null
+
 
   useEffect(() => {
+    if (!btcDid) return
+
     const handle = async () => {
       try {
-        if (!solDid) throw new Error('❌ Wallet not connected')
         setStatus('🔍 Resolving DID...')
+        const result = await resolveDidHealthBtc(btcDid ?? '')
+        if (result.error) throw new Error(result.error)
+        if (!result.resolved) return
 
-        const resolved = await resolveDidHealthSolana(solDid)
-        setDidDoc(resolved)
-
-        const qr = await generateQRCode(JSON.stringify(resolved))
+        setDidDoc(result.resolved)
+        const qr = await generateQRCode(JSON.stringify(result.resolved))
         setQrCode(qr ?? '')
 
-        const fhirService = resolved?.service?.find(
+        const fhirService = result.resolved?.service?.find(
           (s: any) => s.type === 'FHIRResource' || s.id?.includes('#fhir') || s.type === 'IPFS'
         )
 
@@ -46,17 +49,26 @@ export default function ShowSolanaDIDPage() {
     }
 
     handle()
-  }, [solDid])
-
+  }, [btcDid])
   return (
     <main className="p-6 space-y-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold">🔎 View Your did:health Identifier on Solana</h1>
+      <h1 className="text-2xl font-bold">🔎 View Your did:health Identifier on Bitcoin</h1>
 
       <ConnectWallet />
 
       {status && <p className="text-sm text-gray-700 mt-4">{status}</p>}
+      {status?.includes('❌ You do not have a did:health') && (
+        <div className="mt-4">
+          <button
+            onClick={() => window.location.href = '/'}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          >
+            Create a did:health Identifier
+          </button>
+        </div>
+      )}
 
-      {didDoc?.id && (
+      {didDoc?.id && didDoc.id.trim().toLowerCase() !== 'did:health:' && (
         <>
           <div className="mt-4">
             <p className="font-semibold">Resolved DID:</p>

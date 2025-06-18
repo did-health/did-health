@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useOnboardingState } from '../store/OnboardingState'
+import { useOnboardingState } from '../../store/OnboardingState'
 
 export function RegisterDIDSolana() {
   const {

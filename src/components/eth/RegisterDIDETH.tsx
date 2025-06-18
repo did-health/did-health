@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { encryptFHIRFile } from '../lib/litEncryptFile'
-import { storeEncryptedFileByHash, storePlainFHIRFile } from '../lib/storeFIleWeb3'
-import { registerDid } from '../lib/registerDidOnChain'
-import { useOnboardingState } from '../store/OnboardingState'
+import { encryptFHIRFile } from '../../lib/litEncryptFile'
+import { storeEncryptedFileByHash, storePlainFHIRFile } from '../../lib/storeFIleWeb3'
+import { registerDid } from '../../lib/registerDidOnChain'
+import { useOnboardingState } from '../../store/OnboardingState'
 import { Dialog } from '@headlessui/react'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
 import { usePublicClient, useChainId } from 'wagmi'
-import { chainIdToLitChain } from '../lib/getChains'
+import { chainIdToLitChain } from '../../lib/getChains'
 
 export function RegisterDID() {
   const {

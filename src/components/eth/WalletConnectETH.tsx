@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useTranslation } from 'react-i18next';
-import { useOnboardingState } from '../store/OnboardingState';
+import { useOnboardingState } from '../../store/OnboardingState';
 
 /**
  * Deep-link helper for MetaMask Mobile.

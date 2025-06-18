@@ -69,7 +69,7 @@ const CreateDeviceForm: React.FC = () => {
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-            🛠️ {device.id ? 'Edit' : 'Create'} Device DID
+            🛠️ {device.id ? 'Edit' : 'Create'} did:health Device
           </h2>
 
           {/* Device Name */}

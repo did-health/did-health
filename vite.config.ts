@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import rollupNodePolyFill from 'rollup-plugin-polyfill-node'
+import inject from '@rollup/plugin-inject'
 
 export default defineConfig({
   plugins: [react()],
@@ -23,7 +24,12 @@ export default defineConfig({
     target: 'esnext',
     outDir: 'dist',
     rollupOptions: {
-      plugins: [rollupNodePolyFill()],
+      plugins: [
+        rollupNodePolyFill(),
+        inject({
+          Buffer: ['buffer', 'Buffer'], // ⬅️ inject global Buffer
+        }),
+      ],
     },
   },
   server: {

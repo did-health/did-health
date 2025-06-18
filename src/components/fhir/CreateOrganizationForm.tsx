@@ -85,7 +85,7 @@ const CreateOrganizationForm: React.FC = () => {
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-            🏢 {organization.id ? 'Edit' : 'Create'} Organization
+            🏢 {organization.id ? 'Edit' : 'Create'} did:health Organization
           </h2>
 
           {/* Organization Name */}

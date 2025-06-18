@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { useOnboardingState } from '../store/OnboardingState'
-import { ConnectWallet } from './WalletConnect'
-import { ConnectLit } from './ConnectLit'
-import { generateQRCode } from '../lib/QRCodeGeneration'
-import { getLitDecryptedFHIR } from '../lib/litSessionSigs'
-import { resolveDidHealthAcrossChains } from '../lib/DIDDocument'
-import FHIRResource from './FHIRResourceView'
-import logo from '../assets/did-health.png'
+import { useOnboardingState } from '../../store/OnboardingState'
+import { ConnectWallet } from './WalletConnectETH'
+import { ConnectLit } from '../lit/ConnectLit'
+import { generateQRCode } from '../../lib/QRCodeGeneration'
+import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
+import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
+import FHIRResource from '../fhir/FHIRResourceView'
+import logo from '../../assets/did-health.png'
 
-export default function ShowDIDPage() {
+export default function ResolveDIDETH() {
   const { litClient, litConnected } = useOnboardingState()
   const { address: connectedWalletAddress, isConnected } = useAccount()
 

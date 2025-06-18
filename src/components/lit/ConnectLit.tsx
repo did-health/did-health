@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useOnboardingState } from './../store/OnboardingState'
+import { useOnboardingState } from '../../store/OnboardingState'
 import { LitNodeClient } from '@lit-protocol/lit-node-client'
 import { LIT_NETWORK } from '@lit-protocol/constants'
 
