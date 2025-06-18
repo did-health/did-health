@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
-// Import logos from src/assets
+// Import logos
 import EthereumLogo from '../assets/ethereum-eth-logo.svg'
 import BitcoinLogo from '../assets/bitcoin-btc-logo.svg'
 import SolanaLogo from '../assets/solana-sol-logo.svg'
@@ -9,32 +10,33 @@ import logo from '../assets/did-health.png'
 
 export default function SelectBlockchain() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const options = [
     {
-      name: 'Ethereum',
-      description: 'Use Ethereum or L2s like Base, Arbitrum, and Optimism',
+      name: t('blockchain.ethereum.name'),
+      description: t('blockchain.ethereum.description'),
       image: EthereumLogo,
       route: '/onboarding/ethereum',
       checkDidRoute: '/ethereum/did',
     },
     {
-      name: 'Bitcoin',
-      description: 'Coming Soon: Register your DID using Bitcoin and Ordinals',
+      name: t('blockchain.bitcoin.name'),
+      description: t('blockchain.bitcoin.description'),
       image: BitcoinLogo,
       route: '/onboarding/bitcoin',
       checkDidRoute: '/bitcoin/did',
     },
     {
-      name: 'Solana',
-      description: 'Coming Soon : Create a DID on the fast and scalable Solana blockchain',
+      name: t('blockchain.solana.name'),
+      description: t('blockchain.solana.description'),
       image: SolanaLogo,
       route: '/onboarding/solana',
       checkDidRoute: '/solana/did',
     },
     {
-      name: 'Cosmos',
-      description: 'Coming Soon : Use Cosmos chains like Osmosis, Juno, or Stargaze',
+      name: t('blockchain.cosmos.name'),
+      description: t('blockchain.cosmos.description'),
       image: CosmosLogo,
       route: '/onboarding/cosmos',
       checkDidRoute: '/cosmos/did',
@@ -55,10 +57,10 @@ export default function SelectBlockchain() {
 
           <h1 className="text-3xl font-bold leading-snug">
             <span className="block bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 bg-clip-text text-transparent bg-[length:200%_200%] animate-gradient">
-              Choose Your Blockchain
+              {t('selectBlockchain.title')}
             </span>
             <span className="text-red-600 dark:text-red-400">
-              to Create Your did:health
+              {t('selectBlockchain.subtitle')}
             </span>
           </h1>
         </div>
@@ -76,15 +78,14 @@ export default function SelectBlockchain() {
                 {option.description}
               </p>
 
-              {/* Check DID link */}
               <button
                 onClick={(e) => {
-                  e.stopPropagation() // Prevent parent onClick
+                  e.stopPropagation()
                   if (option.checkDidRoute) navigate(option.checkDidRoute)
                 }}
                 className="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-2"
               >
-                Check DID
+                {t('selectBlockchain.checkDid')}
               </button>
             </div>
           ))}

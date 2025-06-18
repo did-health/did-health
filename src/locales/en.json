@@ -16,5 +16,28 @@
   "setAccessControl": "Set Access Control",
   "onboarding": {
     "connectWalletDescription": "To begin, please connect a crypto wallet to your identity."
+  },
+   "selectBlockchain": {
+    "title": "Choose Your Blockchain",
+    "subtitle": "to Create Your did:health",
+    "checkDid": "Check DID"
+  },
+  "blockchain": {
+    "ethereum": {
+      "name": "Ethereum",
+      "description": "Use Ethereum or L2s like Base, Arbitrum, and Optimism"
+    },
+    "bitcoin": {
+      "name": "Bitcoin",
+      "description": "Coming Soon: Register your DID using Bitcoin and Ordinals"
+    },
+    "solana": {
+      "name": "Solana",
+      "description": "Coming Soon: Create a DID on the fast and scalable Solana blockchain"
+    },
+    "cosmos": {
+      "name": "Cosmos",
+      "description": "Coming Soon: Use Cosmos chains like Osmosis, Juno, or Stargaze"
+    }
   }
 }

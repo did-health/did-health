@@ -1,5 +1,5 @@
 # Stage 1: Build Vite app with node 20
-FROM node:21-bookworm AS builder
+FROM node:20.14.0-bookworm AS builder
 
 WORKDIR /app
 
