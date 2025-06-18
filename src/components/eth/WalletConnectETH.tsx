@@ -19,7 +19,9 @@ function useMetaMaskDeepLink() {
 
   const openInMetaMask = () => {
     // Strip the protocol so MetaMask’s router accepts the URL
-    const dappUrl = 'https://test.didhealth.com/onbaording/ethereum';
+    //const dappUrl = 'https://test.didhealth.com/onbaording/ethereum';
+    const dappUrl = window.location.href.replace(/^https?:\/\//, '');
+    console.log('Opening in MetaMask:', dappUrl);  
     window.location.href = `https://metamask.app.link/dapp/${encodeURIComponent(
       dappUrl
     )}`;
@@ -59,7 +61,7 @@ export function ConnectWallet() {
   /* ------------------------------------------------------------------ */
   /* UI                                                                 */
   /* ------------------------------------------------------------------ */
-
+  console.log('isIOS:', isIOS);
   return (
     <div className="rounded-2xl border border-gray-200 p-6 shadow-lg bg-white dark:bg-gray-800">
       <p className="text-gray-600 dark:text-gray-300 mb-6">
