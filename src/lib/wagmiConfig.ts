@@ -1,25 +1,15 @@
-import { createConfig, http } from 'wagmi';
-import type { Chain } from 'viem/chains';
-
-import { connectorsForWallets } from '@rainbow-me/rainbowkit';
+import { getDefaultWallets } from '@rainbow-me/rainbowkit';
 import {
-  metaMaskWallet,
-  rainbowWallet,
-  walletConnectWallet,
-  coinbaseWallet,
-  braveWallet,
-  ledgerWallet,
-  omniWallet,
-  safeWallet,
-  injectedWallet,
-} from '@rainbow-me/rainbowkit/wallets';
+  createConfig,
+} from 'wagmi';
+import { http } from 'wagmi';
+import type { Chain } from 'viem/chains';
 
 import { loadFullChainMetadata } from './getChains';
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string;
 if (!projectId) throw new Error('❌ WalletConnect Project ID missing from .env');
 
-// ✅ Build wagmi-compatible chains from your deployedContracts
 function buildChains(): readonly [Chain, ...Chain[]] {
   const networks = loadFullChainMetadata();
 
@@ -52,31 +42,11 @@ function buildChains(): readonly [Chain, ...Chain[]] {
 
 export const chains = buildChains();
 
-// ✅ Pass wallet factories (not instances) and shared config to connectorsForWallets
-const connectors = connectorsForWallets(
-  [
-    {
-      groupName: 'Popular',
-      wallets: [
-        metaMaskWallet,
-        rainbowWallet,
-        walletConnectWallet,
-        coinbaseWallet,
-        braveWallet,
-        ledgerWallet,
-        omniWallet,
-        safeWallet,
-        injectedWallet,
-      ],
-    },
-  ],
-  {
-    appName: 'did:health',
-    projectId,
-  }
-);
+const { connectors } = getDefaultWallets({
+  appName: 'did:health',
+  projectId,
+});
 
-// ✅ Final wagmi config export
 export const wagmiConfig = createConfig({
   connectors,
   chains,
