@@ -19,7 +19,7 @@ function useMetaMaskDeepLink() {
 
   const openInMetaMask = () => {
     // Strip the protocol so MetaMask’s router accepts the URL
-    const dappUrl = window.location.href.replace(/^https?:\/\//, '');
+    const dappUrl = 'https://test.didhealth.com/onbaording/ethereum';
     window.location.href = `https://metamask.app.link/dapp/${encodeURIComponent(
       dappUrl
     )}`;

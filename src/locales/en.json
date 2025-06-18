@@ -15,7 +15,8 @@
   "registerDID": "Register DID to Blockchain",
   "setAccessControl": "Set Access Control",
   "onboarding": {
-    "connectWalletDescription": "To begin, please connect a crypto wallet to your identity."
+    "connectWalletDescription": "To begin, please connect a crypto wallet to your identity.",
+    "openInMetaMask": "Open in MetaMask"
   },
    "selectBlockchain": {
     "title": "Choose Your Blockchain",
