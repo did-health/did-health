@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 //import legacy from '@vitejs/plugin-legacy'
 import path from 'path'
+import fs from 'fs'
 import rollupNodePolyFill from 'rollup-plugin-polyfill-node'
 import inject from '@rollup/plugin-inject'
 
@@ -40,7 +41,12 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
     port: 3000,
     strictPort: true,
+    https: {
+      key: fs.readFileSync(path.resolve(__dirname, 'decryptedkey.pem')),
+      cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem')),
+    },
   },
 })
