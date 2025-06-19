@@ -1457,8 +1457,240 @@ const deployedContracts = {
       },
     },
     sepolia: {
+      DidHealthDAO: {
+        address: "0x3dA72c640E278D7e5a91C18b799186d2e05c7c92",
+        abi: [
+          {
+            type: "constructor",
+            inputs: [],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "applyForMembership",
+            inputs: [
+              {
+                name: "did",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "ipfsUri",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [],
+            stateMutability: "payable",
+          },
+          {
+            type: "function",
+            name: "approveMembership",
+            inputs: [
+              {
+                name: "addr",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "role",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "orgName",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            outputs: [],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "getProfile",
+            inputs: [
+              {
+                name: "addr",
+                type: "address",
+                internalType: "address",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "",
+                type: "string",
+                internalType: "string",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "isMember",
+            inputs: [
+              {
+                name: "addr",
+                type: "address",
+                internalType: "address",
+              },
+            ],
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "members",
+            inputs: [
+              {
+                name: "",
+                type: "address",
+                internalType: "address",
+              },
+            ],
+            outputs: [
+              {
+                name: "did",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "role",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "orgName",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "exists",
+                type: "bool",
+                internalType: "bool",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "owner",
+            inputs: [],
+            outputs: [
+              {
+                name: "",
+                type: "address",
+                internalType: "address",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "registrationFee",
+            inputs: [],
+            outputs: [
+              {
+                name: "",
+                type: "uint256",
+                internalType: "uint256",
+              },
+            ],
+            stateMutability: "view",
+          },
+          {
+            type: "function",
+            name: "removeMember",
+            inputs: [
+              {
+                name: "addr",
+                type: "address",
+                internalType: "address",
+              },
+            ],
+            outputs: [],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "setRegistrationFee",
+            inputs: [
+              {
+                name: "fee",
+                type: "uint256",
+                internalType: "uint256",
+              },
+            ],
+            outputs: [],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "function",
+            name: "withdraw",
+            inputs: [],
+            outputs: [],
+            stateMutability: "nonpayable",
+          },
+          {
+            type: "event",
+            name: "DaoRegistered",
+            inputs: [
+              {
+                name: "owner",
+                type: "address",
+                indexed: true,
+                internalType: "address",
+              },
+              {
+                name: "did",
+                type: "string",
+                indexed: false,
+                internalType: "string",
+              },
+              {
+                name: "ipfsUri",
+                type: "string",
+                indexed: false,
+                internalType: "string",
+              },
+            ],
+            anonymous: false,
+          },
+        ],
+        chainId: 11155111,
+        chainIdHex: "0xaa36a7",
+        rpcUrl:
+          "https://eth-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+        litChainKey: "sepolia",
+      },
       HealthDIDRegistry: {
-        address: "0x5E9f876De67824591C039d4987d2Bfb6D875960A",
+        address: "0x66745d3002245db8DEcB0b1c79415C4B8b94c5E4",
         abi: [
           {
             type: "constructor",

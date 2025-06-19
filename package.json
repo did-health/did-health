@@ -40,6 +40,8 @@
     "buffer": "^6.0.3",
     "daisyui": "^5.0.43",
     "ethers": "^6.14.3",
+    "graphql": "^16.11.0",
+    "graphql-request": "^7.2.0",
     "i18next": "^25.2.1",
     "i18next-browser-languagedetector": "^8.1.0",
     "lit-share-modal-v3": "^0.0.96",
