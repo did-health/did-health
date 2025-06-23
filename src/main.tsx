@@ -16,7 +16,7 @@ import i18n from './lib/i18n';
 
 import App from './App';
 import './index.css';
-
+import './styles/fonts.css'
 const queryClient = new QueryClient();
 const endpoint = 'https://api.devnet.solana.com'; // or mainnet URL
 

@@ -11,6 +11,8 @@ export default defineConfig({
     react(),
 
   ],
+  base: './', // ensures relative paths for assets
+ 
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
