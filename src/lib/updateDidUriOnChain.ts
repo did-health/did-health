@@ -7,9 +7,15 @@ type UpdateParams = {
 }
 
 export async function updateDIDUriOnChain({ healthDid, newUri, chainName }: UpdateParams) {
-  if (!healthDid || !newUri || !chainName) throw new Error('❌ Missing required input')
+ console.log('🧾 Calling updateDIDData with:')
+console.log('  DID:', healthDid)
+console.log('  New URI:', newUri)
+console.log('  Chain:', chainName)
 
-  const chainContracts = (deployedContracts as any)[chainName]
+  if (!healthDid || !newUri || !chainName) throw new Error('❌ Missing required input')
+const chainContracts = (deployedContracts as any)?.testnet?.[chainName]
+
+//  const chainContracts = (deployedContracts as any)[chainName]
   if (!chainContracts?.HealthDIDRegistry) {
     throw new Error(`❌ No HealthDIDRegistry deployed for chain: ${chainName}`)
   }
@@ -24,7 +30,15 @@ export async function updateDIDUriOnChain({ healthDid, newUri, chainName }: Upda
   const provider = new ethers.BrowserProvider((window as any).ethereum)
   const signer = await provider.getSigner()
 
+const caller = await signer.getAddress()
+console.log('  Caller:', caller)
+
   const contract = new ethers.Contract(contractAddress, abi, signer)
+console.log('📡 Is contract address:', contractAddress)
+console.log('📡 Calling method on:', contract.target || contract.address)
+console.log('🧪 Raw DID being passed:', JSON.stringify(healthDid))
+const actualOwner = await contract.didOwners("did:health:11155111:richardbraman")
+console.log("🧾 On-chain registered owner of did:health:11155111:richardbraman is:", actualOwner)
 
   // Call updateDIDData(_healthDid, _uri)
   const tx = await contract.updateDIDData(healthDid, newUri)
