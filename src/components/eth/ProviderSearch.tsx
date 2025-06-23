@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { gql, request } from 'graphql-request';
 
-const GRAPH_ENDPOINT = 'https://api.studio.thegraph.com/query/114229/didhealth/v0.0.1';
+const GRAPH_ENDPOINT = 'https://api.studio.thegraph.com/query/114229/sepolia/v.0.0.1';
 
 const GET_ALL_URIS = gql`
   {

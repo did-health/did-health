@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { useAccount, useWalletClient } from 'wagmi'
-import { Contract, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import { gql, request } from 'graphql-request'
 import deployedContracts from '../../generated/deployedContracts'
-import ConnectWallet from '../eth/WalletConnectETH' // Adjust path if needed
-
-const SUBGRAPH_ENDPOINT = 'https://api.studio.thegraph.com/query/114229/didhealth/version/latest'
+import ConnectWallet from '../eth/WalletConnectETH'
 
 type Application = {
   id: string
@@ -34,39 +32,43 @@ export default function DAOAdminPage() {
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-  const chainName = 'sepolia'
-  const contractInfo = deployedContracts.testnet?.[chainName]?.DidHealthDAO
-  if (!contractInfo) {
-    return <p className="text-red-600 p-4">Error: DidHealthDAO contract not found in deployedContracts for {chainName}</p>
-  }
-  const CONTRACT_ADDRESS = contractInfo.address
-  const CONTRACT_ABI = contractInfo.abi
-
-  // TODO: Replace with actual contract owner address OR fetch dynamically
   const OWNER_ADDRESS = '0x15B7652e76E27C67A92cd42A0CD384cF572B4a9b'.toLowerCase()
 
-async function fetchApplications() {
-  try {
-    const response = await request(SUBGRAPH_ENDPOINT, GET_ALL_APPLICATIONS);
-    console.log('Subgraph response:', response);
+  async function fetchApplications() {
+    setApplications([])
+    setError(null)
 
-    if (!response || !response.daoRegistereds) {
-      throw new Error('No daoRegistereds field found');
+    const chains = Object.entries(deployedContracts.testnet)
+    const results: Application[] = []
+
+    for (const [chainName, data] of chains) {
+      const dao = (data as any)?.DidHealthDAO
+      const graphUrl = dao?.graphRpcUrl
+
+      if (!dao || !graphUrl) {
+        console.warn(`Skipping chain ${chainName} — missing DidHealthDAO or graphRpcUrl`)
+        continue
+      }
+
+      try {
+        const response = await request(graphUrl, GET_ALL_APPLICATIONS)
+
+        if (response?.daoRegistereds?.length) {
+          const apps = response.daoRegistereds.map((app: any) => ({
+            id: `${chainName}:${app.id}`,
+            applicant: app.owner,
+            did: app.did,
+            ipfsUri: [app.ipfsUri],
+          }))
+          results.push(...apps)
+        }
+      } catch (err: any) {
+        console.warn(`Error fetching from ${chainName}:`, err.message || err)
+      }
     }
 
-    const apps = response.daoRegistereds.map((app: any) => ({
-      id: app.id,
-      applicant: app.owner,
-      did: app.did,
-      ipfsUri: [app.ipfsUri],
-    }));
-
-    setApplications(apps);
-  } catch (error: any) {
-    setError(`Failed to load applications: ${error.message || error}`);
+    setApplications(results)
   }
-}
-
 
   useEffect(() => {
     if (isConnected && address?.toLowerCase() === OWNER_ADDRESS) {
@@ -86,8 +88,14 @@ async function fetchApplications() {
     try {
       const provider = new ethers.BrowserProvider(window.ethereum)
       const signer = await provider.getSigner()
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
 
+      const contractInfo = Object.values(deployedContracts.testnet).find(
+        (entry: any) => entry?.DidHealthDAO?.address && entry?.DidHealthDAO?.abi
+      )?.DidHealthDAO
+
+      if (!contractInfo) throw new Error('DidHealthDAO contract not found')
+
+      const contract = new ethers.Contract(contractInfo.address, contractInfo.abi, signer)
       const tx = await contract.approveApplication(applicant)
       await tx.wait()
 
@@ -110,8 +118,14 @@ async function fetchApplications() {
     try {
       const provider = new ethers.BrowserProvider(window.ethereum)
       const signer = await provider.getSigner()
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
 
+      const contractInfo = Object.values(deployedContracts.testnet).find(
+        (entry: any) => entry?.DidHealthDAO?.address && entry?.DidHealthDAO?.abi
+      )?.DidHealthDAO
+
+      if (!contractInfo) throw new Error('DidHealthDAO contract not found')
+
+      const contract = new ethers.Contract(contractInfo.address, contractInfo.abi, signer)
       const tx = await contract.denyApplication(applicant)
       await tx.wait()
 
