@@ -35,39 +35,35 @@ export default function DAOAdminPage() {
   const OWNER_ADDRESS = '0x15B7652e76E27C67A92cd42A0CD384cF572B4a9b'.toLowerCase()
 
   async function fetchApplications() {
-    setApplications([])
     setError(null)
+    const allApps: Application[] = []
 
-    const chains = Object.entries(deployedContracts.testnet)
-    const results: Application[] = []
-
-    for (const [chainName, data] of chains) {
-      const dao = (data as any)?.DidHealthDAO
-      const graphUrl = dao?.graphRpcUrl
-
-      if (!dao || !graphUrl) {
-        console.warn(`Skipping chain ${chainName} — missing DidHealthDAO or graphRpcUrl`)
+    const networks = Object.entries(deployedContracts.testnet)
+    for (const [chain, contracts] of networks) {
+      const dao = contracts?.DidHealthDAO
+      if (!dao || !dao.graphRpcUrl) {
+        console.warn(`Skipping chain ${chain} — missing DidHealthDAO or graphRpcUrl`)
         continue
       }
 
       try {
-        const response = await request(graphUrl, GET_ALL_APPLICATIONS)
-
-        if (response?.daoRegistereds?.length) {
-          const apps = response.daoRegistereds.map((app: any) => ({
-            id: `${chainName}:${app.id}`,
-            applicant: app.owner,
-            did: app.did,
-            ipfsUri: [app.ipfsUri],
-          }))
-          results.push(...apps)
+        const result = await request(dao.graphRpcUrl, GET_ALL_APPLICATIONS)
+        if (result?.daoRegistereds?.length) {
+          allApps.push(
+            ...result.daoRegistereds.map((app: any) => ({
+              id: app.id,
+              applicant: app.owner,
+              did: app.did,
+              ipfsUri: [app.ipfsUri],
+            }))
+          )
         }
       } catch (err: any) {
-        console.warn(`Error fetching from ${chainName}:`, err.message || err)
+        console.error(`Error fetching from ${chain}: ${err.message}`, err)
       }
     }
 
-    setApplications(results)
+    setApplications(allApps)
   }
 
   useEffect(() => {
