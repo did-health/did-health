@@ -66,7 +66,12 @@ export default function ResolveDIDETH() {
       if (isEncrypted) {
         setStatus('🔐 Decrypting with Lit Protocol...')
         setAccessControlConditions(json.accessControlConditions || null)
-        const decrypted = await getLitDecryptedFHIR(json, litClient)
+        const accChain = json.accessControlConditions?.[0]?.chain || 'ethereum'
+        //const accChain = "arbitrum-sepolia"
+        console.log(accChain)
+        const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
+
+        //const decrypted = await getLitDecryptedFHIR(json, litClient)
         setFhir(decrypted)
         setStatus('✅ Decrypted FHIR resource loaded!')
       } else {

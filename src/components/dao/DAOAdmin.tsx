@@ -3,26 +3,24 @@ import { useAccount, useWalletClient } from 'wagmi'
 import { Contract, ethers } from 'ethers'
 import { gql, request } from 'graphql-request'
 import deployedContracts from '../../generated/deployedContracts'
-import ConnectWallet from '../eth/WalletConnectETH' // Adjust path to your component
+import ConnectWallet from '../eth/WalletConnectETH' // Adjust path if needed
 
-const SUBGRAPH_ENDPOINT = 'https://api.studio.thegraph.com/query/114229/didhealth/v0.0.2'
+const SUBGRAPH_ENDPOINT = 'https://api.studio.thegraph.com/query/114229/didhealth/version/latest'
 
 type Application = {
   id: string
   applicant: string
   did: string
   ipfsUri: string[]
-  approved: boolean
 }
 
-const GET_PENDING_APPLICATIONS = gql`
-  query GetPendingApplications {
-    daoRegistereds(where: { approved: false }) {
+const GET_ALL_APPLICATIONS = gql`
+  query GetAllApplications {
+    daoRegistereds(orderBy: blockTimestamp, orderDirection: desc) {
       id
       owner
       did
       ipfsUri
-      approved
     }
   }
 `
@@ -44,24 +42,31 @@ export default function DAOAdminPage() {
   const CONTRACT_ADDRESS = contractInfo.address
   const CONTRACT_ABI = contractInfo.abi
 
-  // TODO: Replace with actual contract owner address OR fetch dynamically on mount
+  // TODO: Replace with actual contract owner address OR fetch dynamically
   const OWNER_ADDRESS = '0x15B7652e76E27C67A92cd42A0CD384cF572B4a9b'.toLowerCase()
 
-  async function fetchApplications() {
-    try {
-      const data = await request(SUBGRAPH_ENDPOINT, GET_PENDING_APPLICATIONS) as { daoRegistereds: any[] }
-      const apps = data.daoRegistereds.map((app: any) => ({
-        id: app.id,
-        applicant: app.owner,
-        did: app.did,
-        ipfsUri: Array.isArray(app.ipfsUri) ? app.ipfsUri : [app.ipfsUri],
-        approved: app.approved,
-      }))
-      setApplications(apps)
-    } catch (err: any) {
-      setError(`Failed to load applications: ${err.message || err}`)
+async function fetchApplications() {
+  try {
+    const response = await request(SUBGRAPH_ENDPOINT, GET_ALL_APPLICATIONS);
+    console.log('Subgraph response:', response);
+
+    if (!response || !response.daoRegistereds) {
+      throw new Error('No daoRegistereds field found');
     }
+
+    const apps = response.daoRegistereds.map((app: any) => ({
+      id: app.id,
+      applicant: app.owner,
+      did: app.did,
+      ipfsUri: [app.ipfsUri],
+    }));
+
+    setApplications(apps);
+  } catch (error: any) {
+    setError(`Failed to load applications: ${error.message || error}`);
   }
+}
+
 
   useEffect(() => {
     if (isConnected && address?.toLowerCase() === OWNER_ADDRESS) {
@@ -119,7 +124,6 @@ export default function DAOAdminPage() {
     }
   }
 
-  // Show wallet connect if not connected
   if (!isConnected) {
     return (
       <div className="max-w-2xl mx-auto p-6 text-center">
@@ -129,7 +133,6 @@ export default function DAOAdminPage() {
     )
   }
 
-  // Show access denied if connected but not owner
   if (address?.toLowerCase() !== OWNER_ADDRESS) {
     return (
       <div className="max-w-2xl mx-auto p-6 text-center text-red-600">
@@ -138,7 +141,6 @@ export default function DAOAdminPage() {
     )
   }
 
-  // Show the admin table if connected and owner
   return (
     <main className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">DAO Membership Applications</h1>
@@ -148,7 +150,7 @@ export default function DAOAdminPage() {
       {txPending && <p className="text-yellow-600 mb-4">Transaction pending...</p>}
 
       {applications.length === 0 ? (
-        <p>No pending applications found.</p>
+        <p>No applications found.</p>
       ) : (
         <table className="w-full border-collapse border border-gray-300">
           <thead>
@@ -160,8 +162,8 @@ export default function DAOAdminPage() {
             </tr>
           </thead>
           <tbody>
-            {applications.map(({ applicant, did, ipfsUri }) => (
-              <tr key={applicant}>
+            {applications.map(({ id, applicant, did, ipfsUri }) => (
+              <tr key={id}>
                 <td className="border border-gray-300 p-2 break-all">{applicant}</td>
                 <td className="border border-gray-300 p-2 break-all">{did}</td>
                 <td className="border border-gray-300 p-2 break-all">

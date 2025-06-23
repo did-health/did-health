@@ -10,21 +10,21 @@ import { Web3Provider } from '@ethersproject/providers'
 import { decryptFromLitJson } from './litEncryptFile'
 import { chainIdToLitChain } from './getChains'
 
-export async function getLitDecryptedFHIR(json: any, litClient: any) {
-  const { accessControlConditions, chain } = json
+export async function getLitDecryptedFHIR(
+  json: any,
+  litClient: any,
+  options: { chain?: string } = {} // 👈 accept override
+) {
+  const { accessControlConditions } = json
   const provider = new Web3Provider(window.ethereum)
   await provider.send('eth_requestAccounts', [])
-  const network = await provider.getNetwork()
-  const connectedChainId = hexValue(network.chainId)
-  const resolvedChain = chainIdToLitChain[Number(connectedChainId) as keyof typeof chainIdToLitChain]
-  const litResource = new LitAccessControlConditionResource('*')
-
-  console.log('🔐 Decryption Start')
-  console.log('📦 Chain:', chain, 'Resolved:', resolvedChain)
-  console.log('🔑 Conditions:', accessControlConditions)
-
   const signer = provider.getSigner()
   const walletAddress = await signer.getAddress()
+console.log('((((((((' + options.chain)
+  // ✅ FIX: Use override if provided, fallback to ACC or wallet
+  const resolvedChain = options.chain
+
+  const litResource = new LitAccessControlConditionResource('*')
   const latestBlockhash = await litClient.getLatestBlockhash()
 
   const authSigCallback = async (params: any) => {
@@ -40,8 +40,11 @@ export async function getLitDecryptedFHIR(json: any, litClient: any) {
     return await generateAuthSig({ signer, toSign })
   }
 
+
+  console.log("dlkldklfkdlfk" + resolvedChain)
+
   const sessionSigs = await litClient.getSessionSigs({
-    chain: resolvedChain,
+    chain: resolvedChain, // ✅ FIXED HERE
     resourceAbilityRequests: [
       {
         resource: litResource,
@@ -56,16 +59,11 @@ export async function getLitDecryptedFHIR(json: any, litClient: any) {
     litClient,
     sessionSigs,
   })
-  // Convert Uint8Array → string → JSON
-  //const decoder = new TextDecoder();
-  //const decryptedText = decoder.decode(decrypted);
+
   try {
-    console.log('🔍 Decrypted FHIR JSON:', decrypted)
-    return decrypted;
-    //return JSON.parse(decryptedText);
+    return decrypted
   } catch (err) {
-    throw new Error("❌ Decrypted content is not valid JSON");
+    throw new Error('❌ Decrypted content is not valid JSON')
   }
-
-
 }
+

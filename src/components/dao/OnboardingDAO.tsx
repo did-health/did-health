@@ -27,6 +27,7 @@ export default function OnboardingDAO() {
   } = useDAOOnboardingState()
 
   const [status, setStatus] = useState('')
+  const [serviceEndpoint, setServiceEndpoint] = useState<string | null>(null)
   const chainId = useChainId() // Get the currently connected chain ID
 
   const resolveEverything = async () => {
@@ -50,6 +51,7 @@ export default function OnboardingDAO() {
       if (!fhirService?.serviceEndpoint) throw new Error('❌ No FHIR endpoint in DID document')
 
       const response = await fetch(fhirService.serviceEndpoint)
+      setServiceEndpoint(fhirService.serviceEndpoint)
       if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`)
 
       const json = await response.json()
@@ -99,7 +101,7 @@ console.log('DAO Contract:', daoContract)
         : typeof fhirResource?.name === 'string'
         ? fhirResource.name
         : 'unknown'
-    const ipfsUri = fhirResource?.id || 'ipfs://fallback'
+    const ipfsUri = serviceEndpoint
 console.log('IPFS URI:', ipfsUri)
     // ✅ Use connectedWalletAddress instead of overwritten "address"
     await applyToDAO(
@@ -108,7 +110,7 @@ console.log('IPFS URI:', ipfsUri)
       did ?? '',
       role,
       orgName ?? 'unknown',
-      ipfsUri
+      ipfsUri ?? ''
     )
 console.log('Application submitted successfully')
     setApplicationSubmitted(true)

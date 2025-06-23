@@ -1,8 +1,5 @@
 import { ethers } from 'ethers'
 import deployedContracts from '../generated/deployedContracts'
-// import { getWalletClient } from '../eth/walletClient'
-// TODO: Update the import path below to the correct location of walletClient
-
 type UpdateParams = {
   healthDid: string // e.g., 'did:health:11155111:didhealth'
   newUri: string    // new IPFS URL
@@ -20,8 +17,11 @@ export async function updateDIDUriOnChain({ healthDid, newUri, chainName }: Upda
   const { address: contractAddress, abi } = chainContracts.HealthDIDRegistry
 
   // Get the user's wallet signer
-  const walletClient = await getWalletClient()
-  const provider = new ethers.BrowserProvider(walletClient)
+  // Use the injected EIP-1193 provider (e.g., MetaMask)
+  if (!(window as any).ethereum) {
+    throw new Error('❌ No Ethereum provider found. Please install MetaMask or another wallet.')
+  }
+  const provider = new ethers.BrowserProvider((window as any).ethereum)
   const signer = await provider.getSigner()
 
   const contract = new ethers.Contract(contractAddress, abi, signer)
