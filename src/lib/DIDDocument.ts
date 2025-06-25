@@ -118,23 +118,29 @@ return convertToDidDocument({
  */
 
 
-export async function resolveDidHealthAcrossChains(walletAddress: string) {
-  const supportedChains = chains
-  console.log(`🔍 Resolving DID for wallet address: ${walletAddress}`)
-  for (const chainInfo of supportedChains) {
-    console.log(`🔍 Checking "${chainInfo.name}" for DID`)
+export async function resolveDidHealthAcrossChains(walletAddress: string, chainId?: number) {
+  const supportedChains = chains;
+  console.log(`🔍 Resolving DID for wallet address: ${walletAddress}`);
+
+  const chainsToCheck = chainId
+    ? supportedChains.filter((c) => c.id === chainId)
+    : supportedChains;
+
+  for (const chainInfo of chainsToCheck) {
+    console.log(`🔍 Checking "${chainInfo.name}" for DID`);
     try {
-      const doc = await resolveDidHealth(chainInfo.id, walletAddress)
+      const doc = await resolveDidHealth(chainInfo.id, walletAddress);
       if (doc?.id && doc.id !== 'did:health:') {
-        return { doc, chainName: chainInfo.name }
+        return { doc, chainName: chainInfo.name };
       }
     } catch (err: any) {
-      console.warn(`⚠️ DID lookup failed on chain ${chainInfo.name}`, err.message)
+      console.warn(`⚠️ DID lookup failed on chain ${chainInfo.name}`, err.message);
     }
   }
 
-  return null
+  return null;
 }
+
 
 export async function resolveDidHealthByDidNameAcrossChains(fullDid: string) {
   const didParts = fullDid.split(':')

@@ -130,9 +130,9 @@ console.log('Application submitted successfully')
           <div>+</div>
           <img src={daologo} alt="DAO" className="w-14 h-14 rounded-full ring-4 ring-green-400/40" />
         </div>
-        <h1 className="text-4xl font-extrabold mb-2">🧬 DAO Onboarding</h1>
+        <h1 className="text-4xl font-extrabold mb-2">🧬 did:health DAO Onboarding</h1>
         <p className="text-gray-600 dark:text-gray-400 max-w-xl">
-          Apply for membership in the Health DAO.
+          Apply for membership in the did:health DAO.  This lists you in the did:health Provider Directory and gives patients an extra level of assurance that you are you.
         </p>
 
         <div className="mt-4 space-y-2">

@@ -1,23 +1,21 @@
-// ChatAndSearch.tsx - DAO Member Only Version
+// ChatAndSearch.tsx - DAO Member Messaging with Inbox, ACC, and Storage Integration
 import React, { useEffect, useState } from 'react';
 import { useAccount, useWalletClient } from 'wagmi';
-import { Client as XmtpClient } from '@xmtp/xmtp-js';
+import { Client as XmtpClient, Stream } from '@xmtp/xmtp-js';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { LitNodeClient } from '@lit-protocol/lit-node-client';
 import { LIT_NETWORK } from '@lit-protocol/constants';
+import { gql, request } from 'graphql-request';
+import axios from 'axios';
+import { SetupStorage } from '../SetupStorage';
 import ConnectWallet from '../eth/WalletConnectETH';
 import { ConnectLit } from '../lit/ConnectLit';
-import { checkAndSignAuthMessage } from '@lit-protocol/auth-browser';
-import axios from 'axios';
-import { gql, request } from 'graphql-request';
 import deployedContracts from '../../generated/deployedContracts';
 import { useOnboardingState } from '../../store/OnboardingState';
 import { encryptFHIRFile } from '../../lib/litEncryptFile';
 import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3';
-import {
-  resolveDidHealthAcrossChains,
-  resolveDidHealthByDidNameAcrossChains,
-} from '../../lib/DIDDocument';
+import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument';
+import { storePlainFHIRFile } from '../../lib/storeFIleWeb3'
 
 const DAO_QUERY = gql`
   query {
@@ -57,16 +55,16 @@ export default function ChatAndSearch() {
     email,
     web3SpaceDid,
     accessControlConditions,
+    setAccessControlConditions,
+    w3upClient,
   } = useOnboardingState();
 
   const [xmtpClient, setXmtpClient] = useState<XmtpClient | null>(null);
   const [conversation, setConversation] = useState<any>(null);
+  const [inbox, setInbox] = useState<any[]>([]);
   const [recipientDid, setRecipientDid] = useState('');
-  const [recipientWalletAddress, setRecipientWalletAddress] = useState('');
   const [messageText, setMessageText] = useState('');
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [status, setStatus] = useState('');
-  const [streamCancel, setStreamCancel] = useState<() => void>();
   const [entries, setEntries] = useState<DAOEntry[]>([]);
   const [filtered, setFiltered] = useState<DAOEntry[]>([]);
   const [filters, setFilters] = useState({ name: '', zip: '', specialty: '' });
@@ -84,7 +82,7 @@ export default function ChatAndSearch() {
       }
 
       if (!xmtpClient) {
-        const client: XmtpClient = await XmtpClient.create({
+        const client = await XmtpClient.create({
           getAddress: async () => walletClient.account.address,
           signMessage: async (message) => {
             const msg = typeof message === 'string' ? message : new TextDecoder().decode(message);
@@ -92,10 +90,17 @@ export default function ChatAndSearch() {
           },
         });
         setXmtpClient(client);
+
+        const convs = await client.conversations.list();
+        const allMessages = [];
+        for (const conv of convs) {
+          const messages = await conv.messages();
+          allMessages.push(...messages.map((msg) => ({ from: msg.senderAddress, content: msg.content })));
+        }
+        setInbox(allMessages);
       }
     };
     init();
-    return () => streamCancel?.();
   }, [walletClient, isConnected]);
 
   useEffect(() => {
@@ -125,6 +130,28 @@ export default function ChatAndSearch() {
     fetchData();
   }, []);
 
+  /**
+ * Extracts chainId from a DID:health string.
+ * Returns chainId as number or null if not found or invalid format.
+ */
+function getChainIdFromDid(did: string): number | null {
+  try {
+    console.log(did)
+    const parts = did.split(':');
+    // Expecting format: did:health:<chainNamespace>:<chainId>:<rest>
+    console.log(parts.length)
+    if (parts.length < 4) return null;
+
+    const chainIdStr = parts[2]; // parts[0] = 'did', parts[1] = 'health', parts[2] = chainNamespace, parts[3] = chainId
+    console.log(chainIdStr)
+    const chainId = Number(chainIdStr);
+    if (isNaN(chainId)) return null;
+    return chainId;
+  } catch {
+    return null;
+  }
+}
+
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const updated = { ...filters, [name]: value.toLowerCase() };
@@ -138,63 +165,101 @@ export default function ChatAndSearch() {
     setFiltered(matches);
   };
 
-  const resolveRecipient = async () => {
-    const result = await resolveDidHealthAcrossChains(recipientDid);
+const handleSend = async () => {
+  if (!xmtpClient || !litClient || !email || !web3SpaceDid || !accessControlConditions) {
+    console.log(xmtpClient);
+    console.log(litClient);
+    console.log(email)
+    console.log(web3SpaceDid)
+    setStatus('❌ Missing Lit, Web3 state, omail , or access control');
+    //return;
+  }
+
+  setStatus('🔍 Resolving recipient DID...');
+
+  try {
+    // Extract chainId from the DID or identify chain before resolve
+    // Assuming you have a function getChainIdFromDid(did) that returns the chainId number
+    console.log(recipientDid)
+    const chainIdFromDid = getChainIdFromDid(recipientDid);
+    if (!chainIdFromDid) throw new Error('Chain ID could not be determined from DID');
+
+    // Find matching chain key from deployedContracts for the chainId
+    const chains = Object.keys(deployedContracts.testnet) as (keyof typeof deployedContracts.testnet)[];
+    const matchingChain = chains.find((chain) => {
+      const contract = deployedContracts.testnet[chain]?.HealthDIDRegistry;
+      return contract && Number(contract.chainId) === Number(chainIdFromDid);
+    });
+
+    if (!matchingChain) throw new Error(`No contract found for chainId ${chainIdFromDid}`);
+
+    // Resolve DID only on the matching chain
+    const result = await resolveDidHealthAcrossChains(recipientDid, matchingChain); // Pass chain param to resolver to restrict search
+
     if (!result?.doc?.controller) throw new Error('DID not found or invalid');
-    return result.doc.controller;
-  };
 
-  const handleSend = async () => {
-    if (!xmtpClient || !litClient || !email || !web3SpaceDid || !accessControlConditions) {
-      setStatus('❌ Missing Lit or Web3 state');
-      return;
-    }
-    setStatus('🔍 Resolving recipient DID...');
-    try {
-      const wallet = await resolveRecipient();
-      setRecipientWalletAddress(wallet);
-      const conv = await xmtpClient.conversations.newConversation(wallet);
-      setConversation(conv);
+    const wallet = result.doc.controller;
 
-      const bundle = {
-        resourceType: 'Bundle',
-        type: 'message',
-        entry: [
-          {
-            resource: {
-              resourceType: 'MessageHeader',
-              eventCoding: { system: 'http://hl7.org/fhir/message-events', code: 'communication-request' },
-              source: { name: 'DID:Health dApp', endpoint: walletAddress },
-              destination: [{ endpoint: wallet }],
-              focus: [{ reference: 'Communication/1' }],
-            },
+    // Proceed with XMTP conversation etc. (rest of your original logic)...
+
+    const conv = await xmtpClient.conversations.newConversation(wallet);
+    setConversation(conv);
+
+    // Build your FHIR bundle as before
+    const bundle = {
+      resourceType: 'Bundle',
+      type: 'message',
+      entry: [
+        {
+          resource: {
+            resourceType: 'MessageHeader',
+            eventCoding: { system: 'http://hl7.org/fhir/message-events', code: 'communication-request' },
+            source: { name: 'DID:Health dApp', endpoint: walletAddress },
+            destination: [{ endpoint: wallet }],
+            focus: [{ reference: 'Communication/1' }],
           },
-          {
-            resource: {
-              resourceType: 'Communication',
-              status: 'completed',
-              sender: { reference: `Patient/${walletAddress}` },
-              recipient: [{ reference: `Practitioner/${recipientDid}` }],
-              payload: [{ contentString: messageText }],
-            },
+        },
+        {
+          resource: {
+            resourceType: 'Communication',
+            status: 'completed',
+            sender: { reference: `Patient/${walletAddress}` },
+            recipient: [{ reference: `Practitioner/${recipientDid}` }],
+            payload: [{ contentString: messageText }],
           },
-        ],
-      };
+        },
+      ],
+    };
 
-      const blob = new Blob([JSON.stringify(bundle)], { type: 'application/json' });
-      setStatus('🔐 Encrypting...');
-      const { encryptedJSON, hash } = await encryptFHIRFile({ file: blob, litClient, chain: 'ethereum', accessControlConditions });
-      const fileHash = `0x${hash}`;
-      setStatus('📦 Uploading to Web3...');
-      const ipfsUri = await storeEncryptedFileByHash(new Blob([JSON.stringify(encryptedJSON)]), fileHash, 'Bundle');
-      setStatus('📨 Sending via XMTP...');
-      await conv.send(JSON.stringify({ ipfsUri, litHash: fileHash, resourceType: 'Bundle' }));
-      setStatus('✅ Sent');
-    } catch (err) {
-      console.error(err);
-      setStatus('❌ Failed to resolve or send');
-    }
-  };
+    // Encrypt the bundle and upload as before...
+    const blob = new Blob([JSON.stringify(bundle)], { type: 'application/json' });
+    setStatus('🔐 Encrypting...');
+    const { encryptedJSON, hash } = await encryptFHIRFile({
+      file: blob,
+      litClient,
+      chain: matchingChain,
+      accessControlConditions,
+    });
+
+    const fileHash = `0x${hash}`;
+    setStatus('📦 Uploading to Web3...');
+    const ipfsUri = await storeEncryptedFileByHash(
+      new Blob([JSON.stringify(encryptedJSON)]),
+      fileHash,
+      'Bundle'
+    );
+
+    setStatus('📨 Sending via XMTP...');
+    await conv.send(JSON.stringify({ ipfsUri, litHash: fileHash, resourceType: 'Bundle' }));
+
+    setStatus('✅ Sent');
+  } catch (err) {
+    console.error(err);
+    setStatus('❌ Failed to resolve or send');
+  }
+};
+
+
 
   return (
     <div className="grid md:grid-cols-2 gap-6 p-6">
@@ -212,16 +277,25 @@ export default function ChatAndSearch() {
               <p><strong>Name:</strong> {entry.fhir.name?.[0]?.text || 'N/A'}</p>
               <p><strong>ZIP:</strong> {entry.fhir.address?.[0]?.postalCode || 'N/A'}</p>
               <p><strong>Specialty:</strong> {entry.fhir.specialty?.[0]?.coding?.[0]?.display || 'N/A'}</p>
-              <button className="text-blue-600 underline mt-2" onClick={() => setRecipientDid(entry.did)}>
-                Message
-              </button>
+              <button className="text-blue-600 underline mt-2" onClick={() => setRecipientDid(entry.did)}>Message</button>
             </li>
           ))}
         </ul>
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-2">📥 Inbox</h2>
+          {inbox.map((msg, i) => (
+            <div key={i} className="border rounded p-2 text-sm">
+              <p><strong>From:</strong> {msg.from}</p>
+              <p>{msg.content}</p>
+            </div>
+          ))}
+        </div>
       </div>
-          <ConnectWallet />
-            <ConnectLit />
+
       <div>
+        <ConnectWallet />
+        <SetupStorage />
+        <ConnectLit />
         <h2 className="text-xl font-bold mb-4">💬 Chat</h2>
         {!isConnected && <ConnectButton showBalance={false} />}
         <input className="input" placeholder="DID:Health of recipient" value={recipientDid} onChange={(e) => setRecipientDid(e.target.value)} />
