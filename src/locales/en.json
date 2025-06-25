@@ -21,7 +21,8 @@
    "selectBlockchain": {
     "title": "Choose Your Blockchain",
     "subtitle": "to Create Your did:health",
-    "checkDid": "Check DID"
+    "checkDid": "Already registered? Click here to view your DID.",
+    "moreAnswers": "Need more answers? Click herer"
   },
   "blockchain": {
     "ethereum": {
@@ -40,5 +41,12 @@
       "name": "Cosmos",
       "description": "Coming Soon: Use Cosmos chains like Osmosis, Juno, or Stargaze"
     }
+  },
+
+  "didHealth": {
+    "title": "What is a did:health?",
+    "subtitle": "A did:health is a self-owned digital ID that links to your health data. It powers secure, decentralized health applications—like direct messaging and provider discovery—by identifying patients, practitioners, organizations, and devices in a trusted ecosystem."
   }
+
+
 }

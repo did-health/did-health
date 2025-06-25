@@ -7,8 +7,8 @@ import en from '../locales/en.json'
 import es from '../locales/es.json' // Example for Spanish
 import fr from '../locales/fr.json' // Example for French
 import enHelp from '../locales/en-help.json'
-//import esHelp from '../locales/es-help.json'
-//import frHelp from '../locales/fr-help.json'
+import esHelp from '../locales/es-help.json'
+import frHelp from '../locales/fr-help.json'
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -20,10 +20,8 @@ i18n
     },
     resources: {
       en: { translation: en, help: enHelp },
-      
-     
-      es: { translation: es },
-      fr: { translation: fr },
+      es: { translation: es, help: esHelp },
+      fr: { translation: fr, help: frHelp},
     },
   })
 

@@ -9,13 +9,19 @@
   "created": "Creado con éxito:",
   "chooseDID": "Elegir Nombre DID",
   "registerDID": "Registrar DID en la Blockchain",
+  "helpCenterTitle": "Plus de réponses",
   "onboarding": {
     "connectWalletDescription": "Para comenzar, conecta una billetera criptográfica a tu identidad."
   },
   "selectBlockchain": {
     "title": "Elige Tu Blockchain",
     "subtitle": "para Crear tu did:health",
-    "checkDid": "Verificar DID"
+    "checkDid": "Verificar DID",
+    "moreAnswers": "¿Necesitas más respuestas? Haz clic aquí"
+  },
+"didHealth": {
+    "title": "¿Qué es un did:health?",
+    "subtitle": "Un did:health es una identidad digital autogestionada que se vincula a tus datos de salud. Permite aplicaciones de salud seguras y descentralizadas, como mensajería directa y descubrimiento de proveedores, identificando de forma confiable a pacientes, profesionales, organizaciones y dispositivos."
   },
   "blockchain": {
     "ethereum": {

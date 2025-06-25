@@ -16,7 +16,12 @@
   "selectBlockchain": {
     "title": "Choisissez Votre Blockchain",
     "subtitle": "pour Créer votre did:health",
-    "checkDid": "Vérifier le DID"
+    "checkDid": "Vérifier le DID",
+     "moreAnswers": "Besoin de plus de réponses ? Cliquez ici"
+  },
+      "didHealth": {
+    "title": "Qu'est-ce qu'un did:health ?",
+    "subtitle": "Un did:health est une identité numérique auto-détenue liée à vos données de santé. Il permet des applications de santé sécurisées et décentralisées, comme la messagerie directe et la découverte de prestataires, en identifiant de manière fiable les patients, professionnels, organisations et dispositifs."
   },
   "blockchain": {
     "ethereum": {
