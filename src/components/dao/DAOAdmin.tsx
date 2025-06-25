@@ -2,14 +2,27 @@ import React, { useEffect, useState } from 'react'
 import { useAccount, useWalletClient } from 'wagmi'
 import { ethers } from 'ethers'
 import { gql, request } from 'graphql-request'
+import axios from 'axios'
 import deployedContracts from '../../generated/deployedContracts'
 import ConnectWallet from '../eth/WalletConnectETH'
+import FHIRResource from '../fhir/FHIRResourceView'
 
 type Application = {
   id: string
   applicant: string
   did: string
   ipfsUri: string[]
+  fhirResource?: any
+  chain: string
+}
+
+type DaoRegisteredResponse = {
+  daoRegistereds: {
+    id: string
+    owner: string
+    did: string
+    ipfsUri: string
+  }[]
 }
 
 const GET_ALL_APPLICATIONS = gql`
@@ -23,6 +36,9 @@ const GET_ALL_APPLICATIONS = gql`
   }
 `
 
+// Union type of chain keys from deployedContracts.testnet
+type TestnetChains = keyof typeof deployedContracts.testnet
+
 export default function DAOAdminPage() {
   const { data: walletClient } = useWalletClient()
   const { isConnected, address } = useAccount()
@@ -32,31 +48,67 @@ export default function DAOAdminPage() {
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-  const OWNER_ADDRESS = '0x15B7652e76E27C67A92cd42A0CD384cF572B4a9b'.toLowerCase()
+  const OWNER_ADDRESS = '0x15B7652e76E27C67A92cd42a0CD384cF572B4a9b'.toLowerCase()
+
+  function extractRoleFromFHIR(fhirResource: any): string {
+  // Often role can be inferred from 'type' or custom field
+  if (!fhirResource || !fhirResource.type || !Array.isArray(fhirResource.type)) return 'Member'
+
+  // Look for first coding display or code in 'type'
+  const typeObj = fhirResource.type[0]
+  if (typeObj?.coding && Array.isArray(typeObj.coding) && typeObj.coding.length > 0) {
+    return typeObj.coding[0].display || typeObj.coding[0].code || 'Member'
+  }
+
+  return 'Member'
+}
+
+function extractOrgNameFromFHIR(fhirResource: any): string {
+  if (!fhirResource) return 'Organization X'
+  return fhirResource.name || 'Organization X'
+}
 
   async function fetchApplications() {
     setError(null)
     const allApps: Application[] = []
 
-    const networks = Object.entries(deployedContracts.testnet)
-    for (const [chain, contracts] of networks) {
+    const networks = Object.keys(deployedContracts.testnet) as TestnetChains[]
+
+    for (const chain of networks) {
+      const contracts = deployedContracts.testnet[chain]
       const dao = contracts?.DidHealthDAO
-      if (!dao || !dao.graphRpcUrl) {
+
+      if (!dao?.graphRpcUrl) {
         console.warn(`Skipping chain ${chain} — missing DidHealthDAO or graphRpcUrl`)
         continue
       }
 
       try {
-        const result = await request(dao.graphRpcUrl, GET_ALL_APPLICATIONS)
+        const result = await request<DaoRegisteredResponse>(dao.graphRpcUrl, GET_ALL_APPLICATIONS)
         if (result?.daoRegistereds?.length) {
-          allApps.push(
-            ...result.daoRegistereds.map((app: any) => ({
+          for (const app of result.daoRegistereds) {
+            const ipfsUri = app.ipfsUri ? [app.ipfsUri] : []
+
+            let fhirResource = undefined
+            if (ipfsUri.length > 0) {
+              try {
+                const url = ipfsUri[0].replace('ipfs://', 'https://w3s.link/ipfs/')
+                const res = await axios.get(url)
+                fhirResource = res.data
+              } catch {
+                console.warn(`Failed to fetch FHIR from ${ipfsUri[0]}`)
+              }
+            }
+
+            allApps.push({
               id: app.id,
               applicant: app.owner,
               did: app.did,
-              ipfsUri: [app.ipfsUri],
-            }))
-          )
+              ipfsUri,
+              fhirResource,
+              chain,
+            })
+          }
         }
       } catch (err: any) {
         console.error(`Error fetching from ${chain}: ${err.message}`, err)
@@ -74,61 +126,70 @@ export default function DAOAdminPage() {
     }
   }, [isConnected, address])
 
-  async function approveApplication(applicant: string) {
-    if (!walletClient) return setError('No wallet client available')
+  async function approveApplication(applicant: string, chain: TestnetChains) {
+    if (!walletClient) {
+      console.error('[approveApplication] No wallet client available')
+      return setError('No wallet client available')
+    }
 
     setTxPending(true)
     setError(null)
     setSuccessMsg(null)
 
     try {
+      console.log('[approveApplication] Starting approval for:', applicant, 'on chain:', chain)
+
+      // Use ethers provider from injected wallet
       const provider = new ethers.BrowserProvider(window.ethereum)
       const signer = await provider.getSigner()
+      const signerAddress = await signer.getAddress()
 
-      const contractInfo = Object.values(deployedContracts.testnet).find(
-        (entry: any) => entry?.DidHealthDAO?.address && entry?.DidHealthDAO?.abi
-      )?.DidHealthDAO
+      console.log('[approveApplication] Signer address:', signerAddress)
 
-      if (!contractInfo) throw new Error('DidHealthDAO contract not found')
+      // Get contract info for specific chain
+      const contractInfo = deployedContracts.testnet[chain]?.DidHealthDAO
+      if (!contractInfo) throw new Error(`DidHealthDAO contract not found for chain: ${chain}`)
 
       const contract = new ethers.Contract(contractInfo.address, contractInfo.abi, signer)
-      const tx = await contract.approveApplication(applicant)
+
+      // Check contract owner matches signer
+      const owner = await contract.owner()
+      console.log('[approveApplication] Contract owner:', owner)
+
+      if (owner.toLowerCase() !== signerAddress.toLowerCase()) {
+        throw new Error('Signer is not the contract owner')
+      }
+
+      // Check if applicant is already a member
+      const isMember = await contract.isMember(applicant)
+      console.log('[approveApplication] Applicant isMember:', isMember)
+      if (isMember) {
+        throw new Error('Applicant is already a member')
+      }
+
+const application = applications.find(app => app.applicant === applicant)
+const fhirResource = application?.fhirResource
+
+const role = extractRoleFromFHIR(fhirResource)
+const orgName = extractOrgNameFromFHIR(fhirResource)
+
+      console.log('[approveApplication] Sending approveMembership tx with:', {
+        applicant,
+        role,
+        orgName,
+      })
+
+      const tx = await contract.approveMembership(applicant, role, orgName)
+      console.log('[approveApplication] Transaction sent:', tx.hash)
+
       await tx.wait()
+      console.log('[approveApplication] Transaction confirmed:', tx.hash)
 
       setSuccessMsg(`Approved application of ${applicant}`)
       await fetchApplications()
     } catch (err: any) {
+      console.error('[approveApplication] Failed:', err)
       setError(`Failed to approve: ${err.message || err}`)
-    } finally {
-      setTxPending(false)
-    }
-  }
-
-  async function denyApplication(applicant: string) {
-    if (!walletClient) return setError('No wallet client available')
-
-    setTxPending(true)
-    setError(null)
-    setSuccessMsg(null)
-
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum)
-      const signer = await provider.getSigner()
-
-      const contractInfo = Object.values(deployedContracts.testnet).find(
-        (entry: any) => entry?.DidHealthDAO?.address && entry?.DidHealthDAO?.abi
-      )?.DidHealthDAO
-
-      if (!contractInfo) throw new Error('DidHealthDAO contract not found')
-
-      const contract = new ethers.Contract(contractInfo.address, contractInfo.abi, signer)
-      const tx = await contract.denyApplication(applicant)
-      await tx.wait()
-
-      setSuccessMsg(`Denied application of ${applicant}`)
-      await fetchApplications()
-    } catch (err: any) {
-      setError(`Failed to deny: ${err.message || err}`)
     } finally {
       setTxPending(false)
     }
@@ -159,6 +220,8 @@ export default function DAOAdminPage() {
       {successMsg && <p className="text-green-600 mb-4">{successMsg}</p>}
       {txPending && <p className="text-yellow-600 mb-4">Transaction pending...</p>}
 
+      <ConnectWallet />
+
       {applications.length === 0 ? (
         <p>No applications found.</p>
       ) : (
@@ -167,38 +230,41 @@ export default function DAOAdminPage() {
             <tr>
               <th className="border border-gray-300 p-2">Applicant Address</th>
               <th className="border border-gray-300 p-2">DID</th>
-              <th className="border border-gray-300 p-2">IPFS URIs</th>
+              <th className="border border-gray-300 p-2">FHIR Resource</th>
               <th className="border border-gray-300 p-2">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {applications.map(({ id, applicant, did, ipfsUri }) => (
+            {applications.map(({ id, applicant, did, ipfsUri, fhirResource, chain }) => (
               <tr key={id}>
                 <td className="border border-gray-300 p-2 break-all">{applicant}</td>
                 <td className="border border-gray-300 p-2 break-all">{did}</td>
-                <td className="border border-gray-300 p-2 break-all">
-                  {ipfsUri.map((uri, i) => (
-                    <div key={i}>
-                      <a href={uri} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-                        {uri}
-                      </a>
+                <td className="border border-gray-300 p-2 break-all text-sm">
+                  {ipfsUri.length > 0 && (
+                    <a
+                      href={ipfsUri[0]}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline"
+                    >
+                      {ipfsUri[0]}
+                    </a>
+                  )}
+                  {fhirResource ? (
+                    <div className="mt-2">
+                      <FHIRResource resource={fhirResource} />
                     </div>
-                  ))}
+                  ) : (
+                    <div className="text-gray-500">No FHIR data</div>
+                  )}
                 </td>
                 <td className="border border-gray-300 p-2">
                   <button
                     className="mr-2 px-3 py-1 bg-green-600 text-white rounded disabled:opacity-50"
                     disabled={txPending}
-                    onClick={() => approveApplication(applicant)}
+                    onClick={() => approveApplication(applicant, chain as TestnetChains)}
                   >
                     Approve
-                  </button>
-                  <button
-                    className="px-3 py-1 bg-red-600 text-white rounded disabled:opacity-50"
-                    disabled={txPending}
-                    onClick={() => denyApplication(applicant)}
-                  >
-                    Deny
                   </button>
                 </td>
               </tr>
