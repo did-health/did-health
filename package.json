@@ -53,6 +53,7 @@
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.0",
     "react-i18next": "^15.5.2",
+    "react-qr-reader": "^3.0.0-beta-1",
     "react-router-dom": "^7.6.1",
     "react-webcam": "^7.2.0",
     "rollup-plugin-polyfill-node": "^0.13.0",

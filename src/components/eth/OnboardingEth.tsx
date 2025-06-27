@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ConnectWallet } from './WalletConnectETH'
@@ -20,17 +21,18 @@ type StepCardProps = {
 
 export default function OnboardingEth() {
   const { t } = useTranslation()
-
+const navigate = useNavigate()
   const {
     walletConnected,
     litConnected,
     storageReady,
     fhirResource,
     did,
-    accessControlConditions, // ✅ Add this
+    accessControlConditions, // 
     setDID,
     encryptionSkipped, // <-- Add this line
     walletAddress, // <-- Add this line to get walletAddress from state
+    setStorageReady,
   } = useOnboardingState()
 
   console.log(did)
@@ -78,8 +80,11 @@ export default function OnboardingEth() {
         )}
 
         {walletConnected && litConnected && (
-          <StepCard step="3" title={t('setupStorage')}>
-            <SetupStorage />
+          <StepCard step="3" title={t('setupStorage.title')}>
+            <SetupStorage onReady={(client) => {
+              setStorageReady(true)
+              console.log('Storage setup complete:', client)
+            }} />
           </StepCard>
         )}
 
@@ -191,16 +196,31 @@ export default function OnboardingEth() {
           </StepCard>
         )}
 
-        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && !did && (
-          <StepCard step="6" title={t('chooseDID')}>
-            <SelectDIDFormETH onDIDAvailable={(did) => setDID(did)} />
-          </StepCard>
-        )}
-        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
-          <StepCard step="6" title={t('chooseDID')}>
-            {did}
-          </StepCard>
-        )}
+{walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && !did && (
+  <StepCard step="6" title={t('chooseDID')}>
+    <SelectDIDFormETH onDIDAvailable={(did) => setDID(did)} />
+  </StepCard>
+)}
+
+{walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
+  <StepCard step="6" title={t('chooseDID')}>
+    <div>
+      <span>{did}</span>
+      <button
+        type="button"
+        onClick={() => {
+          // Navigate or open DID view modal
+          // Example if using react-router-dom:
+          navigate(`/ethereum/did`)
+        }}
+        style={{ marginLeft: '1rem' }}
+      >
+        {t('selectBlockchain.checkDid')}
+      </button>
+    </div>
+  </StepCard>
+)}
+
 
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (

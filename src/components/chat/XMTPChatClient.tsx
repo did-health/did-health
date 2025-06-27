@@ -1,21 +1,20 @@
 // ChatAndSearch.tsx - DAO Member Messaging with Inbox, ACC, and Storage Integration
 import React, { useEffect, useState } from 'react';
 import { useAccount, useWalletClient } from 'wagmi';
-import { Client as XmtpClient, Stream } from '@xmtp/xmtp-js';
+import { Client as XmtpClient } from '@xmtp/xmtp-js';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { LitNodeClient } from '@lit-protocol/lit-node-client';
-import { LIT_NETWORK } from '@lit-protocol/constants';
-import { gql, request } from 'graphql-request';
-import axios from 'axios';
-import { SetupStorage } from '../SetupStorage';
-import ConnectWallet from '../eth/WalletConnectETH';
 import { ConnectLit } from '../lit/ConnectLit';
-import deployedContracts from '../../generated/deployedContracts';
+import { ConnectWallet } from '../eth/WalletConnectETH';
+import { SetupStorage } from '../SetupStorage';
 import { useOnboardingState } from '../../store/OnboardingState';
+import { request, gql } from 'graphql-request';
+import axios from 'axios';
+import deployedContracts from '../../generated/deployedContracts';
+import type { DeployedContracts } from '../../types/contracts';
 import { encryptFHIRFile } from '../../lib/litEncryptFile';
 import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3';
-import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument';
-import { storePlainFHIRFile } from '../../lib/storeFIleWeb3'
+import { resolveDidHealthByDidNameAcrossChains } from '../../lib/DIDDocument';
+import { LitNodeClient } from '@lit-protocol/lit-node-client';
 
 const DAO_QUERY = gql`
   query {
@@ -41,9 +40,22 @@ type DAOEntry = {
   chain: string;
 };
 
+interface DaoRegistered {
+  did: string;
+  ipfsUri: string;
+}
+
+interface GraphResponse {
+  daoRegistereds: DaoRegistered[];
+}
+
 export default function ChatAndSearch() {
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
+
+  const [storageReady, setStorageReady] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(true);
+  const toggleConfig = () => setIsConfigOpen(!isConfigOpen);
 
   const {
     walletAddress,
@@ -75,7 +87,7 @@ export default function ChatAndSearch() {
       setWalletAddress(address);
 
       if (!litConnected || !litClient) {
-        const lit = new LitNodeClient({ litNetwork: LIT_NETWORK.DatilTest });
+        const lit = new LitNodeClient({ litNetwork: 'datil-test' });
         await lit.connect();
         setLitClient(lit);
         setLitConnected(true);
@@ -84,7 +96,7 @@ export default function ChatAndSearch() {
       if (!xmtpClient) {
         const client = await XmtpClient.create({
           getAddress: async () => walletClient.account.address,
-          signMessage: async (message) => {
+          signMessage: async (message: string | Uint8Array) => {
             const msg = typeof message === 'string' ? message : new TextDecoder().decode(message);
             return walletClient.signMessage({ account: walletClient.account, message: msg });
           },
@@ -108,10 +120,10 @@ export default function ChatAndSearch() {
       const allResults: DAOEntry[] = [];
       const chains = Object.keys(deployedContracts.testnet) as (keyof typeof deployedContracts.testnet)[];
       for (const chain of chains) {
-        const dao = deployedContracts.testnet[chain]?.DidHealthDAO;
+        const dao = (deployedContracts as unknown as DeployedContracts).testnet[chain]?.DidHealthDAO;
         if (!dao?.graphRpcUrl) continue;
         try {
-          const res = await request(dao.graphRpcUrl, DAO_QUERY);
+          const res = await request<GraphResponse>(dao.graphRpcUrl, DAO_QUERY);
           for (const entry of res.daoRegistereds) {
             try {
               const ipfsUrl = entry.ipfsUri.replace('ipfs://', 'https://w3s.link/ipfs/');
@@ -130,27 +142,17 @@ export default function ChatAndSearch() {
     fetchData();
   }, []);
 
-  /**
- * Extracts chainId from a DID:health string.
- * Returns chainId as number or null if not found or invalid format.
- */
-function getChainIdFromDid(did: string): number | null {
-  try {
-    console.log(did)
-    const parts = did.split(':');
-    // Expecting format: did:health:<chainNamespace>:<chainId>:<rest>
-    console.log(parts.length)
-    if (parts.length < 4) return null;
-
-    const chainIdStr = parts[2]; // parts[0] = 'did', parts[1] = 'health', parts[2] = chainNamespace, parts[3] = chainId
-    console.log(chainIdStr)
-    const chainId = Number(chainIdStr);
-    if (isNaN(chainId)) return null;
-    return chainId;
-  } catch {
-    return null;
-  }
-}
+  const getChainIdFromDid = (did: string): number | null => {
+    try {
+      const parts = did.split(':');
+      if (parts.length < 4) return null;
+      const chainIdStr = parts[2];
+      const chainId = Number(chainIdStr);
+      return isNaN(chainId) ? null : chainId;
+    } catch {
+      return null;
+    }
+  };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -167,45 +169,55 @@ function getChainIdFromDid(did: string): number | null {
 
 const handleSend = async () => {
   if (!xmtpClient || !litClient || !email || !web3SpaceDid || !accessControlConditions) {
-    console.log(xmtpClient);
-    console.log(litClient);
-    console.log(email)
-    console.log(web3SpaceDid)
-    setStatus('❌ Missing Lit, Web3 state, omail , or access control');
+    setStatus('❌ Missing Lit, Web3 state, email, or access control');
     //return;
   }
 
   setStatus('🔍 Resolving recipient DID...');
 
   try {
-    // Extract chainId from the DID or identify chain before resolve
-    // Assuming you have a function getChainIdFromDid(did) that returns the chainId number
-    console.log(recipientDid)
-    const chainIdFromDid = getChainIdFromDid(recipientDid);
-    if (!chainIdFromDid) throw new Error('Chain ID could not be determined from DID');
+    let didResult;
+    let recipientWallet;
 
-    // Find matching chain key from deployedContracts for the chainId
-    const chains = Object.keys(deployedContracts.testnet) as (keyof typeof deployedContracts.testnet)[];
-    const matchingChain = chains.find((chain) => {
-      const contract = deployedContracts.testnet[chain]?.HealthDIDRegistry;
-      return contract && Number(contract.chainId) === Number(chainIdFromDid);
-    });
+    try {
+      // Extract chainId and didName from the DID
+      const didParts = recipientDid.split(':');
+      if (didParts.length !== 4 || didParts[0] !== 'did' || didParts[1] !== 'health') {
+        throw new Error('Invalid DID format. Expected: did:health:<chainId>:<didName>');
+      }
 
-    if (!matchingChain) throw new Error(`No contract found for chainId ${chainIdFromDid}`);
+      const chainId = parseInt(didParts[2], 10);
+      if (isNaN(chainId)) {
+        throw new Error('Invalid chainId in DID');
+      }
 
-    // Resolve DID only on the matching chain
-    const result = await resolveDidHealthAcrossChains(recipientDid, matchingChain); // Pass chain param to resolver to restrict search
+      const didName = didParts[3];
+      console.log(`Resolving DID: chainId=${chainId}, didName=${didName}`);
 
-    if (!result?.doc?.controller) throw new Error('DID not found or invalid');
+      didResult = await resolveDidHealthByDidNameAcrossChains(recipientDid);
+      
+      if (!didResult?.doc?.controller) {
+        throw new Error('DID not found or invalid');
+      }
 
-    const wallet = result.doc.controller;
+      recipientWallet = didResult.doc.controller;
+      console.log(`Successfully resolved DID. Recipient wallet: ${recipientWallet}`);
 
-    // Proceed with XMTP conversation etc. (rest of your original logic)...
+    } catch (error: unknown) {
+      console.error('DID resolution error:', error);
+      throw new Error(`Failed to resolve DID: ${error instanceof Error ? error.message : String(error)}`);
+    }
 
-    const conv = await xmtpClient.conversations.newConversation(wallet);
+    recipientWallet = didResult.doc.controller;
+
+    // Begin XMTP conversation
+    if (!xmtpClient) {
+      throw new Error('XMTP client not initialized');
+    }
+    const conv = await xmtpClient.conversations.newConversation(recipientWallet);
     setConversation(conv);
 
-    // Build your FHIR bundle as before
+    // Construct FHIR bundle
     const bundle = {
       resourceType: 'Bundle',
       type: 'message',
@@ -215,7 +227,7 @@ const handleSend = async () => {
             resourceType: 'MessageHeader',
             eventCoding: { system: 'http://hl7.org/fhir/message-events', code: 'communication-request' },
             source: { name: 'DID:Health dApp', endpoint: walletAddress },
-            destination: [{ endpoint: wallet }],
+            destination: [{ endpoint: recipientWallet }],
             focus: [{ reference: 'Communication/1' }],
           },
         },
@@ -231,14 +243,34 @@ const handleSend = async () => {
       ],
     };
 
-    // Encrypt the bundle and upload as before...
+    // Encrypt and upload
     const blob = new Blob([JSON.stringify(bundle)], { type: 'application/json' });
     setStatus('🔐 Encrypting...');
+    if (!litClient) {
+      throw new Error('Lit client is not initialized');
+    }
+    // Create access control conditions that allow both sender and recipient
+    const recipientConditions = [
+      {
+        conditionType: "evmAddress",
+        contractAddress: "",
+        functionName: "",
+        functionParams: {},
+        returnValueTest: {
+          comparator: "=",
+          value: recipientWallet
+        }
+      }
+    ];
+
+    // Combine sender's conditions with recipient's conditions
+    const combinedConditions = [...accessControlConditions, ...recipientConditions];
+
     const { encryptedJSON, hash } = await encryptFHIRFile({
       file: blob,
-      litClient,
-      chain: matchingChain,
-      accessControlConditions,
+      litClient: litClient,
+      chain: didResult.chainName,
+      accessControlConditions: combinedConditions,
     });
 
     const fileHash = `0x${hash}`;
@@ -253,12 +285,11 @@ const handleSend = async () => {
     await conv.send(JSON.stringify({ ipfsUri, litHash: fileHash, resourceType: 'Bundle' }));
 
     setStatus('✅ Sent');
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
-    setStatus('❌ Failed to resolve or send');
+    setStatus(`❌ Failed to resolve or send: ${err.message}`);
   }
 };
-
 
 
   return (
@@ -294,7 +325,7 @@ const handleSend = async () => {
 
       <div>
         <ConnectWallet />
-        <SetupStorage />
+        <SetupStorage onReady={setStorageReady} />
         <ConnectLit />
         <h2 className="text-xl font-bold mb-4">💬 Chat</h2>
         {!isConnected && <ConnectButton showBalance={false} />}
