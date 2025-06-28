@@ -88,7 +88,7 @@ const fhirWithDid = {
         if (encryptionSkipped) {
           setActiveStep(1)
           const fileName = fhirResource.id || crypto.randomUUID()
-          finalIpfsUri = await storePlainFHIRFile(fhirResource, fileName, fhirResource.resourceType)
+          finalIpfsUri = await storePlainFHIRFile(fhirWithDid, fileName, fhirResource.resourceType)
         } else {
           setActiveStep(1)
 
