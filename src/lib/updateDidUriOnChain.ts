@@ -37,11 +37,18 @@ console.log('  Caller:', caller)
 console.log('📡 Is contract address:', contractAddress)
 console.log('📡 Calling method on:', contract.target || contract.address)
 console.log('🧪 Raw DID being passed:', JSON.stringify(healthDid))
-const actualOwner = await contract.didOwners("did:health:11155111:richardbraman")
-console.log("🧾 On-chain registered owner of did:health:11155111:richardbraman is:", actualOwner)
+const parts = healthDid.split(':');
+  if (parts.length < 4 || parts[0] !== 'did' || parts[1] !== 'health') {
+    throw new Error(`❌ Invalid DID format: ${did}`);
+  }
+  const thisDid =  `${parts[2]}:${parts[3]}`;
+const actualOwner = await contract.getDidOwner(thisDid)
+
+//const actualOwner = await contract.didOwners("did:health:11155111:richardbraman")
+console.log("🧾 On-chain registered owner is:", actualOwner)
 
   // Call updateDIDData(_healthDid, _uri)
-  const tx = await contract.updateDIDData(healthDid, newUri)
+  const tx = await contract.updateDIDData(thisDid, newUri)
   await tx.wait()
 
   console.log(`✅ Updated DID URI on-chain: ${tx.hash}`)
