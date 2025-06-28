@@ -1,6 +1,7 @@
 // ChatAndSearch.tsx - DAO Member Messaging with Inbox, ACC, and Storage Integration
 import React, { useEffect, useState } from 'react';
 import { useAccount, useWalletClient } from 'wagmi';
+import type { WalletClient } from 'viem';
 import { Client as XmtpClient } from '@xmtp/xmtp-js';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { ConnectLit } from '../lit/ConnectLit';
@@ -13,7 +14,7 @@ import deployedContracts from '../../generated/deployedContracts';
 import type { DeployedContracts } from '../../types/contracts';
 import { encryptFHIRFile } from '../../lib/litEncryptFile';
 import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3';
-import { resolveDidHealthByDidNameAcrossChains } from '../../lib/DIDDocument';
+import {resolveDidHealthByDidName} from '../../lib/DIDDocument';
 import { LitNodeClient } from '@lit-protocol/lit-node-client';
 
 const DAO_QUERY = gql`
@@ -50,7 +51,7 @@ interface GraphResponse {
 }
 
 export default function ChatAndSearch() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected }: { address?: string; isConnected: boolean } = useAccount();
   const { data: walletClient } = useWalletClient();
 
   const [storageReady, setStorageReady] = useState(false);
@@ -82,38 +83,64 @@ export default function ChatAndSearch() {
   const [filters, setFilters] = useState({ name: '', zip: '', specialty: '' });
 
   useEffect(() => {
-    const init = async () => {
-      if (!walletClient || !isConnected || !address) return;
-      setWalletAddress(address);
+    if (!walletClient || !isConnected || !address) return;
+    
+    setWalletAddress(address);
 
+    const initLit = async () => {
       if (!litConnected || !litClient) {
         const lit = new LitNodeClient({ litNetwork: 'datil-test' });
         await lit.connect();
         setLitClient(lit);
         setLitConnected(true);
       }
-
-      if (!xmtpClient) {
-        const client = await XmtpClient.create({
-          getAddress: async () => walletClient.account.address,
-          signMessage: async (message: string | Uint8Array) => {
-            const msg = typeof message === 'string' ? message : new TextDecoder().decode(message);
-            return walletClient.signMessage({ account: walletClient.account, message: msg });
-          },
-        });
-        setXmtpClient(client);
-
-        const convs = await client.conversations.list();
-        const allMessages = [];
-        for (const conv of convs) {
-          const messages = await conv.messages();
-          allMessages.push(...messages.map((msg) => ({ from: msg.senderAddress, content: msg.content })));
-        }
-        setInbox(allMessages);
-      }
     };
-    init();
-  }, [walletClient, isConnected]);
+    initLit();
+  }, [walletClient, isConnected, address, litClient, litConnected]);
+
+  useEffect(() => {
+    if (!xmtpClient && walletClient?.account?.address) {
+      const initXmtp = async () => {
+        try {
+          const client = await XmtpClient.create({
+            getAddress: async () => walletClient?.account?.address || '',
+            signMessage: async (message: string | ArrayLike<number>) => {
+              if (!walletClient) {
+                throw new Error('Wallet client not available');
+              }
+              const msg = typeof message === 'string' ? message : new TextDecoder().decode(message as Uint8Array);
+              const signature = await walletClient.signMessage({
+                message: msg,
+                account: walletClient.account,
+              });
+              if (!signature) throw new Error('Signature not returned');
+              return signature;
+            },
+          });
+          setXmtpClient(client);
+          setStatus('XMTP client initialized');
+
+          try {
+            if (client) {
+              const convs = await client.conversations.list();
+              const allMessages = [];
+              for (const conv of convs) {
+                const messages = await conv.messages();
+                allMessages.push(...messages.map((msg) => ({ from: msg.senderAddress, content: msg.content })));
+              }
+              setInbox(allMessages);
+            }
+          } catch (error) {
+            console.error('Error fetching conversations:', error);
+          }
+        } catch (error) {
+          console.error('Error initializing XMTP client:', error);
+          setStatus('❌ Failed to initialize XMTP client');
+        }
+      };
+      initXmtp();
+    }
+  }, [walletClient, isConnected, address]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -129,7 +156,7 @@ export default function ChatAndSearch() {
               const ipfsUrl = entry.ipfsUri.replace('ipfs://', 'https://w3s.link/ipfs/');
               const fhirRes = await axios.get(ipfsUrl);
               const resource = fhirRes.data;
-              if (["Practitioner", "Organization"].includes(resource.resourceType)) {
+              if (['Practitioner', 'Organization'].includes(resource.resourceType)) {
                 allResults.push({ fhir: resource, did: entry.did, ipfsUri: entry.ipfsUri, chain });
               }
             } catch {}
@@ -142,18 +169,7 @@ export default function ChatAndSearch() {
     fetchData();
   }, []);
 
-  const getChainIdFromDid = (did: string): number | null => {
-    try {
-      const parts = did.split(':');
-      if (parts.length < 4) return null;
-      const chainIdStr = parts[2];
-      const chainId = Number(chainIdStr);
-      return isNaN(chainId) ? null : chainId;
-    } catch {
-      return null;
-    }
-  };
-
+  
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const updated = { ...filters, [name]: value.toLowerCase() };
@@ -179,36 +195,28 @@ const handleSend = async () => {
     let didResult;
     let recipientWallet;
 
-    try {
-      // Extract chainId and didName from the DID
-      const didParts = recipientDid.split(':');
-      if (didParts.length !== 4 || didParts[0] !== 'did' || didParts[1] !== 'health') {
-        throw new Error('Invalid DID format. Expected: did:health:<chainId>:<didName>');
-      }
+     try {
+      console.log("resolving by name" + recipientDid)
+       // Resolve DID to get the associated wallet address
+       didResult = await resolveDidHealthByDidName(recipientDid);
+       
+       if (!didResult?.doc?.id) {
+         throw new Error('DID not found or invalid');
+       }
 
-      const chainId = parseInt(didParts[2], 10);
-      if (isNaN(chainId)) {
-        throw new Error('Invalid chainId in DID');
-      }
+       // Extract the controller (wallet address) from the DID document
+       const controller = didResult.doc.controller;
+       if (!controller) {
+         throw new Error('No controller found in DID document');
+       }
 
-      const didName = didParts[3];
-      console.log(`Resolving DID: chainId=${chainId}, didName=${didName}`);
+       recipientWallet = controller;
+       console.log(`Successfully resolved DID. Recipient wallet: ${recipientWallet}`);
 
-      didResult = await resolveDidHealthByDidNameAcrossChains(recipientDid);
-      
-      if (!didResult?.doc?.controller) {
-        throw new Error('DID not found or invalid');
-      }
-
-      recipientWallet = didResult.doc.controller;
-      console.log(`Successfully resolved DID. Recipient wallet: ${recipientWallet}`);
-
-    } catch (error: unknown) {
-      console.error('DID resolution error:', error);
-      throw new Error(`Failed to resolve DID: ${error instanceof Error ? error.message : String(error)}`);
-    }
-
-    recipientWallet = didResult.doc.controller;
+     } catch (error: unknown) {
+       console.error('DID resolution error:', error);
+       throw new Error(`Failed to resolve DID: ${error instanceof Error ? error.message : String(error)}`);
+     }
 
     // Begin XMTP conversation
     if (!xmtpClient) {

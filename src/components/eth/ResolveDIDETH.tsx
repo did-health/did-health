@@ -8,6 +8,8 @@ import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
 import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
 import FHIRResource from '../fhir/FHIRResourceView'
 import logo from '../../assets/did-health.png'
+import { DAOStatus } from '../dao/DAOStatus'
+import { isAddress } from 'viem'
 
 export default function ResolveDIDETH() {
   const { litClient, litConnected } = useOnboardingState()
@@ -35,7 +37,7 @@ export default function ResolveDIDETH() {
 
       const result = await resolveDidHealthAcrossChains(connectedWalletAddress)
       if (!result) {
-        throw new Error('❌ You do not have a did:health identifier yet. Please create one.')
+        throw new Error('❌ You do not have a did:health on the Ethereum ecosystem yet. Please create one.')
       }
 
       const { doc, chainName } = result
@@ -92,18 +94,18 @@ export default function ResolveDIDETH() {
 
   return (
     <main className="p-6 space-y-6 max-w-xl mx-auto">
-<div className="flex flex-col items-center mb-6">
-  <div className="w-32 h-32 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
-    <img
-      src={logo}
-      alt="did:health Logo"
-      className="w-full h-full object-contain scale-110 transition-transform duration-300 hover:scale-125"
-    />
-  </div>
-  <h1 className="text-2xl font-bold mt-4 text-center">
-    🔎 View Your <span className="text-green-600 dark:text-green-400">did:health</span> Identifier
-  </h1>
-</div>
+      <div className="flex flex-col items-center mb-6">
+        <div className="w-32 h-32 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
+          <img
+            src={logo}
+            alt="did:health Logo"
+            className="w-full h-full object-contain scale-110 transition-transform duration-300 hover:scale-125"
+          />
+        </div>
+        <h1 className="text-2xl font-bold mt-4 text-center">
+          🔎 View Your <span className="text-green-600 dark:text-green-400">did:health</span> Identifier
+        </h1>
+      </div>
 
       <ConnectWallet />
       <ConnectLit />
@@ -244,7 +246,11 @@ export default function ResolveDIDETH() {
               </div>
             </div>
           )}
-
+          {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && (
+            <div className="mt-6 text-center">
+              <DAOStatus walletAddress={connectedWalletAddress} did={didDoc?.id} ></DAOStatus>
+            </div>
+          )}
 
           {fhir && (
             <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[600px]">
@@ -253,7 +259,7 @@ export default function ResolveDIDETH() {
               <pre className="mt-4 bg-white p-2 rounded text-xs overflow-x-auto">
                 <code>{JSON.stringify(fhir, null, 2)}</code>
               </pre>
-             </div>
+            </div>
           )}
         </>
       )}

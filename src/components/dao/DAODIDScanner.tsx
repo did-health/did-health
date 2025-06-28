@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { QrReader } from 'react-qr-reader'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
@@ -7,11 +7,41 @@ import { useOnboardingState } from '../../store/OnboardingState'
 import FHIRResource from '../fhir/FHIRResourceView'
 import ConnectWallet from '../eth/WalletConnectETH'
 import { ConnectLit } from '../lit/ConnectLit'
+import { Client as XmtpClient } from '@xmtp/xmtp-js'
+import { useAccount } from 'wagmi'
+import { useWalletClient } from 'wagmi'
 import logo from '../../assets/did-health.png'
 
-export function DidHealthQRScanner({ xmtpClient }: { xmtpClient: any }) {
+export function DidHealthQRScanner() {
   const { t } = useTranslation()
+  const { address: walletAddress } = useAccount()
+  const { data: walletClient } = useWalletClient()
   const { litClient, litConnected } = useOnboardingState()
+  const [xmtpClient, setXmtpClient] = useState<any>(null)
+
+  useEffect(() => {
+    const initXmtp = async () => {
+      if (!walletClient || !walletAddress) return;
+      
+      try {
+        const client = await XmtpClient.create({
+          getAddress: async () => walletAddress,
+          signMessage: async (message: string | ArrayLike<number>) => {
+            if (!walletClient) return '';
+            const msg = typeof message === 'string' ? message : new TextDecoder().decode(message as Uint8Array);
+            const signature = await walletClient.signMessage({
+              message: msg,
+            });
+            return signature;
+          },
+        });
+        setXmtpClient(client);
+      } catch (error) {
+        console.error('Error initializing XMTP client:', error);
+      }
+    };
+    initXmtp();
+  }, [walletClient, walletAddress]);
   const [status, setStatus] = useState('')
   const [fhir, setFhir] = useState<any | null>(null)
   const [didDoc, setDidDoc] = useState<any | null>(null)
@@ -55,12 +85,23 @@ export function DidHealthQRScanner({ xmtpClient }: { xmtpClient: any }) {
           console.warn('Decryption failed, sending consent...')
           setStatus(t('scanner.accessDenied'))
 
-          const recipient = doc.controller
-          const patientId = doc.id
-          const practitionerId = 'Practitioner/dummy-id' // Replace with app logic
-
-          await sendConsentRequestMessage(xmtpClient, recipient, patientId, practitionerId)
-          setStatus(t('scanner.consentSent'))
+          const recipient = doc.controller;
+          const patientId = doc.id;
+          const practitionerId = 'Practitioner/dummy-id'; // Replace with actual practitioner ID logic
+                  
+          // Send consent request using XMTP
+          if (xmtpClient) {
+            sendConsentRequestMessage(xmtpClient, recipient, patientId, practitionerId)
+              .then(() => {
+                setStatus('✅ Consent request sent');
+              })
+              .catch((error) => {
+                console.error('Error sending consent request:', error);
+                setStatus('❌ Error sending consent request');
+              });
+          } else {
+            setStatus('❌ Please connect your wallet first');
+          }
         }
       } catch (err: any) {
         console.error(err)

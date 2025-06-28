@@ -8,12 +8,16 @@ import logo from '../../assets/did-health.png'
 import Webcam from 'react-webcam'
 import { useRef } from 'react'
 
-//const webcamRef = useRef<Webcam | null>(null)
-const CreatePatientForm: React.FC = () => {
+interface CreatePatientFormProps {
+  defaultValues: Patient
+  onSubmit: (updatedFHIR: Patient) => Promise<void>
+}
+
+const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
   const { fhirResource, setFHIRResource } = useOnboardingState()
-const webcamRef = useRef<Webcam | null>(null)
-  const [patient, setPatient] = useState<Patient | null>(null)
+  const webcamRef = useRef<Webcam | null>(null)
+  const [patient, setPatient] = useState<Patient>(defaultValues)
   const [showCamera, setShowCamera] = useState(false)
 
 

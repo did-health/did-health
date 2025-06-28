@@ -1,5 +1,30 @@
 import { ethers, JsonRpcProvider} from "ethers";
 import deployedContracts from "../generated/deployedContracts";
+
+// Define types for deployed contracts
+interface ContractConfig {
+  readonly address: string;
+  readonly abi: readonly any[];
+  readonly graphRpcUrl?: string;
+}
+
+interface NetworkConfig {
+  readonly DidHealthDAO: ContractConfig;
+  readonly HealthDIDRegistry?: ContractConfig & {
+    readonly chainId: number;
+  };
+}
+
+interface DeployedContracts {
+  readonly testnet: {
+    readonly [key: string]: NetworkConfig;
+  };
+  readonly mainnet: {
+    readonly [key: string]: NetworkConfig;
+  };
+}
+
+const contracts = deployedContracts as unknown as DeployedContracts;
 import {chains}  from '../lib/wagmiConfig' // adjust this path if needed
 
 
@@ -14,6 +39,35 @@ type ResolvedDID = {
   hasPolygonId: boolean
   hasSocialId: boolean
 }
+export async function registerHealthDID(chainId: number, didName: string, ipfsUri: string, provider: JsonRpcProvider) {
+  const env = 'testnet';
+  const networkKey = Object.keys(deployedContracts[env] || {}).find((key) => {
+    const info = (deployedContracts[env] as any)[key]?.HealthDIDRegistry;
+    return info?.chainId === chainId;
+  });
+
+  if (!networkKey) {
+    throw new Error(`No HealthDIDRegistry found for chain ID ${chainId}`);
+  }
+
+  const registry = (deployedContracts[env] as any)[networkKey]?.HealthDIDRegistry;
+  if (!registry) {
+    throw new Error(`HealthDIDRegistry contract not found for chain ${networkKey}`);
+  }
+
+  const contract = new ethers.Contract(registry.address, registry.abi, provider);
+
+  try {
+    const tx = await contract.registerHealthDID(didName, ipfsUri);
+    await tx.wait();
+    console.log(`Successfully registered DID ${didName} on ${networkKey}`);
+    return true;
+  } catch (error) {
+    console.error('Error registering DID:', error);
+    throw error;
+  }
+}
+
 export function convertToDidDocument({
   owner,
   healthDid,
@@ -95,9 +149,7 @@ export async function resolveDidHealth(chainId: number, address: string) {
   const contract = new ethers.Contract(registryInfo.address, registryInfo.abi, provider)
 
 const result = await contract.addressDidMapping(address.toLowerCase())
-console.log('📦 Mapping result:', result)
-
-//const result = await contract.getHealthDID(did)
+console.log('📦 DID resolution result:', result)
 
 return convertToDidDocument({
   owner: result.owner,
@@ -141,56 +193,152 @@ export async function resolveDidHealthAcrossChains(walletAddress: string, chainI
   return null;
 }
 
-
 export async function resolveDidHealthByDidNameAcrossChains(fullDid: string) {
-  const didParts = fullDid.split(':')
-  const didName = didParts[didParts.length - 1] // just "didhealth" or "fhirfly3"
-  console.log(`🔍 Resolving DID name across chains: ${didName}`)
-
-  const env = 'testnet'
-
-  for (const chainInfo of chains) {
-    try {
-      const networkKey = Object.keys(deployedContracts[env] || {}).find((key) => {
-        const info = (deployedContracts[env] as any)[key]?.HealthDIDRegistry
-        return info?.chainId === chainInfo.id
-      })
-
-      if (!networkKey) continue
-
-      const registry = (deployedContracts[env] as any)[networkKey]?.HealthDIDRegistry
-      if (!registry) continue
-
-      const provider = new JsonRpcProvider(chainInfo.rpcUrls.default.http[0])
-      const contract = new ethers.Contract(registry.address, registry.abi, provider)
-
-      const result = await contract.getHealthDID(didName)
-      const owner = result.owner
-
-      console.log(`📦 ${chainInfo.name}: owner=${owner}`)
-
-      if (owner && owner !== ethers.ZeroAddress) {
-        return {
-          doc: convertToDidDocument({
-            owner: result.owner,
-            healthDid: result.healthDid,
-            ipfsUri: result.ipfsUri,
-            altIpfsUris: result.altIpfsUris,
-            hasWorldId: result.hasWorldId,
-            hasPolygonId: result.hasPolygonId,
-            hasSocialId: result.hasSocialId,
-            reputationScore: Number(result.reputationScore),
-          }),
-          chainName: chainInfo.name,
-        }
-      }
-    } catch (err: any) {
-      console.warn(`❌ DID lookup failed on ${chainInfo.name}: ${err.message}`)
-    }
+  console.log("recoling:" + fullDid)
+  const didParts = fullDid.split(':');
+  if (didParts.length < 4) {
+    throw new Error('Invalid DID format, expected did:health:<chainId>:<didName>');
   }
 
-  return null
+  const chainIdStr = didParts[2];
+  const didName = didParts[3];
+  const chainId = Number(chainIdStr);
+  console.log(chainIdStr)
+  if (isNaN(chainId)) {
+    throw new Error('Invalid chainId in DID');
+  }
+
+  const env = 'testnet';
+
+  // Find chain info for this chainId
+  const chainInfo = chains.find((c) => c.id === chainId);
+  if (!chainInfo) {
+    throw new Error(`Chain with ID ${chainId} not found`);
+  }
+
+  // Find the deployed HealthDIDRegistry for this chainId
+  const networkKey = Object.keys(deployedContracts[env] || {}).find((key) => {
+    const info = (deployedContracts[env] as any)[key]?.HealthDIDRegistry;
+    return info?.chainId === chainId;
+  });
+
+  if (!networkKey) {
+    throw new Error(`No HealthDIDRegistry found for chain ID ${chainId}`);
+  }
+
+  const registry = (deployedContracts[env] as any)[networkKey]?.HealthDIDRegistry;
+  if (!registry) {
+    throw new Error(`HealthDIDRegistry contract not found for chain ${networkKey}`);
+  }
+
+  const provider = new JsonRpcProvider(chainInfo.rpcUrls.default.http[0]);
+  const contract = new ethers.Contract(registry.address, registry.abi, provider);
+
+  try {
+    console.log('calling addressDidMapping')
+    const result = await contract.addressDidMapping(didName);
+    console.log(result)
+    const owner = result.owner;
+
+    console.log(`📦 ${chainInfo.name}: owner=${owner}`);
+
+    if (owner && owner !== ethers.ZeroAddress) {
+      const result = await contract.addressDidMapping(owner);
+      console.log('DID information:', result);
+      return {
+        doc: convertToDidDocument({
+          owner: result.owner,
+          healthDid: result.healthDid,
+          ipfsUri: result.ipfsUri,
+          altIpfsUris: result.altIpfsUris,
+          hasWorldId: result.hasWorldId,
+          hasPolygonId: result.hasPolygonId,
+          hasSocialId: result.hasSocialId,
+          reputationScore: Number(result.reputationScore),
+        }),
+        chainName: chainInfo.name,
+      };
+    }
+  } catch (err: any) {
+    console.warn(`❌ DID lookup failed on ${chainInfo.name}: ${err.message}`);
+  }
+
+  return null;
 }
+
+
+export async function resolveDidHealthByDidName(fullDid: string) {
+  console.log(`🧩 Resolving DID: ${fullDid}`);
+
+  const didParts = fullDid.split(':');
+  if (didParts.length < 4) {
+    throw new Error('❌ Invalid DID format: expected did:health:<chainId>:<didName>');
+  }
+
+  const chainIdStr = didParts[2];
+  const didName = didParts[3];
+  const chainId = Number(chainIdStr);
+
+  if (isNaN(chainId)) {
+    throw new Error(`❌ Invalid chainId "${chainIdStr}" in DID`);
+  }
+
+  const chainInfo = chains.find((c) => Number(c.id) === chainId);
+  if (!chainInfo) {
+    throw new Error(`❌ Chain ID ${chainId} not found in configured chains`);
+  }
+
+  const env = 'testnet'; // or 'mainnet' based on your current config
+  const networkKey = Object.keys(contracts[env]).find((key) => {
+    const info = contracts[env][key]?.HealthDIDRegistry;
+    return info?.chainId === chainId;
+  });
+
+  if (!networkKey) {
+    throw new Error(`❌ No deployed contract found for chain ID ${chainId}`);
+  }
+
+  const registry = contracts[env][networkKey]?.HealthDIDRegistry;
+  if (!registry) {
+    throw new Error(`❌ HealthDIDRegistry missing for network "${networkKey}"`);
+  }
+
+  const rpcUrl = chainInfo.rpcUrls.default.http[0];
+  console.log(`🔗 Using RPC: ${rpcUrl}`);
+  const provider = new JsonRpcProvider(rpcUrl);
+
+  const contract = new ethers.Contract(registry.address, registry.abi, provider);
+  console.log(`📞 Calling getHealthDID("${didParts[2] + ";" + didParts[3]}") on ${networkKey}`);
+
+  try {
+    const result = await contract.getHealthDID(didParts[2] + ";" + didParts[3]);
+    console.log(`✅ DID Info:`, result);
+    
+    if (result.owner && result.owner !== ethers.ZeroAddress) {
+      const doc = convertToDidDocument({
+        owner: result.owner,
+        healthDid: result.healthDid,
+        ipfsUri: result.ipfsUri,
+        altIpfsUris: result.altIpfsUris,
+        hasWorldId: result.hasWorldId,
+        hasPolygonId: result.hasPolygonId,
+        hasSocialId: result.hasSocialId,
+        reputationScore: Number(result.reputationScore),
+      });
+      return {
+        doc,
+        chainName: chainInfo.name,
+      };
+    } else {
+      console.log(`📦 ${chainInfo.name}: No owner found for DID ${didName}`);
+      return null;
+    }
+  } catch (err: any) {
+    console.error(`❌ DID lookup failed:`, err);
+    throw new Error(`❌ Error resolving DID: ${err.message}`);
+  }
+}
+
 /**
  * Returns a list of chainIds that have HealthDIDRegistry contracts deployed.
  */

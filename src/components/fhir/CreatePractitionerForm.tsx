@@ -1,26 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react'
+import type { PractitionerQualificationWithSpecialty } from '../../types/fhir'
 import { useNavigate } from 'react-router-dom'
 import { v4 as uuidv4 } from 'uuid'
 import Webcam from 'react-webcam'
-import type { Practitioner, CodeableConcept } from 'fhir/r4'
+import { useOnboardingState } from '../../store/OnboardingState'
 import logo from '../../assets/did-health.png'
-
-// Extend PractitionerQualification to include specialty for local use
-
-
-type PractitionerQualificationWithSpecialty = NonNullable<Practitioner['qualification']>[number] & {
-  specialty?: CodeableConcept[]
+import type { Practitioner } from 'fhir/r4'
+interface CreatePractitionerFormProps {
+  defaultValues: Practitioner
+  onSubmit: (updatedFHIR: Practitioner) => Promise<void>
 }
 
-import { useOnboardingState } from '../../store/OnboardingState'
-
-const CreatePractitionerForm: React.FC = () => {
+const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
   const { fhirResource, setFHIRResource } = useOnboardingState()
-  const webcamRef = useRef<Webcam>(null)
+  const [practitioner, setPractitioner] = useState<Practitioner>(defaultValues)
   const [showCamera, setShowCamera] = useState(false)
-
-  const [practitioner, setPractitioner] = useState<Practitioner>({ resourceType: 'Practitioner' })
+  const webcamRef = useRef<Webcam>(null)
 
   useEffect(() => {
     if (fhirResource?.resourceType === 'Practitioner') {

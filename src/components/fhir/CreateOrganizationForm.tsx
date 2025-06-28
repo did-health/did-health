@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { Organization } from 'fhir/r4'
 import { v4 as uuidv4 } from 'uuid'
+import type { Organization } from 'fhir/r4'
 import { useOnboardingState } from '../../store/OnboardingState'
 import logo from '../../assets/did-health.png'
 
-const CreateOrganizationForm: React.FC = () => {
+interface CreateOrganizationFormProps {
+  defaultValues: Organization
+  onSubmit: (updatedFHIR: Organization) => Promise<void>
+}
+
+const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
   const { fhirResource, setFHIRResource } = useOnboardingState()
-
-  const [organization, setOrganization] = useState<Organization | null>(null)
+  const [organization, setOrganization] = useState<Organization>(defaultValues)
 
   useEffect(() => {
     if (fhirResource?.resourceType === 'Organization') {
