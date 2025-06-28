@@ -9,7 +9,7 @@ import daologo from '../../assets/did-health.png'
 import { ethers } from 'ethers'
 import deployedContracts from '../../generated/deployedContracts'
 import { useChainId } from 'wagmi'
-
+import FHIRResource from '../fhir/FHIRResourceView'
 
 export default function OnboardingDAO() {
   const { address: connectedWalletAddress, isConnected } = useAccount()
@@ -28,6 +28,8 @@ export default function OnboardingDAO() {
 
   const [status, setStatus] = useState('')
   const [serviceEndpoint, setServiceEndpoint] = useState<string | null>(null)
+  const [applying, setApplying] = useState(false)
+
   const chainId = useChainId() // Get the currently connected chain ID
 
   const resolveEverything = async () => {
@@ -68,6 +70,8 @@ export default function OnboardingDAO() {
   }, [isConnected, connectedWalletAddress])
 
 const handleApply = async () => {
+  setApplying(true)
+  setStatus('⏳ Submitting your DAO membership application...')
   try {
     console.log('Applying with:', { did, fhirResource })
 
@@ -89,11 +93,12 @@ const handleApply = async () => {
       throw new Error(`DidHealthDAO contract not found for chain ${chainName}`)
     }
 
-    // Avoid naming conflict: destructure with aliases
     const { address: daoAddress, abi: daoAbi } = contractInfo
-console.log('DAO Address:', daoAddress)
+    console.log('DAO Address:', daoAddress)
+
     const daoContract = new ethers.Contract(daoAddress, daoAbi, signer)
-console.log('DAO Contract:', daoContract)
+    console.log('DAO Contract:', daoContract)
+
     const role = 'member'
     const orgName =
       Array.isArray(fhirResource?.name) && typeof fhirResource.name[0] === 'object' && 'text' in fhirResource.name[0]
@@ -101,9 +106,10 @@ console.log('DAO Contract:', daoContract)
         : typeof fhirResource?.name === 'string'
         ? fhirResource.name
         : 'unknown'
+
     const ipfsUri = serviceEndpoint
-console.log('IPFS URI:', ipfsUri)
-    // ✅ Use connectedWalletAddress instead of overwritten "address"
+    console.log('IPFS URI:', ipfsUri)
+
     await applyToDAO(
       daoContract,
       connectedWalletAddress ?? '',
@@ -112,14 +118,20 @@ console.log('IPFS URI:', ipfsUri)
       orgName ?? 'unknown',
       ipfsUri ?? ''
     )
-console.log('Application submitted successfully')
+
+    console.log('✅ Application submitted successfully')
+    setStatus('✅ Application submitted successfully')
     setApplicationSubmitted(true)
     setStep(3)
   } catch (err: any) {
     console.error('❌ Failed to apply:', err)
+    setStatus('❌ Failed to apply. Please try again.')
     setError('Failed to apply. Please try again.')
+  } finally {
+    setApplying(false)
   }
 }
+
 
 
   return (
@@ -151,33 +163,61 @@ console.log('Application submitted successfully')
           )}
         </StepCard>
 
-        <StepCard step="2" title="FHIR Resource">
+        <StepCard step="2" title="Your Identifying Record">
           {fhirResource ? (
-            <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-80 dark:bg-gray-900">
-              {JSON.stringify(fhirResource, null, 2)}
-            </pre>
+            <div>
+              <FHIRResource resource={fhirResource} followReferences={false}></FHIRResource>
+              </div>
           ) : (
             <div className="text-red-500">❌ FHIR not loaded</div>
           )}
         </StepCard>
 
-        <StepCard step="3" title="Apply for DAO Membership">
-          {applicationSubmitted ? (
-            <p className="text-green-600 font-semibold">✅ Application submitted!</p>
-          ) : (
-            <>
-              <p>Click below to apply with your current DID and FHIR resource.</p>
-              <button
-                className="btn btn-primary mt-4"
-                disabled={!did || !fhirResource}
-                onClick={handleApply}
-              >
-                📝 Apply Now
-              </button>
-              {error && <p className="text-red-500 mt-2">{error}</p>}
-            </>
-          )}
-        </StepCard>
+<StepCard step="3" title="Apply for did:health DAO Membership">
+  {applicationSubmitted ? (
+    <p className="text-green-600 font-semibold">✅ Application submitted!</p>
+  ) : (
+    <>
+      <p>Click below to apply with your current DID and FHIR resource.</p>
+      <button
+        className="btn btn-primary mt-4 flex items-center justify-center gap-2 disabled:opacity-50"
+        disabled={!did || !fhirResource || applying}
+        onClick={handleApply}
+      >
+        {applying ? (
+          <>
+            <svg
+              className="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8z"
+              ></path>
+            </svg>
+            Applying...
+          </>
+        ) : (
+          '📝 Apply Now'
+        )}
+      </button>
+      {status && <p className="text-sm mt-2 text-gray-700 dark:text-gray-300">{status}</p>}
+      {error && <p className="text-red-500 mt-2">{error}</p>}
+    </>
+  )}
+</StepCard>
+
       </div>
     </main>
   )
