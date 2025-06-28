@@ -146,7 +146,7 @@ export const renderLanguageValues = (languages: any[]): React.ReactNode => (
 export const renderIdentifierAndTelecom = (items: any[]): React.ReactNode => (
     <ul>
         {items.map((item, i) => {
-            // For telecom entries
+            // Telecom entries like email/phone
             if (item?.system && item?.value && !item.type) {
                 return (
                     <li key={`telecom-${i}`}>
@@ -156,22 +156,29 @@ export const renderIdentifierAndTelecom = (items: any[]): React.ReactNode => (
                 );
             }
 
-            // For identifiers and other coded entries
-            if (item?.system && (item?.value || item?.type)) {
+            // Identifier entries
+            if (item?.value) {
+                const coding = item.type?.coding?.[0];
+                const label =
+                    item.type?.text ||
+                    coding?.display ||
+                    coding?.code ||
+                    'Identifier';
+
                 return (
                     <li key={`identifier-${i}`}>
-                        {item.type?.coding?.[0]?.code && <strong>{item.type.coding[0].code}: </strong>}
-                        {item.value} {item.use && <span>({item.use})</span>}
-
+                        <strong>{label}</strong>: {item.value}
+                        {item.use && <span> ({item.use})</span>}
                     </li>
                 );
             }
 
-            // Fallback for other structured objects
+            // Fallback
             return <li key={`item-${i}`}>{JSON.stringify(item)}</li>;
         })}
     </ul>
 );
+
 
 /**
  * Renders arrays of FHIR extension values and primitive data
