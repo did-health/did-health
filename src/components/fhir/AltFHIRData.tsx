@@ -3,12 +3,13 @@ import React, { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useOnboardingState } from '../../store/OnboardingState'
 import { encryptFHIRFile } from '../../lib/litEncryptFile'
-import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3'
+import { storeEncryptedFileByHash, storePlainFHIRFile } from '../../lib/storeFIleWeb3'
+import { v4 as uuidv4 } from 'uuid'
 import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
 import { ConnectWallet } from './../eth/WalletConnectETH'
 import { ConnectLit } from '../lit/ConnectLit'
-import { addAltDataOnChain, type ChainName } from '../../lib/addAltDataonChain'
+import { addAltDataOnChain, type ChainName, contracts } from '../../lib/addAltDataonChain'
 import PatientDirectivesStudio from './pcaio/PatientDirectivesStudio'
 import CreateEndpointForm from './CreateEndpointForm'
 
@@ -16,8 +17,25 @@ export default function AltFHIRData() {
   const { address } = useAccount()
   const { litClient, litConnected } = useOnboardingState()
 
-  const [didDoc, setDidDoc] = useState<any | null>(null)
+  interface DIDDocType {
+    id: string;
+    controller: string;
+    service: { id: string; type: string; serviceEndpoint: string; }[];
+    verificationMethod: never[];
+    reputationScore: number;
+    credentials: { hasWorldId: boolean; hasPolygonId: boolean; hasSocialId: boolean; };
+  }
+
+  const [didDoc, setDidDoc] = useState<DIDDocType | null>(null)
   const [chainName, setChainName] = useState<ChainName | null>(null)
+
+  // Helper function to get all valid chain names
+  const getAllChainNames = (): ChainName[] => {
+    const testnetChains = Object.keys(contracts['testnet']) as ChainName[]
+    const mainnetChains = Object.keys(contracts['mainnet']) as ChainName[]
+    return [...testnetChains, ...mainnetChains]
+  }
+
   const [allResources, setAllResources] = useState<any[]>([])
   const [status, setStatus] = useState('')
   const [didType, setDidType] = useState<'Patient' | 'Practitioner' | 'Organization' | 'Device' | null>(null)
@@ -30,24 +48,45 @@ export default function AltFHIRData() {
       if (!result) throw new Error('❌ DID not found')
 
       const { doc, chainName } = result
-      setDidDoc(doc)
-      setChainName(chainName)
+      // Transform the doc object to match the DIDDocType interface
+      const completeDoc: DIDDocType = {
+        id: doc.id,
+        controller: doc.controller,
+        service: doc.service || [],
+        verificationMethod: [],
+        reputationScore: doc.reputationScore || 0,
+        credentials: {
+          hasWorldId: doc.credentials?.hasWorldId || false,
+          hasPolygonId: doc.credentials?.hasPolygonId || false,
+          hasSocialId: doc.credentials?.hasSocialId || false
+        },
+  
+      }
+      setDidDoc(completeDoc)
+      // Ensure chainName is a valid ChainName type
+      if (Object.keys(contracts['testnet']).includes(chainName) || Object.keys(contracts['mainnet']).includes(chainName)) {
+        setChainName(chainName as ChainName)
+      } else {
+        setChainName(null)
+        console.error('Invalid chain name:', chainName)
+      }
 
       // Log the DID document structure for debugging
       console.log('📦 DID Document:', {
         id: doc.id,
         service: doc.service,
-        altIpfsUris: doc.altIpfsUris
+  
       })
 
       // Process all endpoints (main and alt)
-      const allEndpoints = [
+      interface ServiceEndpoint {
+        id: string;
+        type: string;
+        serviceEndpoint: string;
+      }
+
+      const allEndpoints: ServiceEndpoint[] = [
         ...(doc?.service?.[0]?.serviceEndpoint ? [doc.service[0]] : []),
-        ...(doc?.altIpfsUris?.map(uri => ({
-          id: `did:health:${doc.id}#alt-${uri}`,
-          type: 'FHIRResource',
-          serviceEndpoint: uri
-        })) || [])
       ]
 
       const resources: any[] = []
@@ -98,7 +137,7 @@ export default function AltFHIRData() {
       for (const resource of resources) {
         const resourceType = resource.resourceType
         const shouldEncrypt = ['Patient', 'Device', 'Consent'].includes(resourceType)
-
+        const uuid = uuidv4()
         let fileToUpload: Blob
         let hash = ''
 
@@ -119,37 +158,59 @@ export default function AltFHIRData() {
         }
 
         setStatus(`📤 Uploading ${resourceType}...`)
-        const uri = await storeEncryptedFileByHash(fileToUpload, hash, resourceType)
+        const uri = shouldEncrypt 
+          ? await storeEncryptedFileByHash(fileToUpload, hash, resourceType)
+          : await storePlainFHIRFile(resource, uuid, resourceType)
         uris.push(uri)
       }
 
-      const addAltUrls = async (uris: string[]) => {
-        if (!chainName || !address) {
-          setStatus('❌ Please connect wallet first')
-          return
-        }
+// In addAltUrls
+const addAltUrls = async (uris: string[]) => {
+  if (!chainName || !address) {
+    setStatus('❌ Please connect wallet first')
+    return
+  }
 
-        try {
-          setStatus('⏳ Adding alt URLs...')
-          const tx = await addAltDataOnChain({
-            healthDid: didDoc?.id || '',
-            uris,
-            chainName,
-          })
-          
-          // Wait for the transaction to be confirmed
-          await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait 5 seconds for confirmation
-          
-          // Refresh the DID data
-          await loadDIDData()
-          
-          console.log('✅ Added alt URLs:', uris)
-          setStatus('✅ Alt URLs added successfully')
-        } catch (err: any) {
-          console.error(err)
-          setStatus(`❌ Error adding alt URLs: ${err.message}`)
-        }
-      }
+  try {
+    setStatus('⏳ Sending transaction to register alt data...')
+
+    // Use the wallet address as the healthDID
+    const resolved = await resolveDidHealthAcrossChains(address)
+    if (!resolved || !resolved.doc) throw new Error('❌ DID not found during transaction.')
+
+    const walletDid = resolved.doc.id 
+    console.log('**********' + walletDid)
+    // Ensure the DID is properly formatted as a 0x-prefixed string
+    const formattedDid = `0x${walletDid.replace(/^0x/, '')}` as `0x${string}`
+    const tx = await addAltDataOnChain({
+      healthDid: formattedDid,
+      uris,
+      chainName,
+    })
+
+    console.log('✅ Transaction receipt:', tx)
+
+    if (tx.status !== 'success') throw new Error('❌ Transaction failed')
+
+    setStatus('🔁 Re-fetching DID from chain...')
+    const result = await resolveDidHealthAcrossChains(address)
+
+    if (!result) {
+      throw new Error('❌ Failed to resolve DID document')
+    }
+
+    setDidDoc(result.doc)
+    await loadDIDData()
+
+    console.log('✅ Alt URLs updated and fetched:', result.doc.service)
+    setStatus(`✅ Alt URLs registered: ${uris.join(', ')}`)
+  } catch (err: any) {
+    console.error(err)
+    setStatus(`❌ Error adding alt URLs: ${err.message}`)
+  }
+}
+
+
 
       await addAltUrls(uris)
     } catch (err: any) {

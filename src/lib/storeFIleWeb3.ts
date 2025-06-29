@@ -70,9 +70,13 @@ export async function storePlainFHIRFile(
     type: 'application/json',
   })
 
-  const directoryCid = await client.uploadDirectory([file])
-
-  return `https://w3s.link/ipfs/${directoryCid}/${resourceType}/${fileName}.json`
+  try {
+    const directoryCid = await client.uploadDirectory([file])
+    return `https://w3s.link/ipfs/${directoryCid}/${resourceType}/${fileName}.json`
+  } catch (error: unknown) {
+    console.error('❌ Error uploading to web3 storage:', error)
+    throw new Error(`Failed to upload file to web3 storage: ${error instanceof Error ? error.message : String(error)}`)
+  }
 }
 
 export async function getFromIPFS(url: string): Promise<any> {

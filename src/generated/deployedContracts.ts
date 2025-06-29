@@ -2,7 +2,7 @@ const deployedContracts = {
   testnet: {
     arbitrumSepolia: {
       DidHealthDAO: {
-        address: "0x76ffDB83c3839d5521466E6caB12f3295819A73C",
+        address: "0xCDd076E8B022942635F84628bC041426E0AE0556",
         abi: [
           {
             type: "constructor",
@@ -315,7 +315,7 @@ const deployedContracts = {
           "https://api.studio.thegraph.com/query/114229/arbitrum-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0xBA63B4450eCb80995020f6233AE88476f2d35784",
+        address: "0x916C6b14234a691962176E980714979789dBc993",
         abi: [
           {
             type: "constructor",
@@ -536,51 +536,44 @@ const deployedContracts = {
             ],
             outputs: [
               {
-                name: "",
-                type: "tuple",
-                internalType: "struct HealthDID",
-                components: [
-                  {
-                    name: "owner",
-                    type: "address",
-                    internalType: "address",
-                  },
-                  {
-                    name: "healthDid",
-                    type: "string",
-                    internalType: "string",
-                  },
-                  {
-                    name: "ipfsUri",
-                    type: "string",
-                    internalType: "string",
-                  },
-                  {
-                    name: "altIpfsUris",
-                    type: "string[]",
-                    internalType: "string[]",
-                  },
-                  {
-                    name: "hasWorldId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "hasPolygonId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "hasSocialId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "reputationScore",
-                    type: "uint256",
-                    internalType: "uint256",
-                  },
-                ],
+                name: "owner",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "ipfsUri",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "altIpfsUris",
+                type: "string[]",
+                internalType: "string[]",
+              },
+              {
+                name: "hasWorldId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasPolygonId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasSocialId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "reputationScore",
+                type: "uint256",
+                internalType: "uint256",
               },
             ],
             stateMutability: "view",
@@ -719,7 +712,7 @@ const deployedContracts = {
     },
     baseSepolia: {
       DidHealthDAO: {
-        address: "0xb9aE75Ccc6Ba752256cc3B88E38214fa84aac5A5",
+        address: "0x8D2194304cb40a576DEA9F778385Ff389A299458",
         abi: [
           {
             type: "constructor",
@@ -1032,7 +1025,7 @@ const deployedContracts = {
           "https://api.studio.thegraph.com/query/114229/base-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x0BD721730c5E253223b83C06756b0654B9F9B71d",
+        address: "0x4C1FC0aA763Aba3cE0F47D569fd55A29b107C3D6",
         abi: [
           {
             type: "constructor",
@@ -1253,51 +1246,44 @@ const deployedContracts = {
             ],
             outputs: [
               {
-                name: "",
-                type: "tuple",
-                internalType: "struct HealthDID",
-                components: [
-                  {
-                    name: "owner",
-                    type: "address",
-                    internalType: "address",
-                  },
-                  {
-                    name: "healthDid",
-                    type: "string",
-                    internalType: "string",
-                  },
-                  {
-                    name: "ipfsUri",
-                    type: "string",
-                    internalType: "string",
-                  },
-                  {
-                    name: "altIpfsUris",
-                    type: "string[]",
-                    internalType: "string[]",
-                  },
-                  {
-                    name: "hasWorldId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "hasPolygonId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "hasSocialId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "reputationScore",
-                    type: "uint256",
-                    internalType: "uint256",
-                  },
-                ],
+                name: "owner",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "ipfsUri",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "altIpfsUris",
+                type: "string[]",
+                internalType: "string[]",
+              },
+              {
+                name: "hasWorldId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasPolygonId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasSocialId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "reputationScore",
+                type: "uint256",
+                internalType: "uint256",
               },
             ],
             stateMutability: "view",
@@ -1437,7 +1423,7 @@ const deployedContracts = {
     lineaSepolia: {},
     optimismSepolia: {
       DidHealthDAO: {
-        address: "0xdB0faa637D5600FF479DE161D6d03a942CE42694",
+        address: "0xBA63B4450eCb80995020f6233AE88476f2d35784",
         abi: [
           {
             type: "constructor",
@@ -1750,7 +1736,7 @@ const deployedContracts = {
           "https://api.studio.thegraph.com/query/114229/optimism-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x99764C9484067Bdbe7DfF2844a5411C808728aCe",
+        address: "0xb199afd6994dbdE5d02706017b6c298161934BF9",
         abi: [
           {
             type: "constructor",
@@ -1971,51 +1957,44 @@ const deployedContracts = {
             ],
             outputs: [
               {
-                name: "",
-                type: "tuple",
-                internalType: "struct HealthDID",
-                components: [
-                  {
-                    name: "owner",
-                    type: "address",
-                    internalType: "address",
-                  },
-                  {
-                    name: "healthDid",
-                    type: "string",
-                    internalType: "string",
-                  },
-                  {
-                    name: "ipfsUri",
-                    type: "string",
-                    internalType: "string",
-                  },
-                  {
-                    name: "altIpfsUris",
-                    type: "string[]",
-                    internalType: "string[]",
-                  },
-                  {
-                    name: "hasWorldId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "hasPolygonId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "hasSocialId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "reputationScore",
-                    type: "uint256",
-                    internalType: "uint256",
-                  },
-                ],
+                name: "owner",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "ipfsUri",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "altIpfsUris",
+                type: "string[]",
+                internalType: "string[]",
+              },
+              {
+                name: "hasWorldId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasPolygonId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasSocialId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "reputationScore",
+                type: "uint256",
+                internalType: "uint256",
               },
             ],
             stateMutability: "view",
@@ -2555,7 +2534,7 @@ const deployedContracts = {
     },
     scrollSepolia: {
       DidHealthDAO: {
-        address: "0x4C1FC0aA763Aba3cE0F47D569fd55A29b107C3D6",
+        address: "0x9E48EB941A02482AA33356986e2d2A66259Fa375",
         abi: [
           {
             type: "constructor",
@@ -2868,7 +2847,7 @@ const deployedContracts = {
           "https://api.studio.thegraph.com/query/114229/scroll-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x0BD721730c5E253223b83C06756b0654B9F9B71d",
+        address: "0x8D2194304cb40a576DEA9F778385Ff389A299458",
         abi: [
           {
             type: "constructor",
@@ -3089,51 +3068,44 @@ const deployedContracts = {
             ],
             outputs: [
               {
-                name: "",
-                type: "tuple",
-                internalType: "struct HealthDID",
-                components: [
-                  {
-                    name: "owner",
-                    type: "address",
-                    internalType: "address",
-                  },
-                  {
-                    name: "healthDid",
-                    type: "string",
-                    internalType: "string",
-                  },
-                  {
-                    name: "ipfsUri",
-                    type: "string",
-                    internalType: "string",
-                  },
-                  {
-                    name: "altIpfsUris",
-                    type: "string[]",
-                    internalType: "string[]",
-                  },
-                  {
-                    name: "hasWorldId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "hasPolygonId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "hasSocialId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "reputationScore",
-                    type: "uint256",
-                    internalType: "uint256",
-                  },
-                ],
+                name: "owner",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "ipfsUri",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "altIpfsUris",
+                type: "string[]",
+                internalType: "string[]",
+              },
+              {
+                name: "hasWorldId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasPolygonId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasSocialId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "reputationScore",
+                type: "uint256",
+                internalType: "uint256",
               },
             ],
             stateMutability: "view",
@@ -3272,7 +3244,7 @@ const deployedContracts = {
     },
     sepolia: {
       DidHealthDAO: {
-        address: "0x5B5Ed87D38202883E1f7835093c90fef3C3fC94a",
+        address: "0x8d29C95d7B6D1ceF6de676Ac2B7287b8C1284784",
         abi: [
           {
             type: "constructor",
@@ -3582,10 +3554,10 @@ const deployedContracts = {
           "https://eth-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "sepolia",
         graphRpcUrl:
-          "https://api.studio.thegraph.com/query/114229/sepolia/latest",
+          "https://api.studio.thegraph.com/query/114229/sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x6Dff38A5AB290C0D85217D234FF14Ec7Be4728d3",
+        address: "0xbc0Fb6F7595D92C47A20A172Cf40751fFc6A9672",
         abi: [
           {
             type: "constructor",
@@ -3806,51 +3778,44 @@ const deployedContracts = {
             ],
             outputs: [
               {
-                name: "",
-                type: "tuple",
-                internalType: "struct HealthDID",
-                components: [
-                  {
-                    name: "owner",
-                    type: "address",
-                    internalType: "address",
-                  },
-                  {
-                    name: "healthDid",
-                    type: "string",
-                    internalType: "string",
-                  },
-                  {
-                    name: "ipfsUri",
-                    type: "string",
-                    internalType: "string",
-                  },
-                  {
-                    name: "altIpfsUris",
-                    type: "string[]",
-                    internalType: "string[]",
-                  },
-                  {
-                    name: "hasWorldId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "hasPolygonId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "hasSocialId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "reputationScore",
-                    type: "uint256",
-                    internalType: "uint256",
-                  },
-                ],
+                name: "owner",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "ipfsUri",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "altIpfsUris",
+                type: "string[]",
+                internalType: "string[]",
+              },
+              {
+                name: "hasWorldId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasPolygonId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasSocialId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "reputationScore",
+                type: "uint256",
+                internalType: "uint256",
               },
             ],
             stateMutability: "view",
@@ -3984,12 +3949,12 @@ const deployedContracts = {
           "https://eth-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "sepolia",
         graphRpcUrl:
-          "https://api.studio.thegraph.com/query/114229/sepolia/v20250627185315",
+          "https://api.studio.thegraph.com/query/114229/sepolia/version/latest",
       },
     },
     zksyncSepolia: {
       DidHealthDAO: {
-        address: "0xBA63B4450eCb80995020f6233AE88476f2d35784",
+        address: "0x916C6b14234a691962176E980714979789dBc993",
         abi: [
           {
             type: "constructor",
@@ -4302,7 +4267,7 @@ const deployedContracts = {
           "https://api.studio.thegraph.com/query/114229/zksync-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0xb199afd6994dbdE5d02706017b6c298161934BF9",
+        address: "0x76ffDB83c3839d5521466E6caB12f3295819A73C",
         abi: [
           {
             type: "constructor",
@@ -4523,51 +4488,44 @@ const deployedContracts = {
             ],
             outputs: [
               {
-                name: "",
-                type: "tuple",
-                internalType: "struct HealthDID",
-                components: [
-                  {
-                    name: "owner",
-                    type: "address",
-                    internalType: "address",
-                  },
-                  {
-                    name: "healthDid",
-                    type: "string",
-                    internalType: "string",
-                  },
-                  {
-                    name: "ipfsUri",
-                    type: "string",
-                    internalType: "string",
-                  },
-                  {
-                    name: "altIpfsUris",
-                    type: "string[]",
-                    internalType: "string[]",
-                  },
-                  {
-                    name: "hasWorldId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "hasPolygonId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "hasSocialId",
-                    type: "bool",
-                    internalType: "bool",
-                  },
-                  {
-                    name: "reputationScore",
-                    type: "uint256",
-                    internalType: "uint256",
-                  },
-                ],
+                name: "owner",
+                type: "address",
+                internalType: "address",
+              },
+              {
+                name: "healthDid",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "ipfsUri",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "altIpfsUris",
+                type: "string[]",
+                internalType: "string[]",
+              },
+              {
+                name: "hasWorldId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasPolygonId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "hasSocialId",
+                type: "bool",
+                internalType: "bool",
+              },
+              {
+                name: "reputationScore",
+                type: "uint256",
+                internalType: "uint256",
               },
             ],
             stateMutability: "view",
