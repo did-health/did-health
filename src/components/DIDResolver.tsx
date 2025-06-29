@@ -85,7 +85,7 @@ export default function DIDResolver() {
     <div className="max-w-xl mx-auto p-6 space-y-4">
       <div className="flex items-center space-x-2">
         <img src={didLogo} alt="DID:Health Logo" className="w-8 h-8" />
-        <h1 className="text-2xl font-bold">DID:Health Resolver</h1>
+        <h1 className="text-2xl font-bold">did:health Resolver</h1>
       </div>
 
       <div className="bg-white p-4 rounded-lg shadow space-y-4">
