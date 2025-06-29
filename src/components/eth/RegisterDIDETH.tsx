@@ -63,21 +63,29 @@ export function RegisterDID() {
       let finalIpfsUri = null
       if (!finalIpfsUri) {
         // Inject the DID into the FHIR resource's identifier using the correct system
-        const didIdentifier = {
-          system: 'https://www.w3.org/ns/did',
-          value: did,
-        };
+const didIdentifier = {
+  system: 'https://www.w3.org/ns/did',
+  value: did,
+};
+
+const identifiers = Array.isArray(fhirResource.identifier)
+  ? fhirResource.identifier.filter(id => id && typeof id === 'object')
+  : []
+
+const hasDid = identifiers.some(id => id.system === didIdentifier.system)
+
+const updatedIdentifiers = hasDid
+  ? identifiers.map(id =>
+      id.system === didIdentifier.system
+        ? { ...id, value: didIdentifier.value }
+        : id
+    )
+  : [...identifiers, didIdentifier]
 
 const fhirWithDid = {
   ...fhirResource,
-  identifier: Array.isArray(fhirResource.identifier)
-    ? fhirResource.identifier.some(id => id.system === 'https://www.w3.org/ns/did')
-      ? fhirResource.identifier.map(id =>
-          id.system === 'https://www.w3.org/ns/did' ? { ...id, value: didIdentifier.value } : id
-        )
-      : [...fhirResource.identifier, didIdentifier]
-    : [didIdentifier],
-};
+  identifier: updatedIdentifiers,
+}
 
         console.log('🔗 FHIR Resource with DID:', fhirWithDid)
 
