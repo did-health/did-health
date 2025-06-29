@@ -9,6 +9,7 @@ import OrganizationForm from './components/fhir/CreateOrganizationForm'
 import DeviceForm from './components/fhir/CreateDeviceForm'
 import LanguageSelector from './components/LanguageSelector'
 import ResolveDIDETH from './components/eth/ResolveDIDETH'
+import AltFHIRData from './components/fhir/AltFHIRData'
 import ResolveDIDBTC from './components/btc/ResolveDIDBTC'
 import ResolveDIDSolana from './components/solana/ResolveDIDSolana'
 import ResolveDIDCosmos from './components/cosmos/ResolveDIDCosmos'
@@ -30,6 +31,7 @@ function App() {
         <Route path="/help" element={<Help />} />
         <Route path="/chat" element={<XMTPChatClient />} />
         <Route path="/ethereum/did" element={<ResolveDIDETH />} />
+        <Route path="/ethereum/did/alt" element={<AltFHIRData />} />
         <Route path="/ethereum/did/update" element={<UpdateDIDUri />} />
         <Route path="/btc/did" element={<ResolveDIDBTC />} /> 
         <Route path="/solana/did" element={<ResolveDIDSolana/>} />       
