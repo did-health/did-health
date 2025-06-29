@@ -21,7 +21,8 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['buffer', 'process'],
+    include: ['buffer', 'process','@xmtp/proto'],
+    exclude: ['@xmtp/wasm-bindings', '@xmtp/browser-sdk'],
   },
   define: {
     global: 'globalThis',
@@ -46,9 +47,6 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
     strictPort: true,
-       https: {
-      key: fs.readFileSync(path.resolve(__dirname, 'decryptedkey.pem')),
-      cert: fs.readFileSync(path.resolve(__dirname, 'cert.pem')),
-    },
+
   },
 })
