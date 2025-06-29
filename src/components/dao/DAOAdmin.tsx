@@ -14,15 +14,19 @@ type Application = {
   ipfsUri: string[]
   fhirResource?: any
   chain: string
+  approved: boolean
 }
 
 type DaoRegisteredResponse = {
-  daoRegistereds: {
+  daoRegistereds: Array<{
     id: string
     owner: string
     did: string
     ipfsUri: string
-  }[]
+    approved: boolean
+    approvedAt: string
+    blockTimestamp: string
+  }>
 }
 
 const GET_ALL_APPLICATIONS = gql`
@@ -32,6 +36,9 @@ const GET_ALL_APPLICATIONS = gql`
       owner
       did
       ipfsUri
+      approved
+      approvedAt
+      blockTimestamp
     }
   }
 `
@@ -44,6 +51,7 @@ export default function DAOAdminPage() {
   const { isConnected, address } = useAccount()
 
   const [applications, setApplications] = useState<Application[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [txPending, setTxPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
@@ -51,6 +59,57 @@ export default function DAOAdminPage() {
   const OWNER_ADDRESS = '0x15B7652e76E27C67A92cd42a0CD384cF572B4a9b'.toLowerCase()
 
   function extractSpecialtyFromFHIR(fhirResource: any): string {
+
+  async function fetchApplications() {
+    setError(null)
+    const allApps: Application[] = []
+
+    const networks = Object.keys(deployedContracts.testnet) as TestnetChains[]
+
+    for (const chain of networks) {
+      const contracts = deployedContracts.testnet[chain]
+      const dao = contracts?.DidHealthDAO
+
+      if (!dao?.graphRpcUrl) {
+        console.warn(`Skipping chain ${chain} — missing DidHealthDAO or graphRpcUrl`)
+        continue
+      }
+
+      try {
+        const result = await request<DaoRegisteredResponse>(dao.graphRpcUrl, GET_ALL_APPLICATIONS)
+        if (result?.daoRegistereds?.length) {
+          for (const app of result.daoRegistereds) {
+            const ipfsUri = app.ipfsUri ? [app.ipfsUri] : []
+
+            let fhirResource = undefined
+            if (ipfsUri.length > 0) {
+              try {
+                const url = ipfsUri[0].replace('ipfs://', 'https://w3s.link/ipfs/')
+                const res = await axios.get(url)
+                fhirResource = res.data
+              } catch {
+                console.warn(`Failed to fetch FHIR from ${ipfsUri[0]}`)
+              }
+            }
+
+            allApps.push({
+              id: app.id,
+              applicant: app.owner,
+              did: app.did,
+              ipfsUri,
+              fhirResource,
+              chain,
+              approved: app.approved
+            })
+          }
+        }
+      } catch (err: any) {
+        setError(`Error fetching applications: ${err.message}`)
+      }
+    }
+
+    setApplications(allApps)
+  }
   if (!fhirResource || !fhirResource.specialty || !Array.isArray(fhirResource.specialty)) return 'Member'
 
   const specialtyObj = fhirResource.specialty[0]
@@ -93,14 +152,28 @@ export default function DAOAdminPage() {
               }
             }
 
-            allApps.push({
-              id: app.id,
-              applicant: app.owner,
-              did: app.did,
-              ipfsUri,
-              fhirResource,
-              chain,
-            })
+            if (app.approved) {
+              completedApps.push({
+                id: app.id,
+                applicant: app.owner,
+                did: app.did,
+                ipfsUri,
+                fhirResource,
+                chain,
+                approved: app.approved,
+                approvedAt: app.approvedAt
+              })
+            } else {
+              allApps.push({
+                id: app.id,
+                applicant: app.owner,
+                did: app.did,
+                ipfsUri,
+                fhirResource,
+                chain,
+                approved: app.approved
+              })
+            }
           }
         }
       } catch (err: any) {
@@ -225,6 +298,16 @@ const ipfsUri = app.ipfsUri?.[0] || ''
 
       <ConnectWallet />
 
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search by DID or Address..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full p-2 border rounded-lg"
+        />
+      </div>
+
       {applications.length === 0 ? (
         <p>No applications found.</p>
       ) : (
@@ -234,44 +317,63 @@ const ipfsUri = app.ipfsUri?.[0] || ''
               <th className="border border-gray-300 p-2">Applicant Address</th>
               <th className="border border-gray-300 p-2">DID</th>
               <th className="border border-gray-300 p-2">FHIR Resource</th>
+              <th className="border border-gray-300 p-2">Status</th>
               <th className="border border-gray-300 p-2">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {applications.map(({ id, applicant, did, ipfsUri, fhirResource, chain }) => (
-              <tr key={id}>
-                <td className="border border-gray-300 p-2 break-all">{applicant}</td>
-                <td className="border border-gray-300 p-2 break-all">{did}</td>
-                <td className="border border-gray-300 p-2 break-all text-sm">
-                  {ipfsUri.length > 0 && (
-                    <a
-                      href={ipfsUri[0]}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      {ipfsUri[0]}
-                    </a>
-                  )}
-                  {fhirResource ? (
-                    <div className="mt-2">
-                      <FHIRResource resource={fhirResource} />
-                    </div>
-                  ) : (
-                    <div className="text-gray-500">No FHIR data</div>
-                  )}
-                </td>
-                <td className="border border-gray-300 p-2">
-                  <button
-                    className="mr-2 px-3 py-1 bg-green-600 text-white rounded disabled:opacity-50"
-                    disabled={txPending}
-                    onClick={() => approveApplication(applicant, chain as TestnetChains)}
-                  >
-                    Approve
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {applications
+              .filter((app) =>
+                app.did.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                app.applicant.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map(({ id, applicant, did, ipfsUri, fhirResource, chain, approved }) => (
+                <tr key={id}>
+                  <td className="border border-gray-300 p-2 break-all">{applicant}</td>
+                  <td className="border border-gray-300 p-2 break-all">{did}</td>
+                  <td className="border border-gray-300 p-2 break-all text-sm">
+                    {ipfsUri[0] && (
+                      <a
+                        href={ipfsUri[0]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                      >
+                        {ipfsUri[0]}
+                      </a>
+                    )}
+                    {fhirResource ? (
+                      <div className="mt-2">
+                        <FHIRResource resource={fhirResource} />
+                      </div>
+                    ) : (
+                      <div className="text-gray-500">No FHIR data</div>
+                    )}
+                  </td>
+                  <td className="border border-gray-300 p-2">
+                    {approved ? (
+                      <span className="text-green-600">Approved</span>
+                    ) : (
+                      <span className="text-yellow-600">Pending</span>
+                    )}
+                  </td>
+                  <td className="border border-gray-300 p-2">
+                    {approved ? (
+                      <button className="px-3 py-1 bg-gray-300 text-gray-600 rounded cursor-not-allowed">
+                        Approved
+                      </button>
+                    ) : (
+                      <button
+                        className="px-3 py-1 bg-green-600 text-white rounded disabled:opacity-50"
+                        disabled={txPending}
+                        onClick={() => approveApplication(applicant, chain as TestnetChains)}
+                      >
+                        Approve
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       )}
