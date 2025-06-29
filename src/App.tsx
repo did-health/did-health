@@ -2,11 +2,6 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import SelectBlockChain from './components/SelectBlockChain'
 import OnboardingEth from './components/eth/OnboardingEth'
 import OnboardingBTC from './components/btc/OnboardingBTC'
-import PatientForm from './components/fhir/CreatePatientForm'
-import { v4 as uuidv4 } from 'uuid'
-import PractitionerForm from './components/fhir/CreatePractitionerForm'
-import OrganizationForm from './components/fhir/CreateOrganizationForm'
-import DeviceForm from './components/fhir/CreateDeviceForm'
 import LanguageSelector from './components/LanguageSelector'
 import ResolveDIDETH from './components/eth/ResolveDIDETH'
 import AltFHIRData from './components/fhir/AltFHIRData'
@@ -22,9 +17,13 @@ import { Help } from './components/Help'
 import DAOMemberSearch from './components/dao/DAOMemberSearch'
 import { DAOStatus } from './components/dao/DAOStatus'
 import {DidHealthQRScanner} from './components/dao/DAODIDScanner'
+import  DIDResolver  from './components/DIDResolver';
+
 function App() {
   return (
+
     <div className="relative min-h-screen">
+          
       <LanguageSelector />
       <Routes>
         <Route path="/" element={<SelectBlockChain />} />
@@ -41,54 +40,12 @@ function App() {
         <Route path="/dao/search" element={ <DAOMemberSearch/>}/>
         <Route path="/dao/status" element={ <DAOStatus walletAddress='0x15B7652e76E27C67A92cd42A0CD384cF572B4a9b'/>}/>
         <Route path="/scan" element={ <DidHealthQRScanner/>}/>
+        <Route path="/resolve" element={ <DIDResolver/>}/>
+        
         <Route path="/onboarding/ethereum" element={<OnboardingEth />} />
         <Route path="/onboarding/bitcoin" element={<OnboardingBTC />} />
         <Route path="/onboarding/solana" element={<OnboardingSolana />} />
-        <Route path="/onboarding/cosmis" element={<OnboardingBTC />} />        
-        <Route path="/create/patient" element={<PatientForm 
-          defaultValues={{
-            resourceType: 'Patient',
-            id: uuidv4(),
-            active: true
-          }}
-          onSubmit={async (patient) => {
-            // Handle patient submission here
-            console.log('Patient submitted:', patient)
-          }}
-        />} />
-        <Route path="/create/practitioner" element={<PractitionerForm 
-          defaultValues={{
-            resourceType: 'Practitioner',
-            id: uuidv4(),
-            active: true
-          }}
-          onSubmit={async (practitioner) => {
-            console.log('Practitioner submitted:', practitioner);
-          }}
-        />} />
-        <Route path="/create/organization" element={<OrganizationForm
-          defaultValues={{
-            resourceType: 'Organization',
-            id: uuidv4(),
-            name: '',
-            active: true
-          }}
-          onSubmit={async (organization) => {
-            console.log('Organization submitted:', organization);
-          }}
-        />} />
-        <Route path="/create/device" element={
-          <DeviceForm
-            defaultValues={{
-              resourceType: 'Device',
-              identifier: [{ system: 'https://www.w3.org/ns/did', value: '' }],
-              status: 'active'
-            }}
-            onSubmit={async (device) => {
-              console.log('Device submitted:', device);
-            }}
-          />
-        } />
+        <Route path="/onboarding/cosmos" element={<OnboardingBTC />} />      
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
