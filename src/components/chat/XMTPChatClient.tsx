@@ -14,7 +14,7 @@ import deployedContracts from '../../generated/deployedContracts';
 import type { DeployedContracts } from '../../types/contracts';
 import { encryptFHIRFile } from '../../lib/litEncryptFile';
 import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3';
-import {resolveDidHealthByDidName} from '../../lib/DIDDocument';
+import {resolveDidHealthAcrossChains, resolveDidHealthByDidName} from '../../lib/DIDDocument';
 import { LitNodeClient } from '@lit-protocol/lit-node-client';
 
 const DAO_QUERY = gql`
@@ -195,27 +195,33 @@ const handleSend = async () => {
     let didResult;
     let recipientWallet;
 
-     try {
+    if (!recipientDid || !recipientDid.startsWith('did:health:')) {
+      throw new Error('Please provide a valid DID (format: did:health:chainId:address)');
+    }
+
+    try {
       console.log("resolving by name" + recipientDid)
-       // Resolve DID to get the associated wallet address
-       didResult = await resolveDidHealthByDidName(recipientDid);
-       
-       if (!didResult?.doc?.id) {
-         throw new Error('DID not found or invalid');
-       }
+      // Resolve DID to get the associated wallet address
+      didResult = await resolveDidHealthByDidName(recipientDid);
+      console.log("didResult", didResult)
+      
+      if (!didResult?.doc) {
+        throw new Error('DID not found or invalid');
+      }
 
-       // Extract the controller (wallet address) from the DID document
-       const controller = didResult.doc.controller;
-       if (!controller) {
-         throw new Error('No controller found in DID document');
-       }
+      // Extract the controller (wallet address) from the DID document
+      const controller = didResult.doc.controller;
+      console.log("controller", controller)
+      if (!controller) {
+        throw new Error('No controller found in DID document');
+      }
 
-       recipientWallet = controller;
-       console.log(`Successfully resolved DID. Recipient wallet: ${recipientWallet}`);
+      recipientWallet = controller;
+      console.log(`Successfully resolved DID. Recipient wallet: ${recipientWallet}`);
 
-     } catch (error: unknown) {
-       console.error('DID resolution error:', error);
-       throw new Error(`Failed to resolve DID: ${error instanceof Error ? error.message : String(error)}`);
+    } catch (error: unknown) {
+      console.error('DID resolution error:', error);
+      throw new Error(`Failed to resolve DID: ${error instanceof Error ? error.message : String(error)}`);
      }
 
     // Begin XMTP conversation
