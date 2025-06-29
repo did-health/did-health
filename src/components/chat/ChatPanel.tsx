@@ -1,16 +1,20 @@
 // ChatPanel.tsx
 import React, { useEffect, useCallback, useRef } from 'react';
-import { ethers, JsonRpcProvider, Contract } from 'ethers';
+import type { ethers } from 'ethers';
+import { useAccount } from 'wagmi';
+import { useXmtp } from '../../hooks/useXmtp';
+import { createFHIRMessageBundle } from '../fhir/MessageBundle';
+import { Favorites } from './Favorites';
+import type { ILitNodeClient } from '@lit-protocol/types';
+import type { DeployedContracts } from '../../types/contracts';
+import type { ContractInfo } from '../../types/contracts';
+import type { NetworkConfig } from '../../types/network';
 import deployedContracts from '../../generated/deployedContracts';
 import { encryptFHIRFile } from '../../lib/litEncryptFile';
 import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3';
-import { useXmtp } from '../../hooks/useXmtp';
-import { Client as XmtpClient } from '@xmtp/xmtp-js';
-import { Favorites } from './Favorites';
-import type { AccessControlConditions } from '@lit-protocol/types';
-import type { ILitNodeClient } from '@lit-protocol/types';
 import type { FavoritesRef } from './Favorites';
-import { createFHIRMessageBundle } from "../fhir/MessageBundle"
+import { createMessageAccessControlConditions } from './MessageAccessControl';
+import type { LitAccessControlCondition } from './MessageAccessControl';
 
 interface ChatPanelProps {
   isConnected: boolean;
@@ -31,7 +35,6 @@ function parseDidHealth(did: string) {
   if (parts.length !== 4) throw new Error('Invalid DID format');
   return { chainId: parts[2], name: parts[3] };
 }
-
 
 export function ChatPanel({
   isConnected,
@@ -54,31 +57,29 @@ export function ChatPanel({
   }, [isConnected, initXmtp]);
 
   const getAccessControlConditions = useCallback(
-    (recipientWallet: string): AccessControlConditions[] => [
-      {
-        contractAddress: '',
-        standardContractType: '',
-        chain: 'sepolia',
-        method: '',
-        parameters: [':userAddress'],
-        returnValueTest: { comparator: '=', value: recipientWallet },
-      },
-    ],
-    []
+    (recipientWallet: string): LitAccessControlCondition[] => {
+      if (!walletAddress) throw new Error('Sender wallet address not available');
+      return createMessageAccessControlConditions(walletAddress, recipientWallet);
+    },
+    [walletAddress],
   );
 
   const sendMessage = async () => {
     try {
-      if (!recipientDid || !walletAddress) throw new Error('Missing recipient or sender DID');
+      if (!recipientDid || !walletAddress || !xmtpClient) throw new Error('Missing required information');
       const { chainId, name } = parseDidHealth(recipientDid);
 
-      const favoriteName = `${chainId}:${name}`;
-      favoritesRef.current?.addFavorite(recipientDid, favoriteName);
+      favoritesRef.current?.addFavorite(recipientDid);
 
       const env = 'testnet';
-      const registryEntry = Object.values(deployedContracts[env]).find(
-        (net: any) => net.HealthDIDRegistry?.chainId.toString() === chainId
-      )?.HealthDIDRegistry;
+      const network = Object.values(deployedContracts[env]).find(
+        (net: any) => {
+          const dao = net?.DidHealthDAO;
+          return dao && typeof dao.chainId === 'number' && dao.chainId.toString() === chainId;
+        }
+      );
+      if (!network) throw new Error(`No registry for chain ${chainId}`);
+      const registryEntry = network.DidHealthDAO as any;
       if (!registryEntry) throw new Error(`No registry for chain ${chainId}`);
 
       const provider = new JsonRpcProvider(registryEntry.rpcUrl);
@@ -90,14 +91,7 @@ export function ChatPanel({
         throw new Error('❌ Self messaging is not supported');
       }
 
-      const conv = await xmtpClient.conversations.newConversationV3({
-        conversationId: `didhealth:${recipientWallet}`,
-        peerAddress: recipientWallet,
-        metadata: {
-          type: 'FHIRMessage',
-          schema: 'https://hl7.org/fhir',
-        },
-      });
+      const conv = await xmtpClient.conversations.newConversation(recipientWallet);
 
       const senderDid = `did:health:${chainId}:${walletAddress}`;
       const bundle = createFHIRMessageBundle(senderDid, recipientDid, messageText);
@@ -135,7 +129,7 @@ export function ChatPanel({
         </div>
       )}
       <div className="space-y-4">
-        <Favorites ref={favoritesRef} onSelect={(did) => setRecipientDid(did)} />
+        <Favorites ref={favoritesRef} onSelect={(did: string) => setRecipientDid(did)} />
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Recipient's DID:Health</label>
           <input

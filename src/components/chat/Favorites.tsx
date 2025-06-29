@@ -1,28 +1,27 @@
 // Favorites.tsx
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useAccount } from 'wagmi';
-import { useXmtp } from '../../hooks/useXmtp';
-import { getLitDecryptedFHIR } from '../../lib/litSessionSigs';
-import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument';
+import didLogo from '../../assets/did-health.png';
 
 interface Favorite {
   did: string;
-  name?: string;
   timestamp: number;
   fhirData?: any;
   encrypted?: boolean;
 }
 
 export interface FavoritesRef {
-  addFavorite: (did: string, name?: string) => void;
+  addFavorite: (did: string) => void;
 }
 
 export const Favorites = forwardRef<FavoritesRef, { onSelect: (did: string) => void }>((props, ref) => {
   const { onSelect } = props;
   const { address } = useAccount();
-  const { xmtpClient } = useXmtp();
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [expandedDid, setExpandedDid] = useState<string | null>(null);
+  const [didInput, setDidInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const storageKey = `favorites_${address}`;
 
   useEffect(() => {
@@ -37,43 +36,45 @@ export const Favorites = forwardRef<FavoritesRef, { onSelect: (did: string) => v
   }, [address, storageKey]);
 
   const addFavorite = async (did: string) => {
-    if (!xmtpClient || !address) return;
-
-    const newFavorite: Favorite = {
-      did,
-      timestamp: Date.now()
-    };
-
-    try {
-      const result = await resolveDidHealthAcrossChains(did);
-      if (!result) {
-        throw new Error('No DID found for this address');
-      }
-      const doc = result.doc;
-      const fhirUrl = doc?.ipfsUri || doc?.altIpfsUris?.[0];
-
-      if (!fhirUrl) throw new Error('No FHIR URL found');
-
-      const response = await fetch(fhirUrl);
-      const json = await response.json();
-
-      const isEncrypted = fhirUrl.endsWith('.enc') || fhirUrl.endsWith('.lit');
-      const fhirData = isEncrypted
-        ? await getLitDecryptedFHIR(json, { chain: 'ethereum' })
-        : json;
-
-      newFavorite.fhirData = fhirData;
-      newFavorite.encrypted = isEncrypted;
-    } catch (error) {
-      console.error('Error resolving or decrypting FHIR data', error);
+    if (!address) {
+      console.error('Missing wallet address');
+      setError('Please connect your wallet first');
+      return;
     }
 
-    setFavorites(prev => {
-      const updated = [newFavorite, ...prev.filter(f => f.did !== did)].slice(0, 10);
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-      return updated;
-    });
-    onSelect(did);
+    console.log('Adding favorite for DID:', did);
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Validate DID format
+      if (!did.startsWith('did:health:') || did.split(':').length !== 4) {
+        throw new Error('Invalid DID format. Expected format: did:health:<chainId>:<name>');
+      }
+
+      const newFavorite: Favorite = {
+        did,
+        timestamp: Date.now(),
+        fhirData: null,
+        encrypted: false
+      };
+
+      console.log('New favorite created:', newFavorite);
+
+      setFavorites(prev => {
+        const updated = [newFavorite, ...prev.filter(f => f.did !== did)].slice(0, 10);
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+        console.log('Favorites updated:', updated);
+        return updated;
+      });
+      onSelect(did);
+    } catch (error: any) {
+      setError(error.message || 'Failed to add favorite');
+      console.error('Error adding favorite', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useImperativeHandle(ref, () => ({
@@ -92,83 +93,86 @@ export const Favorites = forwardRef<FavoritesRef, { onSelect: (did: string) => v
     <div className="bg-gray-50 p-4 rounded-lg">
       <h3 className="text-lg font-semibold mb-4">Favorites</h3>
 
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const form = e.target as HTMLFormElement;
-          const input = form.elements.namedItem('didInput') as HTMLInputElement;
-          const nameInput = form.elements.namedItem('nameInput') as HTMLInputElement;
-          const did = input.value.trim();
-          const name = nameInput.value.trim();
-          if (did) {
-            await addFavorite(did, name || undefined);
-            input.value = '';
-            nameInput.value = '';
-          }
-        }}
-        className="mb-4 space-y-2"
-      >
+      <div className="mb-4 space-y-2">
         <input
           type="text"
-          name="didInput"
           placeholder="did:health:<chainId>:<name>"
           className="w-full border px-3 py-2 rounded text-sm"
           required
+          onChange={(e) => setDidInput(e.target.value)}
+          value={didInput}
         />
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700"
-        >
-          ➕ Add to Favorites
-        </button>
-      </form>
+        <div className="flex flex-col space-y-2">
+          <button
+            disabled={isLoading || !didInput.trim()}
+            onClick={async (e) => {
+              e.preventDefault();
+              if (didInput.trim()) {
+                try {
+                  console.log('Attempting to add favorite with DID:', didInput.trim());
+                  await addFavorite(didInput.trim());
+                  setDidInput('');
+                  console.log('Successfully added favorite');
+                } catch (err) {
+                  console.error('Error adding favorite:', err);
+                  setError('Failed to add favorite. Please check the console for more details.');
+                }
+              }
+            }}
+            className={`w-full ${isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} text-white py-2 px-4 rounded`}
+          >
+            {isLoading ? '⏳ Adding...' : '➕ Add to Favorites'}
+          </button>
+          {error && (
+            <div className="text-red-500 text-sm p-2 bg-red-50 rounded">
+              {error}
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="space-y-2">
-        {favorites.map((f) => (
-          <div key={f.did} className="bg-white rounded-lg shadow overflow-hidden">
-            <div
-              onClick={() => setExpandedDid(f.did === expandedDid ? null : f.did)}
-              className="flex items-center justify-between p-3 border-b cursor-pointer hover:bg-gray-100"
-            >
-              <div className="flex items-center space-x-2">
-                <span className="text-blue-600">⭐</span>
-                <span className="font-medium">{f.name || f.did}</span>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeFavorite(f.did);
-                }}
-                className="text-red-500 hover:text-red-700"
-              >
-                ×
-              </button>
-            </div>
-            {expandedDid === f.did && f.fhirData && (
-              <div className="p-4 space-y-3 bg-gray-50">
-                {f.fhirData.photo?.[0]?.url && (
-                  <img
-                    src={f.fhirData.photo[0].url}
-                    alt="Profile"
-                    className="w-24 h-24 rounded-full mx-auto object-cover shadow"
-                  />
-                )}
-                <div className="text-center">
-                  <h4 className="text-lg font-semibold">
-                    {f.fhirData.name?.[0]?.text || f.fhirData.name?.[0]?.given?.join(' ')}
-                  </h4>
-                  <p className="text-sm text-gray-600">{f.fhirData.resourceType}</p>
-                  {f.encrypted && (
-                    <p className="text-xs text-indigo-600 mt-1">🔐 Encrypted and Decrypted</p>
-                  )}
-                </div>
-                <pre className="bg-white p-2 rounded text-xs overflow-x-auto max-h-60">
-                  {JSON.stringify(f.fhirData, null, 2)}
-                </pre>
-              </div>
-            )}
+        {favorites.length === 0 ? (
+          <div className="text-gray-500 text-sm text-center py-4">
+            No favorites added yet
           </div>
-        ))}
+        ) : (
+          <div className="space-y-2">
+            {favorites.map((f) => (
+              <div key={f.did} className="bg-white rounded-lg shadow overflow-hidden hover:bg-gray-50 transition-colors duration-200">
+                <div
+                  onClick={() => setExpandedDid(f.did === expandedDid ? null : f.did)}
+                  className="flex items-center justify-between p-3 border-b cursor-pointer hover:bg-gray-100"
+                >
+                  <div className="flex items-center space-x-2">
+                    <img
+                      src={didLogo}
+                      alt="DID Health"
+                      className="w-5 h-5"
+                    />
+                    <span className="font-medium truncate">{f.did}</span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFavorite(f.did);
+                    }}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    ×
+                  </button>
+                </div>
+                {expandedDid === f.did && (
+                  <div className="p-4 space-y-3 bg-gray-50">
+                    <div className="text-sm text-gray-600">
+                      {f.did.split(':').slice(2).join(':')}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
