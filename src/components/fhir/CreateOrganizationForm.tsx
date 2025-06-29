@@ -70,7 +70,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
     }
 
     setFHIRResource(updatedOrg)
-    navigate('/onboarding/ethereum')
+    //navigate('/onboarding/ethereum')
   }
 
   if (!organization) return null

@@ -60,7 +60,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
     }
     console.log('FHIR Patient Resource:', updatedPatient)
     setFHIRResource(updatedPatient)
-    navigate('/onboarding/ethereum')
+    //navigate('/onboarding/ethereum')
   }
 
   if (!patient) return null

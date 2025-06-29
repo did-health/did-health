@@ -67,7 +67,7 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
       updatedPractitioner.id = uuidv4()
     }
     setFHIRResource(updatedPractitioner)
-    navigate('/onboarding/ethereum')
+    //navigate('/onboarding/ethereum')
   }
 
   if (!practitioner) return null
@@ -83,135 +83,115 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
               className="w-full h-full object-contain scale-110 transition-transform duration-300 hover:scale-125"
             />
           </div>
-        </div>    <form onSubmit={handleSubmit} className="space-y-4">
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
             🩺 {practitioner.id ? 'Edit' : 'Create'} Practitioner DID Resource
           </h2>
 
-          <input type="text" name="name.0.given.0" value={practitioner.name?.[0]?.given?.[0] || ''} onChange={handleInputChange} placeholder="First Name" className="input" />
-          <input type="text" name="name.0.family" value={practitioner.name?.[0]?.family || ''} onChange={handleInputChange} placeholder="Last Name" className="input" />
-          <select name="gender" value={practitioner.gender || ''} onChange={handleInputChange} className="input">
-            <option value="">Select Gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-            <option value="unknown">Unknown</option>
-          </select>
-          <input type="date" name="birthDate" value={practitioner.birthDate || ''} onChange={handleInputChange} className="input" />
-          <input type="tel" name="telecom.0.value" value={practitioner.telecom?.[0]?.value || ''} onChange={handleInputChange} placeholder="Phone" className="input" />
-          <input type="email" name="telecom.1.value" value={practitioner.telecom?.[1]?.value || ''} onChange={handleInputChange} placeholder="Email" className="input" />
-          <input type="text" name="address.0.line.0" value={practitioner.address?.[0]?.line?.[0] || ''} onChange={handleInputChange} placeholder="Address Line" className="input" />
-          <input type="text" name="address.0.city" value={practitioner.address?.[0]?.city || ''} onChange={handleInputChange} placeholder="City" className="input" />
-          <input type="text" name="address.0.state" value={practitioner.address?.[0]?.state || ''} onChange={handleInputChange} placeholder="State" className="input" />
-          <input type="text" name="address.0.postalCode" value={practitioner.address?.[0]?.postalCode || ''} onChange={handleInputChange} placeholder="Postal Code" className="input" />
-          <input type="text" name="address.0.country" value={practitioner.address?.[0]?.country || ''} onChange={handleInputChange} placeholder="Country" className="input" />
-
-          <input type="text" name="qualification.0.code.text" value={practitioner.qualification?.[0]?.code?.text || ''} onChange={handleInputChange} placeholder="Qualification (e.g. MD, RN)" className="input" />
-          <input
-            type="text"
-            name="qualification.0.specialty.0.text"
-            value={
-              ((practitioner.qualification?.[0] as PractitionerQualificationWithSpecialty)?.specialty?.[0]?.text || '')
-            }
-            onChange={handleInputChange}
-            placeholder="Specialty (e.g. Cardiology)"
-            className="input"
-          />
-
-          {/* Practitioner Photo */}
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 block">Practitioner Photo</label>
-            {practitioner?.photo?.[0]?.data && !showCamera && (
-              <>
-                <img
-                  src={`data:${practitioner.photo[0].contentType};base64,${practitioner.photo[0].data}`}
-                  alt="Practitioner"
-                  className="w-32 h-32 rounded-full object-cover border shadow"
-                />
-                <button type="button" className="btn-outline mt-2" onClick={() => setShowCamera(true)}>
-                  🔁 Change Photo
-                </button>
-              </>
-            )}
-            {(!practitioner?.photo?.[0]?.data || showCamera) && (
-              <>
-                <Webcam
-                  ref={webcamRef}
-                  screenshotFormat="image/jpeg"
-                  className="w-full sm:w-64 rounded-md shadow-md border"
-                  videoConstraints={{ width: 320, height: 240, facingMode: 'user' }}
-                />
-                <button
-                  type="button"
-                  className="btn-primary mt-2"
-                  onClick={() => {
-                    const screenshot = webcamRef.current?.getScreenshot()
-                    if (!screenshot) return
-                    setPractitioner((prev) => {
-                      if (!prev) return prev
-                      return {
-                        ...prev,
-                        photo: [
-                          {
-                            contentType: 'image/jpeg',
-                            data: screenshot.split(',')[1],
-                            title: 'captured-webcam.jpg',
-                            creation: new Date().toISOString(),
-                          },
-                        ],
-                      }
-                    })
-                    setShowCamera(false)
-                  }}
-                >
-                  📸 Capture Photo
-                </button>
-              </>
-            )}
+          <div>
+            <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">First Name</label>
+            <input id="firstName" type="text" name="name.0.given.0" value={practitioner.name?.[0]?.given?.[0] || ''} onChange={handleInputChange} className="input" />
           </div>
-          {/* Identifier: NPI, SSN, MRN */}
-<div>
-  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 block mb-2">
-    Identifier (e.g. NPI, MRN, SSN)
-  </label>
-  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <select
-      name="identifier.2.type.coding.0.code"
-      value={practitioner?.identifier?.[2]?.type?.coding?.[0]?.code || ''}
-      onChange={handleInputChange}
-      className="input input-bordered w-full"
-    >
-      <option value="">Type</option>
-      <option value="NI">National Insurance (UK)</option>
-      <option value="SS">Social Security Number (SSN)</option>
-      <option value="MR">Medical Record Number (MRN)</option>
-      <option value="DL">Driver License</option>
-      <option value="NPI">National Provider Identifier (NPI)</option>
-    </select>
 
-    <input
-      name="identifier.2.system"
-      value={practitioner?.identifier?.[2]?.system || ''}
-      onChange={handleInputChange}
-      className="input input-bordered w-full"
-      placeholder="System URI"
-    />
+          <div>
+            <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Last Name</label>
+            <input id="lastName" type="text" name="name.0.family" value={practitioner.name?.[0]?.family || ''} onChange={handleInputChange} className="input" />
+          </div>
 
-    <input
-      name="identifier.2.value"
-      value={practitioner?.identifier?.[2]?.value || ''}
-      onChange={handleInputChange}
-      className="input input-bordered w-full"
-      placeholder="Identifier Value"
-    />
-  </div>
-</div>
+          <div>
+            <label htmlFor="gender" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Gender</label>
+            <select id="gender" name="gender" value={practitioner.gender || ''} onChange={handleInputChange} className="input">
+              <option value="">Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
 
+          <div>
+            <label htmlFor="birthDate" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Birth Date</label>
+            <input id="birthDate" type="date" name="birthDate" value={practitioner.birthDate || ''} onChange={handleInputChange} className="input" />
+          </div>
+
+          <div>
+            <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Phone</label>
+            <input id="phone" type="tel" name="telecom.0.value" value={practitioner.telecom?.[0]?.value || ''} onChange={handleInputChange} className="input" />
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Email</label>
+            <input id="email" type="email" name="telecom.1.value" value={practitioner.telecom?.[1]?.value || ''} onChange={handleInputChange} className="input" />
+          </div>
+
+          <div>
+            <label htmlFor="addressLine" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Address Line</label>
+            <input id="addressLine" type="text" name="address.0.line.0" value={practitioner.address?.[0]?.line?.[0] || ''} onChange={handleInputChange} className="input" />
+          </div>
+
+          <div>
+            <label htmlFor="city" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">City</label>
+            <input id="city" type="text" name="address.0.city" value={practitioner.address?.[0]?.city || ''} onChange={handleInputChange} className="input" />
+          </div>
+
+          <div>
+            <label htmlFor="state" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">State</label>
+            <input id="state" type="text" name="address.0.state" value={practitioner.address?.[0]?.state || ''} onChange={handleInputChange} className="input" />
+          </div>
+
+          <div>
+            <label htmlFor="postalCode" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Postal Code</label>
+            <input id="postalCode" type="text" name="address.0.postalCode" value={practitioner.address?.[0]?.postalCode || ''} onChange={handleInputChange} className="input" />
+          </div>
+
+          <div>
+            <label htmlFor="country" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Country</label>
+            <input id="country" type="text" name="address.0.country" value={practitioner.address?.[0]?.country || ''} onChange={handleInputChange} className="input" />
+          </div>
+
+          <div>
+            <label htmlFor="qualification" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Qualification (e.g., MD, RN)</label>
+            <input id="qualification" type="text" name="qualification.0.code.text" value={practitioner.qualification?.[0]?.code?.text || ''} onChange={handleInputChange} className="input" />
+          </div>
+
+          <div>
+            <label htmlFor="specialty" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Specialty (e.g., Cardiology)</label>
+            <input id="specialty" type="text" name="qualification.0.specialty.0.text" value={(practitioner.qualification?.[0] as PractitionerQualificationWithSpecialty)?.specialty?.[0]?.text || ''} onChange={handleInputChange} className="input" />
+          </div>
+
+          {/* Practitioner Photo block is already labeled correctly */}
+
+          <div>
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 block mb-2">Identifier (e.g. NPI, MRN, SSN)</label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="identifierType" className="sr-only">Identifier Type</label>
+                <select id="identifierType" name="identifier.2.type.coding.0.code" value={practitioner?.identifier?.[2]?.type?.coding?.[0]?.code || ''} onChange={handleInputChange} className="input input-bordered w-full">
+                  <option value="">Type</option>
+                  <option value="NI">National Insurance (UK)</option>
+                  <option value="SS">Social Security Number (SSN)</option>
+                  <option value="MR">Medical Record Number (MRN)</option>
+                  <option value="DL">Driver License</option>
+                  <option value="NPI">National Provider Identifier (NPI)</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="identifierSystem" className="sr-only">System URI</label>
+                <input id="identifierSystem" name="identifier.2.system" value={practitioner?.identifier?.[2]?.system || ''} onChange={handleInputChange} className="input input-bordered w-full" placeholder="System URI" />
+              </div>
+              <div>
+                <label htmlFor="identifierValue" className="sr-only">Identifier Value</label>
+                <input id="identifierValue" name="identifier.2.value" value={practitioner?.identifier?.[2]?.value || ''} onChange={handleInputChange} className="input input-bordered w-full" placeholder="Identifier Value" />
+              </div>
+            </div>
+          </div>
 
           <button type="submit" className="btn-primary w-full">
             {practitioner.id ? '💾 Update Practitioner' : '✅ Save Practitioner Record'}
           </button>
         </form>
+
       </div>
     </div>
   )

@@ -12,7 +12,10 @@ import { useOnboardingState } from '../../store/OnboardingState'
 import { SetEncryption } from '../lit/SetEncryption'
 import logo from '../../assets/did-health.png'
 import ethlogo from '../../assets/ethereum-eth-logo.svg'
-
+import CreateDeviceForm from '../fhir/CreateDeviceForm'
+import CreatePatientForm from '../fhir/CreatePatientForm'
+import CreatePractitionerForm from '../fhir/CreatePractitionerForm'
+import CreateOrganizationForm from '../fhir/CreateOrganizationForm'
 type StepCardProps = {
   step: string
   title: string
@@ -21,7 +24,7 @@ type StepCardProps = {
 
 export default function OnboardingEth() {
   const { t } = useTranslation()
-const navigate = useNavigate()
+  const navigate = useNavigate()
   const {
     walletConnected,
     litConnected,
@@ -36,6 +39,10 @@ const navigate = useNavigate()
   } = useOnboardingState()
 
   console.log(did)
+  const handleSubmit = async (updatedFHIR: any) => {
+    console.log('💾 Submitting updated FHIR:', updatedFHIR)
+    useOnboardingState.getState().setFHIRResource(updatedFHIR)
+  }
   return (
     <main className="p-6 sm:p-10 max-w-3xl mx-auto text-gray-800 dark:text-white">
       <div className="mb-8 text-center flex flex-col items-center">
@@ -98,16 +105,32 @@ const navigate = useNavigate()
             <p className="text-green-600 dark:text-green-400 font-medium">
               ✅ {t('created')} <strong>{fhirResource.resourceType}</strong>
             </p>
+
             <div className="mt-2">
-              <Link
-                to={`/create/${fhirResource.resourceType.toLowerCase()}`}
-                className="inline-flex items-center text-sm text-blue-600 hover:underline dark:text-blue-400"
-              >
-                ✏️ {t('edit')} {fhirResource.resourceType}
-              </Link>
+              {(() => {
+                switch (fhirResource.resourceType) {
+                  case 'Patient':
+                    return <CreatePatientForm defaultValues={fhirResource} onSubmit={handleSubmit} />
+                  case 'Organization':
+                    return <CreateOrganizationForm defaultValues={fhirResource} onSubmit={handleSubmit} />
+                  case 'Practitioner':
+                    return <CreatePractitionerForm defaultValues={fhirResource} onSubmit={handleSubmit} />
+                  case 'Device':
+                    return <CreateDeviceForm defaultValues={fhirResource} onSubmit={handleSubmit} />
+                    
+                  default:
+                    return (
+                      <p className="text-sm text-red-500">
+                        ❌ Unsupported FHIR resource type: 
+                      </p>
+                    )
+                }
+              })()}
+
             </div>
           </StepCard>
         )}
+
 
 
         {
@@ -196,30 +219,30 @@ const navigate = useNavigate()
           </StepCard>
         )}
 
-{walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && !did && (
-  <StepCard step="6" title={t('chooseDID')}>
-    <SelectDIDFormETH onDIDAvailable={(did) => setDID(did)} />
-  </StepCard>
-)}
+        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && !did && (
+          <StepCard step="6" title={t('chooseDID')}>
+            <SelectDIDFormETH onDIDAvailable={(did) => setDID(did)} />
+          </StepCard>
+        )}
 
-{walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
-  <StepCard step="6" title={t('chooseDID')}>
-    <div>
-      <span>{did}</span>
-      <button
-        type="button"
-        onClick={() => {
-          // Navigate or open DID view modal
-          // Example if using react-router-dom:
-          navigate(`/ethereum/did`)
-        }}
-        style={{ marginLeft: '1rem' }}
-      >
-        {t('selectBlockchain.checkDid')}
-      </button>
-    </div>
-  </StepCard>
-)}
+        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
+          <StepCard step="6" title={t('chooseDID')}>
+            <div>
+              <span>{did}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  // Navigate or open DID view modal
+                  // Example if using react-router-dom:
+                  navigate(`/ethereum/did`)
+                }}
+                style={{ marginLeft: '1rem' }}
+              >
+                {t('selectBlockchain.checkDid')}
+              </button>
+            </div>
+          </StepCard>
+        )}
 
 
 

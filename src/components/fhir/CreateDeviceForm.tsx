@@ -54,7 +54,7 @@ const CreateDeviceForm: React.FC<CreateDeviceFormProps> = ({ defaultValues, onSu
       updatedDevice.id = uuidv4()
     }
     setFHIRResource(updatedDevice)
-    navigate('/onboarding/ethereum')
+    //navigate('/onboarding/ethereum')
   }
 
   if (!device) return null
