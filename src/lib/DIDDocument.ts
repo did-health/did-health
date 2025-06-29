@@ -91,11 +91,18 @@ export function convertToDidDocument({
     id: `did:health:${healthDid}`,
     controller: owner,
     service: [
+      // Main FHIR resource
       {
         id: `did:health:${healthDid}#fhir`,
         type: 'FHIRResource',
         serviceEndpoint: ipfsUri,
       },
+      // Alternate FHIR resources
+      ...(altIpfsUris || []).map((uri, index) => ({
+        id: `did:health:${healthDid}#alt-${index}`,
+        type: 'FHIRResource',
+        serviceEndpoint: uri,
+      })),
     ],
     verificationMethod: [], // optional
     reputationScore,
@@ -150,7 +157,7 @@ export async function resolveDidHealth(chainId: number, address: string) {
 
 const result = await contract.addressDidMapping(address.toLowerCase())
 console.log('📦 DID resolution result:', result)
-
+console.log(result.altIpfsUris)
 return convertToDidDocument({
   owner: result.owner,
   healthDid: result.healthDid, 
