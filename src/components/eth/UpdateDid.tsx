@@ -177,7 +177,7 @@ const handleSubmit = async (updatedFHIR: any) => {
     setTimeout(() => setModalOpen(false), 2000)
   } catch (err: any) {
     console.error(err)
-    setStatus(`❌ ${err.message}`)
+    setStatus(`❌ Error Updating DID`)
   }
 }
 

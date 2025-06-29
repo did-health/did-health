@@ -98,10 +98,20 @@ export default function ResolveDIDETH() {
         <div className="w-32 h-32 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
           <img
             src={logo}
-            alt="did:health Logo"
-            className="w-full h-full object-contain scale-110 transition-transform duration-300 hover:scale-125"
+            alt="DID Health Logo"
+            className="w-full h-full object-contain"
           />
         </div>
+        {didDoc?.id && (
+          <div className="mt-4">
+            <a
+              href={`/ethereum/did/update?did=${didDoc.id}`}
+              className="btn-primary w-full"
+            >
+              🔄 Update DID
+            </a>
+          </div>
+        )}
         <h1 className="text-2xl font-bold mt-4 text-center">
           🔎 View Your <span className="text-green-600 dark:text-green-400">did:health</span> Identifier
         </h1>
@@ -248,7 +258,7 @@ export default function ResolveDIDETH() {
           )}
           {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && (
             <div className="mt-6 text-center">
-              <DAOStatus walletAddress={connectedWalletAddress} did={didDoc?.id} ></DAOStatus>
+              <DAOStatus walletAddress={connectedWalletAddress} did={didDoc?.id || ''} ></DAOStatus>
             </div>
           )}
 
