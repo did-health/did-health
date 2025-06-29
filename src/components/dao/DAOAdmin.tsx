@@ -50,22 +50,15 @@ export default function DAOAdminPage() {
 
   const OWNER_ADDRESS = '0x15B7652e76E27C67A92cd42a0CD384cF572B4a9b'.toLowerCase()
 
-  function extractRoleFromFHIR(fhirResource: any): string {
-  // Often role can be inferred from 'type' or custom field
-  if (!fhirResource || !fhirResource.type || !Array.isArray(fhirResource.type)) return 'Member'
+  function extractSpecialtyFromFHIR(fhirResource: any): string {
+  if (!fhirResource || !fhirResource.specialty || !Array.isArray(fhirResource.specialty)) return 'Member'
 
-  // Look for first coding display or code in 'type'
-  const typeObj = fhirResource.type[0]
-  if (typeObj?.coding && Array.isArray(typeObj.coding) && typeObj.coding.length > 0) {
-    return typeObj.coding[0].display || typeObj.coding[0].code || 'Member'
+  const specialtyObj = fhirResource.specialty[0]
+  if (specialtyObj?.coding && Array.isArray(specialtyObj.coding) && specialtyObj.coding.length > 0) {
+    return specialtyObj.coding[0].display || specialtyObj.coding[0].code || 'Member'
   }
 
   return 'Member'
-}
-
-function extractOrgNameFromFHIR(fhirResource: any): string {
-  if (!fhirResource) return 'Organization X'
-  return fhirResource.name || 'Organization X'
 }
 
   async function fetchApplications() {
@@ -167,19 +160,29 @@ function extractOrgNameFromFHIR(fhirResource: any): string {
         throw new Error('Applicant is already a member')
       }
 
-const application = applications.find(app => app.applicant === applicant)
-const fhirResource = application?.fhirResource
+const app = applications.find(a => a.applicant === applicant)
+if (!app) {
+  throw new Error('Application not found')
+}
 
-const role = extractRoleFromFHIR(fhirResource)
-const orgName = extractOrgNameFromFHIR(fhirResource)
+const fhirResource = app.fhirResource
+const specialty = extractSpecialtyFromFHIR(fhirResource)
+const ipfsUri = app.ipfsUri?.[0] || ''
 
       console.log('[approveApplication] Sending approveMembership tx with:', {
         applicant,
-        role,
-        orgName,
+        specialty,
+        ipfsUri,
       })
 
-      const tx = await contract.approveMembership(applicant, role, orgName)
+      // For practitioners, we need to pass specialty and empty string for orgName
+      const tx = await contract.approveMembership(
+        applicant,         // addr
+        app.did,           // did
+        specialty,         // role
+        '',               // orgName (empty for practitioners)
+        ipfsUri            // ipfsUri
+      )
       console.log('[approveApplication] Transaction sent:', tx.hash)
 
       await tx.wait()
