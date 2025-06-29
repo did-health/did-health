@@ -1,132 +1,134 @@
-import { useState, useEffect } from 'react'
-import { searchDAOApprovedMembers} from '../../lib/DAOApporovedMembers'
-import { resolveDidHealthByDidNameAcrossChains } from '../../lib/DIDDocument'
-
+import React, { useState } from 'react'
+import { useOnboardingState } from '../../store/OnboardingState'
+import { getLitChainByChainId } from '../../lib/getChains'
+import {
+  hashAccessControlConditions, validateAccessControlConditionsSchema
+} from '@lit-protocol/access-control-conditions'
 interface SetAccessControlProps {
-  onSetAccessConditions: (conditions: any[]) => void
+  onSetAccessConditions?: (conditions: any[]) => void
   connectedWallet: string
+  encryptionSkipped: boolean
+  setEncryptionSkipped: (skipped: boolean) => void
+  setShareError: (error: string | null) => void
 }
 
-export function SetAccessControl({ onSetAccessConditions, connectedWallet }: SetAccessControlProps) {
-  const [shareAddress, setShareAddress] = useState('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [searchResults, setSearchResults] = useState<any[]>([])
+export function SetAccessControl({ 
+  onSetAccessConditions, 
+  connectedWallet,
+  encryptionSkipped,
+  setEncryptionSkipped,
+  setShareError
+}: SetAccessControlProps) {
+  const { setAccessControlConditions } = useOnboardingState()
   const [loading, setLoading] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [showError, setShowError] = useState('')
 
-  async function handleSelfOnly() {
-    onSetAccessConditions([
+
+  const applyAccessControl = async (conditions: any) => {
+    const isValid = await validateAccessControlConditionsSchema(conditions)
+    if (!isValid) {
+      setShowError('Invalid access control condition')
+      return
+    }
+    const hash = await hashAccessControlConditions(conditions)
+    console.log('✅ ACC hash:', hash)
+
+    setAccessControlConditions(conditions)
+    setEncryptionSkipped(false)
+    setShareError(null)
+  }
+
+
+
+  const handleSelfOnly = async () => {
+    if (!connectedWallet) return
+    
+    const acc = [
       {
-        conditionType: 'evmBasic',
         contractAddress: '',
         standardContractType: '',
-        chain: 'ethereum',
+        chain: litChain,
         method: '',
-        parameters: [],
+        parameters: [':userAddress'],
+        returnValueTest: {
+          comparator: '=',
+          value: connectedWallet
+        }
+      }];
+    await applyAccessControl(acc);
+  }
+
+  const { chainId } = useOnboardingState();
+  const litChain = chainId ? getLitChainByChainId(chainId as number) : 'ethereum';
+
+  const handleShareWithOther = async () => {
+    if (!connectedWallet || !/^0x[a-fA-F0-9]{40}$/.test(connectedWallet)) {
+      setShowError('Please enter a valid Wallet address.')
+      return
+    }
+    const acc = [
+      {
+        contractAddress: '',
+        standardContractType: '',
+        chain: litChain,
+        method: '',
+        parameters: [':userAddress'],
         returnValueTest: {
           comparator: '=',
           value: connectedWallet,
         },
       },
-    ])
+    ]
+    await applyAccessControl(acc)
   }
 
-  async function handleShareWithOther() {
-    if (!shareAddress) return
-    onSetAccessConditions([
-      {
-        conditionType: 'evmBasic',
-        contractAddress: '',
-        standardContractType: '',
-        chain: 'ethereum',
-        method: '',
-        parameters: [],
-        returnValueTest: {
-          comparator: '=',
-          value: shareAddress,
-        },
-      },
-    ])
-  }
-
-  async function handleResolveAndShare(did: string) {
-    setLoading(true)
-    try {
-      const doc = await resolveDidHealthByDidNameAcrossChains(did)
-      const controller = doc?.doc?.controller ?? null
-      setLoading(false)
-
-      if (controller) {
-        setShareAddress(controller)
-        await handleShareWithOther()
-      } else {
-        alert('Could not resolve wallet address for this DID.')
-      }
-    } catch (error) {
-      console.error('Error resolving DID:', error)
-      setLoading(false)
-      alert('Error resolving DID. Please try again.')
-    }
-  }
-
-  useEffect(() => {
-    const delaySearch = setTimeout(async () => {
-      if (searchTerm.length >= 3) {
-        const results = await searchDAOApprovedMembers(searchTerm)
-        setSearchResults(results)
-      } else {
-        setSearchResults([])
-      }
-    }, 300)
-
-    return () => clearTimeout(delaySearch)
-  }, [searchTerm])
 
   return (
     <div className="p-6 bg-white shadow rounded max-w-xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">Step 5. Set Access Control</h2>
-      <p className="mb-4">Choose how this record should be encrypted.</p>
-
       <div className="space-y-4">
-        <button className="btn btn-outline btn-accent w-full" onClick={handleSelfOnly}>
-          🔒 Only I can decrypt
+        <button
+          onClick={handleSelfOnly}
+          className="btn-primary w-full"
+        >
+          🔐 Only I can decrypt
         </button>
 
-        <div className="w-full space-y-2">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Share with another wallet
+          </label>
           <input
-            className="input input-bordered w-full"
             type="text"
-            placeholder="Enter wallet address"
-            value={shareAddress}
-            onChange={(e) => setShareAddress(e.target.value)}
+            value={connectedWallet}
+            placeholder="Connected wallet address"
+            className="w-full p-2 border rounded"
+            disabled
           />
-          <button className="btn btn-primary w-full" onClick={handleShareWithOther}>
-            🤝 Share with wallet address
+          <button
+            onClick={handleShareWithOther}
+            className="btn-primary w-full"
+            disabled={!connectedWallet}
+          >
+            🔐 Share with this wallet
           </button>
         </div>
 
-        <div className="pt-4">
-          <input
-            className="input input-bordered w-full"
-            type="text"
-            placeholder="Search for healthcare provider (name or org)"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchResults.length > 0 && (
-            <ul className="menu bg-base-100 w-full rounded-box mt-2">
-              {searchResults.map((r) => (
-                <li key={r.did}>
-                  <button
-                    disabled={loading}
-                    onClick={() => handleResolveAndShare(r.did)}
-                  >
-                    {r.name} ({r.resourceType}) — {r.did}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        {loading && (
+          <div className="mt-2 text-sm text-gray-600">
+            Setting access conditions...
+          </div>
+        )}
+        {showSuccess && (
+          <div className="mt-2 text-sm text-green-600">
+            Access conditions set successfully!
+          </div>
+        )}
+        {showError && (
+          <div className="mt-2 text-sm text-red-600">
+            {showError}
+          </div>
+        )}
       </div>
     </div>
   )
