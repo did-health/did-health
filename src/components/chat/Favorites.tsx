@@ -1,11 +1,18 @@
 // Favorites.tsx
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useAccount } from 'wagmi';
+import { ethers } from 'ethers';
 import didLogo from '../../assets/did-health.png';
+import deployedContracts from '../../generated/deployedContracts';
+import { decryptFHIRFile } from '../../lib/litEncryptFile';
+import type { ILitNodeClient } from '@lit-protocol/types';
+import { parseDidHealth } from '../../utils/did';
 
 interface Favorite {
   did: string;
   timestamp: number;
+  chainId: string;
+  name: string;
   fhirData?: any;
   encrypted?: boolean;
 }
@@ -14,7 +21,10 @@ export interface FavoritesRef {
   addFavorite: (did: string) => void;
 }
 
-export const Favorites = forwardRef<FavoritesRef, { onSelect: (did: string) => void }>((props, ref) => {
+export const Favorites = forwardRef<FavoritesRef, { 
+  onSelect: (did: string) => void,
+  litClient?: ILitNodeClient
+}>((props, ref) => {
   const { onSelect } = props;
   const { address } = useAccount();
   const [favorites, setFavorites] = useState<Favorite[]>([]);
@@ -49,13 +59,16 @@ export const Favorites = forwardRef<FavoritesRef, { onSelect: (did: string) => v
 
     try {
       // Validate DID format
-      if (!did.startsWith('did:health:') || did.split(':').length !== 4) {
+      const parts = did.split(':');
+      if (parts.length !== 4 || !did.startsWith('did:health:')) {
         throw new Error('Invalid DID format. Expected format: did:health:<chainId>:<name>');
       }
 
       const newFavorite: Favorite = {
         did,
         timestamp: Date.now(),
+        chainId: parts[2],
+        name: parts[3],
         fhirData: null,
         encrypted: false
       };
@@ -139,9 +152,12 @@ export const Favorites = forwardRef<FavoritesRef, { onSelect: (did: string) => v
         ) : (
           <div className="space-y-2">
             {favorites.map((f) => (
-              <div key={f.did} className="bg-white rounded-lg shadow overflow-hidden hover:bg-gray-50 transition-colors duration-200">
+              <div key={f.did} className="bg-white rounded-lg shadow overflow-hidden hover:bg-gray-50 transition-colors duration-200 relative">
                 <div
-                  onClick={() => setExpandedDid(f.did === expandedDid ? null : f.did)}
+                  onClick={() => {
+                    onSelect(f.did);
+                    setExpandedDid(f.did === expandedDid ? null : f.did);
+                  }}
                   className="flex items-center justify-between p-3 border-b cursor-pointer hover:bg-gray-100"
                 >
                   <div className="flex items-center space-x-2">
@@ -165,10 +181,87 @@ export const Favorites = forwardRef<FavoritesRef, { onSelect: (did: string) => v
                 {expandedDid === f.did && (
                   <div className="p-4 space-y-3 bg-gray-50">
                     <div className="text-sm text-gray-600">
-                      {f.did.split(':').slice(2).join(':')}
+                      <div className="flex justify-between items-center">
+                        <span>Chain ID:</span>
+                        <span className="font-medium">{f.chainId}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Name:</span>
+                        <span className="font-medium">{f.name}</span>
+                      </div>
+                      {f.fhirData ? (
+                        <div className="mt-2 p-2 bg-gray-100 rounded">
+                          <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(f.fhirData, null, 2)}</pre>
+                        </div>
+                      ) : (
+                        <div className="mt-2 p-2 bg-gray-100 rounded text-gray-500">
+                          <p className="text-xs">No FHIR data available</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
+                <div
+                  className="absolute top-0 left-0 w-full h-full opacity-0 transition-opacity duration-200 hover:opacity-100 bg-white/90 rounded-lg pointer-events-none"
+                  onMouseEnter={async () => {
+                    try {
+                      const { chainId, name } = parseDidHealth(f.did);
+                      const env = 'testnet';
+                      const network = Object.values(deployedContracts[env]).find(
+                        (net: any) => {
+                          const dao = net?.DidHealthDAO;
+                          return dao && typeof dao.chainId === 'number' && dao.chainId.toString() === chainId;
+                        }
+                      );
+                      if (!network) throw new Error(`No registry for chain ${chainId}`);
+                      const registryEntry = network.DidHealthDAO as any;
+                      if (!registryEntry) throw new Error(`No registry for chain ${chainId}`);
+                      
+                      const provider = new ethers.JsonRpcProvider(registryEntry.rpcUrl);
+                      const contract = new ethers.Contract(registryEntry.address, registryEntry.abi, provider);
+                      const data = await contract.getHealthDID(`${chainId}:${name}`);
+                      
+                      // Try to decrypt FHIR data if available
+                      if (data.fhirData && props.litClient) {
+                        try {
+                          const blob = new Blob([data.fhirData], { type: 'application/json' });
+                          const decrypted = await decryptFHIRFile({
+                            file: blob,
+                            litClient: props.litClient,
+                            chain: 'ethereum'
+                          } as any);
+                          setFavorites(prev => prev.map(fav => 
+                            fav.did === f.did ? { ...fav, fhirData: decrypted } : fav
+                          ));
+                        } catch (err) {
+                          console.error('Failed to decrypt FHIR data:', err);
+                          setFavorites(prev => prev.map(fav => 
+                            fav.did === f.did ? { ...fav, fhirData: { error: 'Failed to decrypt FHIR data' } } : fav
+                          ));
+                        }
+                      }
+                    } catch (err) {
+                      console.error('Error fetching DID info:', err);
+                      setFavorites(prev => prev.map(fav => 
+                        fav.did === f.did ? { ...fav, fhirData: { error: 'Failed to fetch DID info' } } : fav
+                      ));
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    setFavorites(prev => prev.map(fav => 
+                      fav.did === f.did ? { ...fav, fhirData: null } : fav
+                    ));
+                  }}
+                >
+                  {f.fhirData && !f.fhirData.error && (
+                    <div className="p-4">
+                      <h4 className="text-sm font-semibold mb-2">DID Information</h4>
+                      <div className="text-xs text-gray-600">
+                        <pre className="whitespace-pre-wrap">{JSON.stringify(f.fhirData, null, 2)}</pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
