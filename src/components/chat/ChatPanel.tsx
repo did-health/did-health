@@ -69,12 +69,32 @@ export function ChatPanel({
     email,
     web3SpaceDid,
 }: ChatPanelProps) {
-    const { xmtpClient, initXmtp } = useXmtp();
     const favoritesRef = useRef<FavoritesRef>(null);
+    const { xmtpClient, initXmtp, error: xmtpError } = useXmtp();
 
     useEffect(() => {
-        if (isConnected) initXmtp();
-    }, [isConnected, initXmtp]);
+        if (isConnected && !xmtpClient) {
+            initXmtp().catch((err: any) => {
+                console.error('Failed to initialize XMTP:', err);
+                setStatus(`❌ XMTP Error: ${err.message || 'Failed to initialize'}`);
+            });
+        }
+    }, [isConnected, initXmtp, xmtpClient]);
+
+    if (!xmtpClient) {
+        return (
+            <div className="p-4 text-center">
+                <div className="text-yellow-600 mb-2">
+                    Initializing XMTP...
+                </div>
+                {xmtpError && (
+                    <div className="text-red-600">
+                        Error: {xmtpError}
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     const getAccessControlConditions = useCallback(
         async function getAccessControlConditions(recipientWallet: string, chainId: string): Promise<any[]> {
