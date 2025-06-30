@@ -68,16 +68,24 @@ export function RegisterDID() {
           value: did,
         };
 
-const fhirWithDid = {
-  ...fhirResource,
-  identifier: Array.isArray(fhirResource.identifier)
-    ? fhirResource.identifier.some(id => id.system === 'https://www.w3.org/ns/did')
-      ? fhirResource.identifier.map(id =>
-          id.system === 'https://www.w3.org/ns/did' ? { ...id, value: didIdentifier.value } : id
-        )
-      : [...fhirResource.identifier, didIdentifier]
-    : [didIdentifier],
-};
+        const identifiers = Array.isArray(fhirResource.identifier)
+          ? fhirResource.identifier.filter(id => id && typeof id === 'object')
+          : []
+
+        const hasDid = identifiers.some(id => id.system === didIdentifier.system)
+
+        const updatedIdentifiers = hasDid
+          ? identifiers.map(id =>
+            id.system === didIdentifier.system
+              ? { ...id, value: didIdentifier.value }
+              : id
+          )
+          : [...identifiers, didIdentifier]
+
+        const fhirWithDid = {
+          ...fhirResource,
+          identifier: updatedIdentifiers,
+        }
 
         console.log('🔗 FHIR Resource with DID:', fhirWithDid)
 
@@ -88,10 +96,10 @@ const fhirWithDid = {
         if (encryptionSkipped) {
           setActiveStep(1)
           const fileName = fhirResource.id || crypto.randomUUID()
-          finalIpfsUri = await storePlainFHIRFile(fhirResource, fileName, fhirResource.resourceType)
+          finalIpfsUri = await storePlainFHIRFile(fhirWithDid, fileName, fhirResource.resourceType)
         } else {
           setActiveStep(1)
-
+console.log('Encrypting with access constrol conditions:' + accessControlConditions)
           const { encryptedJSON, hash } = await encryptFHIRFile({
             file: resourceBlob,
             litClient: litClient!,
@@ -123,6 +131,11 @@ const fhirWithDid = {
       setTxHash(tx)
       setFinalDid(did)
       setDID(did)
+      
+      // Wait a moment to show the checkmark
+      setTimeout(() => {
+        setActiveStep(5)
+      }, 1000)
     } catch (err: any) {
       console.error('❌ Registration error:', err)
       setError(err.message || '❌ Registration failed. See console for details.')
@@ -158,7 +171,7 @@ const fhirWithDid = {
                       <CheckCircleIcon className="h-5 w-5 text-green-500" />
                     ) : index === activeStep ? (
                       activeStep === 5 ? (
-                        <div className="h-5 w-5 rounded-full border border-blue-300 bg-blue-100" /> // non-animated dot
+                        <div className="h-5 w-5 rounded-full border border-blue-300 bg-blue-100" />
                       ) : (
                         <svg className="animate-spin h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
                           <circle
@@ -185,56 +198,44 @@ const fhirWithDid = {
                   </li>
                 ))}
               </ol>
-
-
               {error && <p className="text-red-600 mt-4 text-sm">{error}</p>}
-
-              {activeStep === 4 && txHash && (
-                <div className="mt-6 space-y-4">
-                  <div className="bg-gray-100 rounded-lg p-4 shadow-sm text-sm space-y-2">
-                    <p><strong>DID:</strong> <code className="break-all">{finalDid}</code></p>
+              {activeStep === 5 && txHash && (
+                <div className="mt-4 space-y-4">
+                  <div className="bg-green-100 rounded-lg p-4">
+                    <div className="flex items-center">
+                      <CheckCircleIcon className="h-6 w-6 text-green-600 mr-3" />
+                      <div>
+                        <h3 className="font-semibold text-green-800">Registration Complete!</h3>
+                        <p className="text-green-700 mt-1">
+                          Your DID has been successfully registered.
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <a
-                      href={'/ethereum/did'}
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                    >
-                      🌐 View DID
-                    </a>
-
-                    {ipfsUri && (
-                      <a
-                        href={ipfsUri}
+                  <div className="space-y-2">
+                    <p className="font-medium">View your DID:</p>
+                    <div className="flex gap-2">
+                      <a 
+                        href={`/ethereum/did`} 
+                        className="btn btn-primary"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                       >
-                        🌐 View IPFS
+                        View DID
                       </a>
-                    )}
-
-                    <a
-                      href={getExplorerLink(txHash)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                    >
-                      🔎 View Transaction
-                    </a>
-
-                    <button
-                      onClick={() => finalDid && navigator.clipboard.writeText(finalDid)}
-                      className="inline-flex items-center px-4 py-2 text-sm font-medium bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
-                    >
-                      📋 Copy DID
-                    </button>
+                      <a 
+                        href={getExplorerLink(txHash)} 
+                        className="btn btn-secondary"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View on Etherscan
+                      </a>
+                    </div>
                   </div>
                 </div>
               )}
-
-
               <div className="mt-6 text-center">
                 <button className="btn btn-sm btn-outline" onClick={() => setOpen(false)}>
                   Close

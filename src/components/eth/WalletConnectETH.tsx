@@ -61,7 +61,7 @@ export function ConnectWallet() {
   /* ------------------------------------------------------------------ */
   /* UI                                                                 */
   /* ------------------------------------------------------------------ */
-  console.log('isIOS:', isIOS);
+  //console.log('isIOS:', isIOS);
   return (
     <div className="rounded-2xl border border-gray-200 p-6 shadow-lg bg-white dark:bg-gray-800">
       <p className="text-gray-600 dark:text-gray-300 mb-6">

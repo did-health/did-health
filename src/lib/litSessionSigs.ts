@@ -7,22 +7,24 @@ import {
 } from '@lit-protocol/auth-helpers'
 import { hexValue } from '@ethersproject/bytes'
 import { Web3Provider } from '@ethersproject/providers'
-import { decryptFromLitJson } from './litEncryptFile'
+import { decryptFHIRFile } from './litEncryptFile'
 import { chainIdToLitChain } from './getChains'
 
 export async function getLitDecryptedFHIR(
   json: any,
   litClient: any,
-  options: { chain?: string } = {} // 👈 accept override
+  options: { chain?: string } = {}
 ) {
   const { accessControlConditions } = json
   const provider = new Web3Provider(window.ethereum)
   await provider.send('eth_requestAccounts', [])
   const signer = provider.getSigner()
   const walletAddress = await signer.getAddress()
-console.log('((((((((' + options.chain)
-  // ✅ FIX: Use override if provided, fallback to ACC or wallet
-  const resolvedChain = options.chain
+
+  // Get chain from options or fallback to first ACC or default to ethereum
+  const resolvedChain = options.chain || 
+    (accessControlConditions?.[0]?.chain || 'ethereum')
+  console.log('Resolving chain:', resolvedChain)
 
   const litResource = new LitAccessControlConditionResource('*')
   const latestBlockhash = await litClient.getLatestBlockhash()
@@ -40,11 +42,8 @@ console.log('((((((((' + options.chain)
     return await generateAuthSig({ signer, toSign })
   }
 
-
-  console.log("dlkldklfkdlfk" + resolvedChain)
-
   const sessionSigs = await litClient.getSessionSigs({
-    chain: resolvedChain, // ✅ FIXED HERE
+    chain: resolvedChain,
     resourceAbilityRequests: [
       {
         resource: litResource,
@@ -54,16 +53,19 @@ console.log('((((((((' + options.chain)
     authNeededCallback: authSigCallback,
   })
 
-  const decrypted = await decryptFromLitJson({
-    encryptedJson: json,
-    litClient,
-    sessionSigs,
-  })
-
   try {
+    const decrypted = await decryptFHIRFile({
+      encryptedJson: json,
+      litClient,
+      sessionSigs,
+    })
     return decrypted
-  } catch (err) {
-    throw new Error('❌ Decrypted content is not valid JSON')
+  } catch (err: any) {
+    // If decryption fails but we have access control conditions, rethrow the error
+    if (accessControlConditions?.length) {
+      throw new Error(`❌ Failed to decrypt: ${err.message || 'Unknown error'}`)
+    }
+    // If no access control conditions and decryption fails, return the original JSON
+    return json
   }
 }
-

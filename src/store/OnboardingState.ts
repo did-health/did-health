@@ -20,6 +20,7 @@ type State = {
   encryptionSkipped: boolean
   ipfsUri: string | null
   chainId: number | string | null
+  w3upClient: any | null
 
   setWalletConnected: (value: boolean) => void
   setWalletAddress: (address: string) => void
@@ -34,6 +35,7 @@ type State = {
   setEncryptionSkipped: (value: boolean) => void
   setIpfsUri: (uri: string | null) => void
   setChainId: (chainId: number | string | null) => void
+  setW3upClient: (client: any) => void
 }
 
 export const useOnboardingState = create<State>()(
@@ -52,14 +54,15 @@ export const useOnboardingState = create<State>()(
       encryptionSkipped: false,
       ipfsUri: null,
       chainId: null,
-
+      w3upClient: null,
+      setW3upClient: (client) => set({ w3upClient: client }),
       setWalletConnected: (walletConnected) => set({ walletConnected }),
       setWalletAddress: (walletAddress) => set({ walletAddress }),
       setLitConnected: (litConnected) => set({ litConnected }),
       setStorageReady: (storageReady) => set({ storageReady }),
       setFHIRResource: (fhirResource) => set({ fhirResource }),
       setDID: (did) => set({ did }),
-      setLitClient: (client) => set({ litClient: client }),
+      setLitClient: (litClient) => set({ litClient }),
       setEmail: (email) => set({ email }),
       setWeb3SpaceDid: (web3SpaceDid) => set({ web3SpaceDid }),
       setAccessControlConditions: (accessControlConditions) => set({ accessControlConditions }),
@@ -72,11 +75,11 @@ export const useOnboardingState = create<State>()(
       partialize: (state) => {
         const {
           litClient,
-          setLitClient,
+          w3upClient,
           ...persistedState
         } = state
-        return persistedState // exclude non-serializable Lit client
-      },
+        return persistedState // exclude non-serializable Lit client and w3upClient
+      }
     }
   )
 )

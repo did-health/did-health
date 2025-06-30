@@ -7,7 +7,23 @@
   "onboardingInstructions": "Follow the steps below to create your decentralized health identity.",
   "connectWallet": "Connect Wallet",
   "connectLit": "Connect to Lit Protocol",
-  "setupStorage": "Setup Storage (Web3.Storage)",
+"setupStorage": {
+   "title": "Set up your health data storage on Web3.Storage",
+    "input": {
+      "placeholder": "Enter your email address",
+      "ariaLabel": "Email address"
+    },
+    "button": {
+      "verifyAndSetup": "Verify and Setup"
+    },
+    "status": {
+      "invalidEmail": "Please enter a valid email address",
+      "emailSent": "Verification email sent! Please check your inbox and confirm to continue.",
+      "spaceReady": "Your Web3.Storage space is ready (DID: {{did}})",
+      "alreadySetup": "Web3.Storage already set up (DID: {{did}})",
+      "error": "Error setting up Web3.Storage space. Please try again."
+    }
+  },
   "createFHIR": "Create FHIR Resource",
   "fhirCreated": "FHIR Record Created",
   "created": "Successfully created:",

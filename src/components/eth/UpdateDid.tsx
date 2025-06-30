@@ -3,6 +3,11 @@ import { useAccount } from 'wagmi'
 import { useOnboardingState } from '../../store/OnboardingState'
 import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
+
+interface FormProps {
+  defaultValues: any;
+  onSubmit: (updatedFHIR: any) => Promise<void>;
+}
 import { encryptFHIRFile } from '../../lib/litEncryptFile'
 import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3'
 import { updateDIDUriOnChain } from '../../lib/updateDidUriOnChain'
@@ -143,6 +148,11 @@ const handleSubmit = async (updatedFHIR: any) => {
       const blob = new Blob([JSON.stringify(updatedFHIR)], { type: 'application/json' })
       const litChain = chainName || 'ethereum'
 
+      if (!litClient) {
+        setStatus('❌ Lit client not initialized. Please try again.')
+        return
+      }
+
       const result = await encryptFHIRFile({
         file: blob,
         litClient,
@@ -158,17 +168,16 @@ const handleSubmit = async (updatedFHIR: any) => {
     const url = await storeEncryptedFileByHash(fileToUpload, hash, resourceType)
 
     setStatus('📝 Updating smart contract...')
-    //await updateDIDUriOnChain({ did: address, newUri: url, chainName })
-await updateDIDUriOnChain({
-  healthDid: didDoc?.id || address,
-  newUri: url,
-  chainName,
-})
+    await updateDIDUriOnChain({
+      healthDid: didDoc?.id || address,
+      newUri: url,
+      chainName
+    })
     setStatus('✅ DID updated on-chain!')
     setTimeout(() => setModalOpen(false), 2000)
   } catch (err: any) {
     console.error(err)
-    setStatus(`❌ ${err.message}`)
+    setStatus(`❌ Error Updating DID`)
   }
 }
 
@@ -193,13 +202,13 @@ await updateDIDUriOnChain({
 
     switch (fhir.resourceType) {
       case 'Patient':
-        return <CreatePatientForm {...props} />
+        return <CreatePatientForm {...props} defaultValues={fhir} onSubmit={handleSubmit} />
       case 'Organization':
-        return <CreateOrganizationForm {...props} />
+        return <CreateOrganizationForm {...props} defaultValues={fhir} onSubmit={handleSubmit} />
       case 'Practitioner':
-        return <CreatePractitionerForm {...props} />
+        return <CreatePractitionerForm {...props} defaultValues={fhir} onSubmit={handleSubmit} />
       case 'Device':
-        return <CreateDeviceForm {...props} />
+        return <CreateDeviceForm {...props} defaultValues={fhir} onSubmit={handleSubmit} />
       default:
         return <p className="text-sm text-red-500">❌ Unsupported FHIR resource type: {fhir.resourceType}</p>
     }

@@ -16,7 +16,7 @@ export async function getW3Client(email: string) {
 
 export async function storeEncryptedFileByHash(
   encryptedBlob: Blob,
-  fileHash: string,
+  fileHash: string | { hash: string },
   resourceType: string
 ): Promise<string> {
   const { email, web3SpaceDid } = useOnboardingState.getState()
@@ -25,22 +25,27 @@ export async function storeEncryptedFileByHash(
     throw new Error('Missing Web3.Storage credentials in Zustand state')
   }
 
-  const client = await getW3Client(email)
-  // If you have a space object, use its did() method:
-  // await client.setCurrentSpace(space.did())
+  try {
+    const client = await createW3Client()
+    await client.login(email as `${string}@${string}`)
+    await client.setCurrentSpace(web3SpaceDid as `did:${string}:${string}`)
 
-  // If web3SpaceDid is already in the correct format, cast it:
-  await client.setCurrentSpace(web3SpaceDid as `did:${string}:${string}`)
+    // Create FHIR-style structure: Patient/abc123.enc
+    const hash = typeof fileHash === 'object' ? fileHash.hash : fileHash
+    const file = new File([encryptedBlob], `${resourceType}/${hash}.enc`, {
+      type: 'application/octet-stream',
+    })
 
-  // Create FHIR-style structure: Patient/abc123.enc
-  const file = new File([encryptedBlob], `${resourceType}/${fileHash}.enc`, {
-    type: 'application/octet-stream',
-  })
+    // Upload the file using the directory API
+    const directoryCid = await client.uploadDirectory([file])
+    console.log('Web3.Storage upload response:', directoryCid)
 
-  const directoryCid = await client.uploadDirectory([file])
-
-  // Return the Web3.Storage URL for access via w3s.link
-  return `https://w3s.link/ipfs/${directoryCid}/${resourceType}/${fileHash}.enc`
+    // Return the Web3.Storage URL
+    return `https://w3s.link/ipfs/${directoryCid}/${resourceType}/${hash}.enc`
+  } catch (error) {
+    console.error('❌ Web3.Storage upload error:', error)
+    throw new Error(`Failed to upload file to web3 storage: ${error instanceof Error ? error.message : String(error)}`)
+  }
 }
 
 /**
@@ -70,9 +75,13 @@ export async function storePlainFHIRFile(
     type: 'application/json',
   })
 
-  const directoryCid = await client.uploadDirectory([file])
-
-  return `https://w3s.link/ipfs/${directoryCid}/${resourceType}/${fileName}.json`
+  try {
+    const directoryCid = await client.uploadDirectory([file])
+    return `https://w3s.link/ipfs/${directoryCid}/${resourceType}/${fileName}.json`
+  } catch (error: unknown) {
+    console.error('❌ Error uploading to web3 storage:', error)
+    throw new Error(`Failed to upload file to web3 storage: ${error instanceof Error ? error.message : String(error)}`)
+  }
 }
 
 export async function getFromIPFS(url: string): Promise<any> {

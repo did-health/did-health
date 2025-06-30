@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { v4 as uuidv4 } from 'uuid'
-import type { Device as FHIRDevice } from 'fhir/r4'
+import type { Device } from 'fhir/r4'
 import { useOnboardingState } from '../../store/OnboardingState'
 import logo from '../../assets/did-health.png'
 
-const CreateDeviceForm: React.FC = () => {
+interface CreateDeviceFormProps {
+  defaultValues: Device
+  onSubmit: (updatedFHIR: Device) => Promise<void>
+}
+
+const CreateDeviceForm: React.FC<CreateDeviceFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
   const { fhirResource, setFHIRResource } = useOnboardingState()
-
-  const [device, setDevice] = useState<FHIRDevice | null>(null)
+  const [device, setDevice] = useState<Device>(defaultValues)
 
   useEffect(() => {
     if (fhirResource?.resourceType === 'Device') {
-      setDevice(fhirResource as FHIRDevice)
+      setDevice(fhirResource as Device)
     } else {
       setDevice({
         resourceType: 'Device',
@@ -50,7 +54,7 @@ const CreateDeviceForm: React.FC = () => {
       updatedDevice.id = uuidv4()
     }
     setFHIRResource(updatedDevice)
-    navigate('/onboarding/ethereum')
+    //navigate('/onboarding/ethereum')
   }
 
   if (!device) return null
