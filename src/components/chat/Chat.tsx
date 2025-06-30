@@ -55,7 +55,7 @@ export default function Chat() {
               }} />
             </div>
           ) : (
-            walletConnected && litConnected && storageReady ? (
+            walletConnected && storageReady && litConnected ? (
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex flex-col gap-4">
                   <MemberSearch
@@ -89,14 +89,37 @@ export default function Chat() {
                   <span className="mr-2">💬</span>
                   <span>Chat</span>
                 </h2>
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                  <p className="text-yellow-700">Please complete the onboarding process to start chatting.</p>
-                </div>
-                <SettingsPanel onStorageReady={(client) => {
-                  if (client) {
-                    setStorageReady(true);
-                  }
-                }} />
+                {litConnected ? (
+                  <div className="flex flex-col gap-4">
+                    <MemberSearch
+                      filters={filters}
+                      onFilterChange={(e) => {
+                        const { name, value } = e.target;
+                        setFilters(prev => ({ ...prev, [name]: value }));
+                      }}
+                      filtered={[]} // TODO: Implement filtering logic
+                      onSelectRecipient={setRecipientDid}
+                    />
+                    <Inbox inbox={inbox} />
+                    <ChatPanel 
+                      isConnected={true}
+                      recipientDid={recipientDid}
+                      setRecipientDid={setRecipientDid}
+                      messageText={messageText}
+                      setMessageText={setMessageText}
+                      status={status}
+                      setStatus={setStatus}
+                      litClient={litClient}
+                      email={email || ''}
+                      web3SpaceDid={web3SpaceDid || ''}
+                      walletAddress={walletAddress || ''}
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <p className="text-yellow-700">Initializing Lit Protocol...</p>
+                  </div>
+                )}
               </div>
             )
           )

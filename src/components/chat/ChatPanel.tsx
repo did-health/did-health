@@ -3,7 +3,6 @@ import React, { useEffect, useCallback, useRef } from 'react';
 import { ethers, JsonRpcProvider } from 'ethers';
 import type { ethers as ethersTypes } from 'ethers';
 import { useAccount } from 'wagmi';
-import { ContentTypeId } from '@xmtp/wasm-bindings';
 import { useXmtp } from '../../hooks/useXmtp';
 import { createFHIRMessageBundle } from '../fhir/MessageBundle';
 import { Favorites } from './Favorites';
@@ -16,8 +15,12 @@ import { encryptFHIRFile } from '../../lib/litEncryptFile';
 import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3';
 import type { FavoritesRef } from './Favorites';
 import { createMessageAccessControlConditions } from './MessageAccessControl';
-import type { LitAccessControlCondition } from './MessageAccessControl';
+import { validateAccessControlConditionsSchema } from '@lit-protocol/access-control-conditions';
+import { getLitChainByChainId } from '../../lib/getChains';
 import logo from '../../assets/did-health.png'
+import { ConnectLit } from '../lit/ConnectLit';
+import { Client } from '@xmtp/browser-sdk';
+import { ContentType, ContentTypeId } from '@xmtp/wasm-bindings';
 interface ChatPanelProps {
     isConnected: boolean;
     recipientDid: string | null;
@@ -75,16 +78,38 @@ export function ChatPanel({
     }, [isConnected, initXmtp]);
 
     const getAccessControlConditions = useCallback(
-        (recipientWallet: string): LitAccessControlCondition[] => {
-            if (!walletAddress) throw new Error('Sender wallet address not available');
-            return createMessageAccessControlConditions(walletAddress, recipientWallet);
+        async function getAccessControlConditions(recipientWallet: string, chainId: string): Promise<any[]> {
+            const litChain = getLitChainByChainId(parseInt(chainId)) || 'ethereum';
+            const conditions = [
+                {
+                    conditionType: 'equals',
+                    contractAddress: '',
+                    standardContractType: '',
+                    chain: litChain,
+                    method: '',
+                    parameters: [':userAddress', recipientWallet],
+                    returnValueTest: {
+                        comparator: '=',
+                        value: recipientWallet
+                    }
+                }
+            ];
+
+            const isValid = await validateAccessControlConditionsSchema(conditions);
+            if (!isValid) {
+                throw new Error('Invalid access control conditions');
+            }
+            return conditions;
         },
-        [walletAddress],
+        [],
     );
 
     const sendMessage = async () => {
         try {
-            if (!recipientDid || !walletAddress || !xmtpClient) throw new Error('Missing required information');
+            if (!recipientDid) throw new Error('Please select a recipient');
+            if (!walletAddress) throw new Error('Please connect your wallet');
+            if (!xmtpClient) throw new Error('XMTP client not initialized');
+            if (!litClient) throw new Error('Please wait for Lit Protocol initialization');
             const { chainId, lookupKey } = parseDidHealth(recipientDid);
 
             favoritesRef.current?.addFavorite(recipientDid);
@@ -102,7 +127,7 @@ export function ChatPanel({
             const contract = new ethers.Contract(registryEntry.address, registryEntry.abi, provider)
             const data = await contract.getHealthDID(lookupKey)
             if (!data || data.owner === ethers.ZeroAddress) {
-                throw new Error(`❌ DID "${didKey}" not found on chain ${chainId}`)
+                throw new Error(`❌ DID not found on chain ${chainId}`)
             }
             const recipientWallet = data.owner;
 
@@ -114,21 +139,22 @@ export function ChatPanel({
                 throw new Error('❌ Self messaging is not supported');
             }
 
-
-            const conv = await xmtpClient.conversations.newConversation(recipientWallet);
-
             const senderDid = `did:health:${chainId}:${walletAddress}`;
             const bundle = createFHIRMessageBundle(senderDid, recipientDid, messageText);
 
             setStatus('🔐 Encrypting...');
             const blob = new Blob([JSON.stringify(bundle)], { type: 'application/json' });
-            const accessControlConditions = getAccessControlConditions(recipientWallet);
+            const accessControlConditions = await createMessageAccessControlConditions(
+                walletAddress!, // sender is the wallet address
+                recipientWallet,
+                chainId.toString()
+            );
             const { encryptedJSON } = await encryptFHIRFile({
                 file: blob,
-                litClient,
+                litClient: litClient!, // We've already checked it's not null
                 chain: chainId.toString(),
                 accessControlConditions
-            } as any);
+            });
             const encryptedBlob = new Blob([encryptedJSON], { type: 'application/json' });
 
             setStatus('📦 Storing...');
@@ -136,9 +162,12 @@ export function ChatPanel({
 
             // Extract hash and cid from the URL (format: https://w3s.link/ipfs/{cid}/Message/{hash}.enc)
             const [, , cid, hash] = url.split('/') || ['', '', '', ''];
+            console.log('Web3 Storage CID:', cid);
 
             setStatus('📨 Sending...');
-            await conv.send(`${hash}:${cid}`, { contentType: ContentTypeId.Text });
+            const conversation = await xmtpClient.conversations.newDm(recipientWallet);
+            const message = await conversation.send(`${hash}:${cid}`, ContentType.Text);
+            console.log('Message sent:', message);
             setMessageText('');
             setStatus('✅ Message sent!');
         } catch (err: any) {
@@ -155,6 +184,7 @@ export function ChatPanel({
                     <h2 className="text-2xl font-bold">Secure Chat</h2>
                 </div>
             </div>
+            <ConnectLit />
             {!isConnected && (
                 <div className="bg-red-50 p-4 rounded-lg">
                     <p className="text-sm">Please connect your wallet to start chatting</p>

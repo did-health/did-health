@@ -2,7 +2,7 @@ const deployedContracts = {
   testnet: {
     arbitrumSepolia: {
       DidHealthDAO: {
-        address: "0xCDd076E8B022942635F84628bC041426E0AE0556",
+        address: "0xa54e4ac0D2DE3F7c34349b80256eEE76bC648c07",
         abi: [
           {
             type: "constructor",
@@ -315,7 +315,7 @@ const deployedContracts = {
           "https://api.studio.thegraph.com/query/114229/arbitrum-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x916C6b14234a691962176E980714979789dBc993",
+        address: "0xFF4d69075D459C47fa9C2432ad23f00D4AcF8203",
         abi: [
           {
             type: "constructor",
@@ -712,7 +712,7 @@ const deployedContracts = {
     },
     baseSepolia: {
       DidHealthDAO: {
-        address: "0x8D2194304cb40a576DEA9F778385Ff389A299458",
+        address: "0xEc486590247ab4450b0382108685C18082b45276",
         abi: [
           {
             type: "constructor",
@@ -1025,7 +1025,7 @@ const deployedContracts = {
           "https://api.studio.thegraph.com/query/114229/base-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x4C1FC0aA763Aba3cE0F47D569fd55A29b107C3D6",
+        address: "0x9E48EB941A02482AA33356986e2d2A66259Fa375",
         abi: [
           {
             type: "constructor",
@@ -1423,7 +1423,7 @@ const deployedContracts = {
     lineaSepolia: {},
     optimismSepolia: {
       DidHealthDAO: {
-        address: "0xBA63B4450eCb80995020f6233AE88476f2d35784",
+        address: "0x916C6b14234a691962176E980714979789dBc993",
         abi: [
           {
             type: "constructor",
@@ -1736,7 +1736,7 @@ const deployedContracts = {
           "https://api.studio.thegraph.com/query/114229/optimism-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0xb199afd6994dbdE5d02706017b6c298161934BF9",
+        address: "0x76ffDB83c3839d5521466E6caB12f3295819A73C",
         abi: [
           {
             type: "constructor",
@@ -2534,7 +2534,7 @@ const deployedContracts = {
     },
     scrollSepolia: {
       DidHealthDAO: {
-        address: "0x9E48EB941A02482AA33356986e2d2A66259Fa375",
+        address: "0x9E35829fC997748E332b96eBd48D2c17670cf41e",
         abi: [
           {
             type: "constructor",
@@ -2847,7 +2847,7 @@ const deployedContracts = {
           "https://api.studio.thegraph.com/query/114229/scroll-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x8D2194304cb40a576DEA9F778385Ff389A299458",
+        address: "0xEc486590247ab4450b0382108685C18082b45276",
         abi: [
           {
             type: "constructor",
@@ -3244,7 +3244,7 @@ const deployedContracts = {
     },
     sepolia: {
       DidHealthDAO: {
-        address: "0x8d29C95d7B6D1ceF6de676Ac2B7287b8C1284784",
+        address: "0x61F07C2048c947d85A511e0F7d2AFB01fc7B959f",
         abi: [
           {
             type: "constructor",
@@ -3557,7 +3557,7 @@ const deployedContracts = {
           "https://api.studio.thegraph.com/query/114229/sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0xbc0Fb6F7595D92C47A20A172Cf40751fFc6A9672",
+        address: "0xB46dc49C051C1D2A1978eCFDFf79eBc4fF6746d2",
         abi: [
           {
             type: "constructor",
@@ -3954,7 +3954,7 @@ const deployedContracts = {
     },
     zksyncSepolia: {
       DidHealthDAO: {
-        address: "0x916C6b14234a691962176E980714979789dBc993",
+        address: "0xFF4d69075D459C47fa9C2432ad23f00D4AcF8203",
         abi: [
           {
             type: "constructor",
@@ -4267,7 +4267,7 @@ const deployedContracts = {
           "https://api.studio.thegraph.com/query/114229/zksync-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x76ffDB83c3839d5521466E6caB12f3295819A73C",
+        address: "0xCDd076E8B022942635F84628bC041426E0AE0556",
         abi: [
           {
             type: "constructor",

@@ -1,26 +1,45 @@
-export type LitAccessControlCondition = {
-  method: string;
-  parameters: string[];
-  returnValueTest?: {
-    comparator: string;
-    value: string;
-  };
-};
+import { validateAccessControlConditionsSchema } from '@lit-protocol/access-control-conditions';
+import { getLitChainByChainId } from '../../lib/getChains';
 
-export function createMessageAccessControlConditions(
+export async function createMessageAccessControlConditions(
   senderWallet: string,
-  recipientWallet: string
-): LitAccessControlCondition[] {
-  return [
-    // Sender condition
+  recipientWallet: string,
+  chainId: string
+): Promise<any[]> {
+  const litChain = getLitChainByChainId(parseInt(chainId)) || 'ethereum';
+  
+  // Create conditions for both sender and recipient with operator
+  const conditions = [
     {
-      method: 'equals',
-      parameters: [':userAddress', senderWallet],
+      conditionType: 'evmAddress',
+      chain: litChain,
+      contractAddress: '',
+      standardContractType: '',
+      method: '',
+      parameters: [],
+      returnValueTest: {
+        comparator: '=',
+        value: senderWallet
+      }
     },
-    // Recipient condition
+    { operator: 'or' },
     {
-      method: 'equals',
-      parameters: [':userAddress', recipientWallet],
-    },
+      conditionType: 'evmAddress',
+      chain: litChain,
+      contractAddress: '',
+      standardContractType: '',
+      method: '',
+      parameters: [],
+      returnValueTest: {
+        comparator: '=',
+        value: recipientWallet
+      }
+    }
   ];
+
+  const isValid = await validateAccessControlConditionsSchema(conditions);
+  if (!isValid) {
+    throw new Error('Invalid access control conditions');
+  }
+  return conditions;
 }

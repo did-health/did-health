@@ -1,4 +1,4 @@
-import { Client, type Signer } from '@xmtp/xmtp-js';
+import { Client, type SCWSigner } from '@xmtp/browser-sdk';
 import { useWalletClient } from 'wagmi';
 import { useState, useCallback } from 'react';
 
@@ -10,19 +10,20 @@ export const useXmtp = () => {
     if (!walletClient?.account?.address) return;
 
     try {
-      const signer: Signer = {
+      const signer: SCWSigner = {
+        getIdentifier: async () => {
+          const address = walletClient.account!.address;
+          return address;
+        },
         signMessage: async (message: string | Uint8Array) => {
           const normalizedMessage = typeof message === 'string' ? message : new TextDecoder().decode(message);
           const signature = await walletClient.signMessage({
             message: normalizedMessage,
           });
-          return signature;
+          return new Uint8Array(Buffer.from(signature.slice(2), 'hex'));
         },
-        getAddress: async () => {
-          if (!walletClient.account) {
-            throw new Error('walletClient.account is undefined');
-          }
-          return walletClient.account.address;
+        getChainId: async () => {
+          return BigInt(1); // Mainnet
         }
       };
 

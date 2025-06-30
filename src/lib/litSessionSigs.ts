@@ -7,7 +7,7 @@ import {
 } from '@lit-protocol/auth-helpers'
 import { hexValue } from '@ethersproject/bytes'
 import { Web3Provider } from '@ethersproject/providers'
-import { decryptFromLitJson } from './litEncryptFile'
+import { decryptFHIRFile } from './litEncryptFile'
 import { chainIdToLitChain } from './getChains'
 
 export async function getLitDecryptedFHIR(
@@ -54,7 +54,7 @@ export async function getLitDecryptedFHIR(
   })
 
   try {
-    const decrypted = await decryptFromLitJson({
+    const decrypted = await decryptFHIRFile({
       encryptedJson: json,
       litClient,
       sessionSigs,
