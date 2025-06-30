@@ -16,7 +16,7 @@ export async function getW3Client(email: string) {
 
 export async function storeEncryptedFileByHash(
   encryptedBlob: Blob,
-  fileHash: string,
+  fileHash: string | { hash: string },
   resourceType: string
 ): Promise<string> {
   const { email, web3SpaceDid } = useOnboardingState.getState()
@@ -25,22 +25,27 @@ export async function storeEncryptedFileByHash(
     throw new Error('Missing Web3.Storage credentials in Zustand state')
   }
 
-  const client = await getW3Client(email)
-  
-  // Set the current space
-  await client.setCurrentSpace(web3SpaceDid as `did:${string}:${string}`)
+  try {
+    const client = await createW3Client()
+    await client.login(email as `${string}@${string}`)
+    await client.setCurrentSpace(web3SpaceDid as `did:${string}:${string}`)
 
-  // Create FHIR-style structure: Patient/abc123.enc
-  const file = new File([encryptedBlob], `${resourceType}/${fileHash}.enc`, {
-    type: 'application/octet-stream',
-  })
+    // Create FHIR-style structure: Patient/abc123.enc
+    const hash = typeof fileHash === 'object' ? fileHash.hash : fileHash
+    const file = new File([encryptedBlob], `${resourceType}/${hash}.enc`, {
+      type: 'application/octet-stream',
+    })
 
-  // Upload the file using the blob API
-  const uploadResponse = await client.capability.blob.add(file)
-  const cid = uploadResponse.digest.toString()
+    // Upload the file using the directory API
+    const directoryCid = await client.uploadDirectory([file])
+    console.log('Web3.Storage upload response:', directoryCid)
 
-  // Return the Web3.Storage URL
-  return `https://w3s.link/ipfs/${cid}/${resourceType}/${fileHash}.enc`
+    // Return the Web3.Storage URL
+    return `https://w3s.link/ipfs/${directoryCid}/${resourceType}/${hash}.enc`
+  } catch (error) {
+    console.error('❌ Web3.Storage upload error:', error)
+    throw new Error(`Failed to upload file to web3 storage: ${error instanceof Error ? error.message : String(error)}`)
+  }
 }
 
 /**

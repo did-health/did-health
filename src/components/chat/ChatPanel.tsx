@@ -170,22 +170,31 @@ export function ChatPanel({
             console.log('Extracted CID:', cid);
             console.log('Extracted Hash:', hash);
 
+            // Validate CID and hash
+            if (typeof cid !== 'string' || typeof hash !== 'string') {
+              throw new Error(`Invalid CID or hash type: CID=${typeof cid}, Hash=${typeof hash}`);
+            }
+
             setStatus('📨 Creating message bundle...');
             const messageBundle = createFHIRMessageBundle(
               `did:health:${chainId}:${walletAddress}`,
               recipientDid,
               `Encrypted message: ${cid}:${hash}`
             );
+            console.log('Message bundle:', messageBundle);
 
             setStatus('📨 Sending...');
-            const conversation = await xmtpClient.conversations.newDm({
-                type: 'Ethereum',
-                identifier: recipientWallet
-            });
-            const message = await conversation.send(JSON.stringify(messageBundle));
-            console.log('Message sent:', message);
-            setMessageText('');
-            setStatus('✅ Message sent!');
+            try {
+              const conversation = await xmtpClient.conversations.newDm(recipientWallet);
+              const message = await conversation.send(JSON.stringify(messageBundle));
+              console.log('Message sent:', message);
+              setMessageText('');
+              setStatus('✅ Message sent!');
+            } catch (err: any) {
+              console.error('XMTP send error:', err);
+              setStatus(`❌ Error: ${err.message || 'Unknown error occurred'}`);
+              throw err;
+            }
         } catch (err: any) {
             console.error(err);
             setStatus(`❌ Error: ${err.message || 'Unknown error occurred'}`);
