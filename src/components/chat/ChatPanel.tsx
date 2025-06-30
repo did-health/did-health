@@ -19,8 +19,7 @@ import { validateAccessControlConditionsSchema } from '@lit-protocol/access-cont
 import { getLitChainByChainId } from '../../lib/getChains';
 import logo from '../../assets/did-health.png'
 import { ConnectLit } from '../lit/ConnectLit';
-import { Client } from '@xmtp/browser-sdk';
-import { ContentType, ContentTypeId } from '@xmtp/wasm-bindings';
+import { Client, type Identifier } from '@xmtp/browser-sdk';
 interface ChatPanelProps {
     isConnected: boolean;
     recipientDid: string | null;
@@ -159,14 +158,31 @@ export function ChatPanel({
 
             setStatus('📦 Storing...');
             const url = await storeEncryptedFileByHash(encryptedBlob, recipientWallet, 'Message');
+            console.log('Web3 Storage URL:', url);
 
-            // Extract hash and cid from the URL (format: https://w3s.link/ipfs/{cid}/Message/{hash}.enc)
-            const [, , cid, hash] = url.split('/') || ['', '', '', ''];
-            console.log('Web3 Storage CID:', cid);
+            // Extract hash and cid from the URL
+            const urlRegex = /ipfs\/([^\/]+)\/Message\/([^\.]+)\.enc/;
+            const match = url.match(urlRegex);
+            if (!match) {
+              throw new Error(`Invalid Web3 Storage URL format: ${url}`);
+            }
+            const [_, cid, hash] = match;
+            console.log('Extracted CID:', cid);
+            console.log('Extracted Hash:', hash);
+
+            setStatus('📨 Creating message bundle...');
+            const messageBundle = createFHIRMessageBundle(
+              `did:health:${chainId}:${walletAddress}`,
+              recipientDid,
+              `Encrypted message: ${cid}:${hash}`
+            );
 
             setStatus('📨 Sending...');
-            const conversation = await xmtpClient.conversations.newDm(recipientWallet);
-            const message = await conversation.send(`${hash}:${cid}`, ContentType.Text);
+            const conversation = await xmtpClient.conversations.newDm({
+                type: 'Ethereum',
+                identifier: recipientWallet
+            });
+            const message = await conversation.send(JSON.stringify(messageBundle));
             console.log('Message sent:', message);
             setMessageText('');
             setStatus('✅ Message sent!');

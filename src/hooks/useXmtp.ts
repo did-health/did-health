@@ -1,4 +1,4 @@
-import { Client, type SCWSigner } from '@xmtp/browser-sdk';
+import { Client, type SCWSigner, type Identifier } from '@xmtp/browser-sdk';
 import { useWalletClient } from 'wagmi';
 import { useState, useCallback } from 'react';
 
@@ -11,9 +11,12 @@ export const useXmtp = () => {
 
     try {
       const signer: SCWSigner = {
-        getIdentifier: async () => {
+        getIdentifier: async (): Promise<Identifier> => {
           const address = walletClient.account!.address;
-          return address;
+          return {
+            identifier: address,
+            identifierKind: 'Ethereum'
+          };
         },
         signMessage: async (message: string | Uint8Array) => {
           const normalizedMessage = typeof message === 'string' ? message : new TextDecoder().decode(message);
@@ -22,9 +25,10 @@ export const useXmtp = () => {
           });
           return new Uint8Array(Buffer.from(signature.slice(2), 'hex'));
         },
-        getChainId: async () => {
+        getChainId: () => {
           return BigInt(1); // Mainnet
-        }
+        },
+        type: 'SCW'
       };
 
       const client = await Client.create(signer);

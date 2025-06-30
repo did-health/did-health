@@ -26,10 +26,8 @@ export async function storeEncryptedFileByHash(
   }
 
   const client = await getW3Client(email)
-  // If you have a space object, use its did() method:
-  // await client.setCurrentSpace(space.did())
-
-  // If web3SpaceDid is already in the correct format, cast it:
+  
+  // Set the current space
   await client.setCurrentSpace(web3SpaceDid as `did:${string}:${string}`)
 
   // Create FHIR-style structure: Patient/abc123.enc
@@ -37,10 +35,12 @@ export async function storeEncryptedFileByHash(
     type: 'application/octet-stream',
   })
 
-  const directoryCid = await client.uploadDirectory([file])
+  // Upload the file using the blob API
+  const uploadResponse = await client.capability.blob.add(file)
+  const cid = uploadResponse.digest.toString()
 
-  // Return the Web3.Storage URL for access via w3s.link
-  return `https://w3s.link/ipfs/${directoryCid}/${resourceType}/${fileHash}.enc`
+  // Return the Web3.Storage URL
+  return `https://w3s.link/ipfs/${cid}/${resourceType}/${fileHash}.enc`
 }
 
 /**
