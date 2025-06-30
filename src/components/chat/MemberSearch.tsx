@@ -23,7 +23,7 @@ export interface MemberEntry {
 export function MemberSearch({ filters, onFilterChange, filtered, onSelectRecipient }: MemberSearchProps) {
   return (
     <>
-      <h1 className="text-2xl font-bold mb-4">🩺 DAO Member Directory</h1>
+      <h1 className="text-2xl font-bold mb-4">🩺 did:health DAO Member Directory</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <input className="input" name="name" placeholder="Name" onChange={onFilterChange} />
         <input className="input" name="zip" placeholder="ZIP Code" onChange={onFilterChange} />
