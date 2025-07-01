@@ -1,15 +1,12 @@
 // ChatPanel.tsx
 import React, { useEffect, useCallback, useRef } from 'react';
-import { ethers, JsonRpcProvider } from 'ethers';
-import type { ethers as ethersTypes } from 'ethers';
-import { useAccount } from 'wagmi';
+import { ethers } from 'ethers';
+import { JsonRpcProvider } from 'ethers';
 import { useXmtp } from '../../hooks/useXmtp';
+import type { MultipleAccessControlConditions } from '@lit-protocol/types';
 import { createFHIRMessageBundle } from '../fhir/MessageBundle';
 import { Favorites } from './Favorites';
 import type { ILitNodeClient } from '@lit-protocol/types';
-import type { DeployedContracts } from '../../types/contracts';
-import type { ContractInfo } from '../../types/contracts';
-import type { NetworkConfig } from '../../types/network';
 import deployedContracts from '../../generated/deployedContracts';
 import { encryptFHIRFile } from '../../lib/litEncryptFile';
 import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3';
@@ -20,6 +17,7 @@ import { getLitChainByChainId } from '../../lib/getChains';
 import logo from '../../assets/did-health.png'
 import { ConnectLit } from '../lit/ConnectLit';
 import { Client, type Identifier } from '@xmtp/browser-sdk';
+import type { AccessControlConditions } from '@lit-protocol/types';
 interface ChatPanelProps {
     isConnected: boolean;
     recipientDid: string | null;
@@ -31,7 +29,8 @@ interface ChatPanelProps {
     walletAddress: string | null;
     litClient: ILitNodeClient | null;
     email: string;
-    web3SpaceDid: string;
+    web3SpaceDid: string | null;
+    chainId: number | null;
 }
 
 interface Message {
@@ -68,18 +67,23 @@ export function ChatPanel({
     litClient,
     email,
     web3SpaceDid,
+    chainId,
 }: ChatPanelProps) {
     const favoritesRef = useRef<FavoritesRef>(null);
-    const { xmtpClient, initXmtp, error: xmtpError } = useXmtp();
+    const { xmtpClient, initXmtp, error: xmtpError } = useXmtp({
+      address: walletAddress,
+      walletClient: chainId ? deployedContracts['testnet'].arbitrumSepolia.DidHealthDAO.rpcUrl : '',
+      isConnected: isConnected
+    });
 
     useEffect(() => {
-        if (isConnected && !xmtpClient) {
+        if (isConnected && !xmtpClient && walletAddress && chainId) {
             initXmtp().catch((err: any) => {
                 console.error('Failed to initialize XMTP:', err);
                 setStatus(`❌ XMTP Error: ${err.message || 'Failed to initialize'}`);
             });
         }
-    }, [isConnected, initXmtp, xmtpClient]);
+    }, [isConnected, initXmtp, xmtpClient, walletAddress, chainId]);
 
     if (!xmtpClient) {
         return (
@@ -96,129 +100,70 @@ export function ChatPanel({
         );
     }
 
-    const getAccessControlConditions = useCallback(
-        async function getAccessControlConditions(recipientWallet: string, chainId: string): Promise<any[]> {
-            const litChain = getLitChainByChainId(parseInt(chainId)) || 'ethereum';
-            const conditions = [
-                {
-                    conditionType: 'equals',
-                    contractAddress: '',
-                    standardContractType: '',
-                    chain: litChain,
-                    method: '',
-                    parameters: [':userAddress', recipientWallet],
-                    returnValueTest: {
-                        comparator: '=',
-                        value: recipientWallet
-                    }
-                }
-            ];
-
-            const isValid = await validateAccessControlConditionsSchema(conditions);
-            if (!isValid) {
-                throw new Error('Invalid access control conditions');
-            }
-            return conditions;
-        },
-        [],
-    );
-
     const sendMessage = async () => {
         try {
+            const env = 'testnet' // or 'mainnet'
             if (!recipientDid) throw new Error('Please select a recipient');
             if (!walletAddress) throw new Error('Please connect your wallet');
             if (!xmtpClient) throw new Error('XMTP client not initialized');
             if (!litClient) throw new Error('Please wait for Lit Protocol initialization');
+            
             const { chainId, lookupKey } = parseDidHealth(recipientDid);
-
+            
+            // Add recipient to favorites
             favoritesRef.current?.addFavorite(recipientDid);
 
-            const env = 'testnet' // or 'mainnet'
-            const registryEntry = Object.values(deployedContracts[env]).find(
-                (net: any) => net.HealthDIDRegistry?.chainId === chainId
-            )?.HealthDIDRegistry
+            // Get recipient wallet address from DID
+            console.log('🔍 Starting DID initialization process');
+            console.log('Environment:', env);
+            
+            const network = deployedContracts[env as keyof typeof deployedContracts];
+            if (!network) {
+                throw new Error(`❌ Network not found for env ${env}`);
+            }
 
+            const registryEntry = network[chainId.toString() as keyof typeof network]?.HealthDIDRegistry;
             if (!registryEntry) {
-                throw new Error(`❌ No HealthDIDRegistry deployed for chain ${chainId}`)
+                throw new Error(`❌ No HealthDIDRegistry deployed for chain ${chainId}`);
             }
 
-            const provider = new JsonRpcProvider(registryEntry.rpcUrl)
-            const contract = new ethers.Contract(registryEntry.address, registryEntry.abi, provider)
-            const data = await contract.getHealthDID(lookupKey)
-            if (!data || data.owner === ethers.ZeroAddress) {
-                throw new Error(`❌ DID not found on chain ${chainId}`)
-            }
-            const recipientWallet = data.owner;
+            console.log('Using RPC URL:', registryEntry.rpcUrl);
+            console.log('Using contract address:', registryEntry.address);
 
-            if (!ethers.isAddress(recipientWallet)) {
-                throw new Error('Invalid recipient wallet address');
-            }
+            const provider = new JsonRpcProvider(registryEntry.rpcUrl);
+            console.log('Created provider instance');
 
-            if (recipientWallet.toLowerCase() === walletAddress.toLowerCase()) {
-                throw new Error('❌ Self messaging is not supported');
-            }
-
-            const senderDid = `did:health:${chainId}:${walletAddress}`;
-            const bundle = createFHIRMessageBundle(senderDid, recipientDid, messageText);
-
-            setStatus('🔐 Encrypting...');
-            const blob = new Blob([JSON.stringify(bundle)], { type: 'application/json' });
-            const accessControlConditions = await createMessageAccessControlConditions(
-                walletAddress!, // sender is the wallet address
-                recipientWallet,
-                chainId.toString()
-            );
-            const { encryptedJSON } = await encryptFHIRFile({
-                file: blob,
-                litClient: litClient!, // We've already checked it's not null
-                chain: chainId.toString(),
-                accessControlConditions
-            });
-            const encryptedBlob = new Blob([encryptedJSON], { type: 'application/json' });
-
-            setStatus('📦 Storing...');
-            const url = await storeEncryptedFileByHash(encryptedBlob, recipientWallet, 'Message');
-            console.log('Web3 Storage URL:', url);
-
-            // Extract hash and cid from the URL
-            const urlRegex = /ipfs\/([^\/]+)\/Message\/([^\.]+)\.enc/;
-            const match = url.match(urlRegex);
-            if (!match) {
-              throw new Error(`Invalid Web3 Storage URL format: ${url}`);
-            }
-            const [_, cid, hash] = match;
-            console.log('Extracted CID:', cid);
-            console.log('Extracted Hash:', hash);
-
-            // Validate CID and hash
-            if (typeof cid !== 'string' || typeof hash !== 'string') {
-              throw new Error(`Invalid CID or hash type: CID=${typeof cid}, Hash=${typeof hash}`);
-            }
-
-            setStatus('📨 Creating message bundle...');
-            const messageBundle = createFHIRMessageBundle(
-              `did:health:${chainId}:${walletAddress}`,
-              recipientDid,
-              `Encrypted message: ${cid}:${hash}`
-            );
-            console.log('Message bundle:', messageBundle);
-
-            setStatus('📨 Sending...');
             try {
-              const conversation = await xmtpClient.conversations.newDm(recipientWallet);
-              const message = await conversation.send(JSON.stringify(messageBundle));
-              console.log('Message sent:', message);
-              setMessageText('');
-              setStatus('✅ Message sent!');
-            } catch (err: any) {
-              console.error('XMTP send error:', err);
-              setStatus(`❌ Error: ${err.message || 'Unknown error occurred'}`);
-              throw err;
+                const signer = await provider.getSigner();
+                console.log('Got signer instance');
+                
+                const wallet = await signer.getAddress();
+                console.log('Got wallet address:', wallet);
+ 
+                const contract = new ethers.Contract(registryEntry.address, registryEntry.abi, provider)
+                const data = await contract.getHealthDID(lookupKey)
+
+                if (!data || data.owner === ethers.ZeroAddress) {
+                    throw new Error(`❌ DID "${lookupKey}" not found on chain ${chainId}`)
+      }
+                console.log('Got DID owner data:', data);
+                
+                if (!data || data.owner === ethers.ZeroAddress) {
+                    throw new Error(`❌ DID not found on chain ${chainId}`);
+                }
+                const recipientWallet = data.owner;
+                console.log('Recipient wallet:', recipientWallet);
+                
+                return { wallet, recipientWallet };
+            } catch (error) {
+                console.error('❌ Initialization error:', error);
+                throw error;
             }
+
         } catch (err: any) {
-            console.error(err);
-            setStatus(`❌ Error: ${err.message || 'Unknown error occurred'}`);
-        }
+            console.error('❌ Initialization error:', err);
+            throw err;
+        }   
     };
 
     return (

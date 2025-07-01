@@ -4,7 +4,6 @@ import { useOnboardingState } from '../../store/OnboardingState';
 import { ChatPanel } from './ChatPanel';
 import { MemberSearch } from './MemberSearch';
 import { Inbox } from './Inbox';
-import { SettingsPanel } from './SettingsPanel';
 
 interface Message {
   from: string;
@@ -12,7 +11,7 @@ interface Message {
 }
 
 export default function Chat() {
-  const { address } = useAccount();
+  const { address, chain } = useAccount();
 
   const {
     setWalletAddress,
@@ -38,100 +37,39 @@ export default function Chat() {
   const [filters, setFilters] = useState({
     name: '',
     zip: '',
-    specialty: ''
   });
-  const [inbox, setInbox] = useState<Message[]>([]);
 
   return (
-    <div className="min-h-screen">
-      <div className="container mx-auto px-4">
-        {address ? (
-          !walletConnected ? (
-            <div className="bg-white rounded-lg shadow p-6">
-              <SettingsPanel onStorageReady={(client) => {
-                if (client) {
-                  setStorageReady(true);
-                }
-              }} />
-            </div>
-          ) : (
-            walletConnected && storageReady && litConnected ? (
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex flex-col gap-4">
-                  <MemberSearch
-                    filters={filters}
-                    onFilterChange={(e) => {
-                      const { name, value } = e.target;
-                      setFilters(prev => ({ ...prev, [name]: value }));
-                    }}
-                    filtered={[]} // TODO: Implement filtering logic
-                    onSelectRecipient={setRecipientDid}
-                  />
-                  <Inbox inbox={inbox} />
-                  <ChatPanel 
-                    isConnected={true}
-                    recipientDid={recipientDid}
-                    setRecipientDid={setRecipientDid}
-                    messageText={messageText}
-                    setMessageText={setMessageText}
-                    status={status}
-                    setStatus={setStatus}
-                    litClient={litClient}
-                    email={email || ''}
-                    web3SpaceDid={web3SpaceDid || ''}
-                    walletAddress={walletAddress || ''}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-2xl font-bold mb-4 flex items-center">
-                  <span className="mr-2">💬</span>
-                  <span>Chat</span>
-                </h2>
-                {litConnected ? (
-                  <div className="flex flex-col gap-4">
-                    <MemberSearch
-                      filters={filters}
-                      onFilterChange={(e) => {
-                        const { name, value } = e.target;
-                        setFilters(prev => ({ ...prev, [name]: value }));
-                      }}
-                      filtered={[]} // TODO: Implement filtering logic
-                      onSelectRecipient={setRecipientDid}
-                    />
-                    <Inbox inbox={inbox} />
-                    <ChatPanel 
-                      isConnected={true}
-                      recipientDid={recipientDid}
-                      setRecipientDid={setRecipientDid}
-                      messageText={messageText}
-                      setMessageText={setMessageText}
-                      status={status}
-                      setStatus={setStatus}
-                      litClient={litClient}
-                      email={email || ''}
-                      web3SpaceDid={web3SpaceDid || ''}
-                      walletAddress={walletAddress || ''}
-                    />
-                  </div>
-                ) : (
-                  <div className="bg-yellow-50 p-4 rounded-lg">
-                    <p className="text-yellow-700">Initializing Lit Protocol...</p>
-                  </div>
-                )}
-              </div>
-            )
-          )
-        ) : (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold mb-4 flex items-center">
-              <span className="mr-2">💬</span>
-              <span>Chat</span>
-            </h2>
-            <p className="text-gray-600">Please connect your wallet to start chatting.</p>
+    <div className="flex flex-col h-screen bg-gray-100">
+      <div className="flex-1 overflow-auto p-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex flex-col gap-4">
+            <MemberSearch
+              filters={filters}
+              onFilterChange={(e) => {
+                const { name, value } = e.target;
+                setFilters(prev => ({ ...prev, [name]: value }));
+              }}
+              filtered={[]} // TODO: Implement filtering logic
+              onSelectRecipient={setRecipientDid}
+            />
+            <Inbox walletAddress={walletAddress} litClient={litClient} />
+            <ChatPanel 
+              isConnected={true}
+              recipientDid={recipientDid}
+              setRecipientDid={setRecipientDid}
+              messageText={messageText}
+              setMessageText={setMessageText}
+              status={status}
+              setStatus={setStatus}
+              litClient={litClient}
+              email={email || ''}
+              walletAddress={walletAddress}
+              web3SpaceDid={web3SpaceDid}
+              chainId={chain?.id || null}
+            />
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

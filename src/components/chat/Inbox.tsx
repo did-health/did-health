@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
 import { useXmtp } from '../../hooks/useXmtp';
 import { getFromIPFS } from '../../lib/storeFIleWeb3';
 import { decryptFHIRFile } from '../../lib/litEncryptFile';
 import FHIRResource from '../fhir/FHIRResourceView';
-import { ContentTypeId } from '@xmtp/browser-sdk';
+import { ContentTypeId, DecodedMessage } from '@xmtp/browser-sdk';
+import deployedContracts from '../../generated/deployedContracts';
 
 interface Message {
   id: string;
@@ -20,7 +22,13 @@ interface InboxProps {
 }
 
 export function Inbox({ walletAddress, litClient }: InboxProps) {
-  const { xmtpClient } = useXmtp();
+  const { chain } = useAccount();
+  const { xmtpClient } = useXmtp({
+    address: walletAddress,
+    walletClient: chain?.id ? deployedContracts['testnet'].arbitrumSepolia.DidHealthDAO.rpcUrl : '',
+    isConnected: !!walletAddress
+  });
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
@@ -35,13 +43,13 @@ export function Inbox({ walletAddress, litClient }: InboxProps) {
         for (const conv of conversations) {
           const msgs = await conv.messages();
           for (const msg of msgs) {
-            if (msg.contentType === ContentTypeId.Text) {
-              const [hash, cid] = msg.content.split(':');
+            if (msg.contentType.authorityId === 'xmtp.org' && msg.contentType.typeId === 'text') {
+              const content = msg.content as string;
               allMessages.push({
                 id: msg.id,
-                sender: msg.senderAddress,
-                content: msg.content,
-                timestamp: new Date(msg.sent),
+                sender: (msg as any).senderAddress,
+                content,
+                timestamp: new Date(Number(msg.sentAtNs) / 1e9),
                 decrypted: false
               });
             }
