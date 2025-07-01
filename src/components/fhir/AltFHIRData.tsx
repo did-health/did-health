@@ -12,6 +12,8 @@ import { ConnectLit } from '../lit/ConnectLit'
 import { addAltDataOnChain, type ChainName, contracts } from '../../lib/addAltDataonChain'
 import PatientDirectivesStudio from './pcaio/PatientDirectivesStudio'
 import CreateEndpointForm from './CreateEndpointForm'
+import deployedContracts from '../../generated/deployedContracts'
+import { ethers, JsonRpcProvider, Contract } from 'ethers'
 
 export default function AltFHIRData() {
   const { address } = useAccount()
@@ -40,88 +42,88 @@ export default function AltFHIRData() {
   const [status, setStatus] = useState('')
   const [didType, setDidType] = useState<'Patient' | 'Practitioner' | 'Organization' | 'Device' | null>(null)
 
-  const loadDIDData = async () => {
-    try {
-      if (!address || !litClient) return
-      setStatus('🔍 Resolving did:health...')
-      const result = await resolveDidHealthAcrossChains(address)
-      if (!result) throw new Error('❌ DID not found')
+ const loadDIDData = async () => {
+  try {
+    if (!address || !litClient) return
+    setStatus('🔍 Resolving did:health...')
 
-      const { doc, chainName } = result
-      // Transform the doc object to match the DIDDocType interface
-      const completeDoc: DIDDocType = {
-        id: doc.id,
-        controller: doc.controller,
-        service: doc.service || [],
-        verificationMethod: [],
-        reputationScore: doc.reputationScore || 0,
-        credentials: {
-          hasWorldId: doc.credentials?.hasWorldId || false,
-          hasPolygonId: doc.credentials?.hasPolygonId || false,
-          hasSocialId: doc.credentials?.hasSocialId || false
-        },
-  
-      }
-      setDidDoc(completeDoc)
-      // Ensure chainName is a valid ChainName type
-      if (Object.keys(contracts['testnet']).includes(chainName) || Object.keys(contracts['mainnet']).includes(chainName)) {
-        setChainName(chainName as ChainName)
-      } else {
-        setChainName(null)
-        console.error('Invalid chain name:', chainName)
-      }
+    const result = await resolveDidHealthAcrossChains(address)
+    if (!result) throw new Error('❌ DID not found')
 
-      // Log the DID document structure for debugging
-      console.log('📦 DID Document:', {
-        id: doc.id,
-        service: doc.service,
-  
-      })
+    const { doc: resolvedDoc, chainName } = result
+    const fullDid = resolvedDoc.id // e.g., did:health:baseSepolia:rich
+    const [_did, _method, chainPart, idPart] = fullDid.split(':')
+    const env = import.meta.env.VITE_ENV || 'testnet'
+const chainId = parseInt(chainPart) // 👈 extract chain ID from the DID part (e.g., "84532")
 
-      // Process all endpoints (main and alt)
-      interface ServiceEndpoint {
-        id: string;
-        type: string;
-        serviceEndpoint: string;
-      }
+const registryEntry = Object.values(deployedContracts[env]).find(
+  (net: any) => net.HealthDIDRegistry?.chainId === chainId
+)?.HealthDIDRegistry
 
-      const allEndpoints: ServiceEndpoint[] = [
-        ...(doc?.service?.[0]?.serviceEndpoint ? [doc.service[0]] : []),
-      ]
+if (!registryEntry) {
+  throw new Error(`❌ No HealthDIDRegistry deployed for chain ID ${chainId}`)
+}
 
-      const resources: any[] = []
-      
-      // Process each endpoint
-      for (const endpoint of allEndpoints) {
-        try {
-          const res = await fetch(endpoint.serviceEndpoint)
-          const json = await res.json()
-          const decrypted = endpoint.serviceEndpoint.endsWith('.enc') || endpoint.serviceEndpoint.endsWith('.lit')
-            ? await getLitDecryptedFHIR(json, litClient, { chain: chainName })
-            : json
-          resources.push({ 
-            uri: endpoint.serviceEndpoint, 
-            resource: decrypted 
-          })
-        } catch (err) {
-          console.warn(`❌ Could not load resource: ${endpoint.serviceEndpoint}`, err)
-        }
-      }
 
-      // Set the first resource type as the didType
-      const didResourceType = resources[0]?.resource?.resourceType || 'Patient'
-      setDidType(didResourceType as any)
+    if (!registryEntry) throw new Error(`❌ No HealthDIDRegistry deployed for chain ${chainName}`)
 
-      // Log the final resources array
-      console.log('📦 Final resources:', resources)
+    const provider = new JsonRpcProvider(registryEntry.rpcUrl)
+    const contract = new Contract(registryEntry.address, registryEntry.abi, provider)
 
-      setAllResources(resources)
-      setStatus('')
-    } catch (err: any) {
-      console.error(err)
-      setStatus(err.message || '❌ Unexpected error')
+    const data = await contract.getHealthDID(chainPart + ':' + idPart)
+
+    if (!data || data.owner === ethers.ZeroAddress) {
+      throw new Error(`❌ DID "${idPart}" not found on chain ${chainName}`)
     }
+
+    const completeDoc: DIDDocType = {
+      id: `did:health:${chainPart}:${idPart}`,
+      controller: data.owner,
+      service: (data.altIpfsUris ?? []).map((uri: string, idx: number) => ({
+        id: `#service-${idx}`,
+        type: 'AlternateFHIR',
+        serviceEndpoint: uri,
+      })),
+      verificationMethod: [],
+      reputationScore: Number(data.reputationScore ?? 0),
+      credentials: {
+        hasWorldId: data.hasWorldId,
+        hasPolygonId: data.hasPolygonId,
+        hasSocialId: data.hasSocialId,
+      },
+    }
+
+    setDidDoc(completeDoc)
+    setChainName(chainName as ChainName)
+
+    // 🔄 Fetch & optionally decrypt altIpfsUris
+    const resources: any[] = []
+    for (const endpoint of completeDoc.service) {
+      try {
+        const res = await fetch(endpoint.serviceEndpoint)
+        const json = await res.json()
+        const decrypted = endpoint.serviceEndpoint.endsWith('.enc') || endpoint.serviceEndpoint.endsWith('.lit')
+          ? await getLitDecryptedFHIR(json, litClient, { chain: chainName })
+          : json
+        resources.push({
+          uri: endpoint.serviceEndpoint,
+          resource: decrypted,
+        })
+      } catch (err) {
+        console.warn(`❌ Could not load resource: ${endpoint.serviceEndpoint}`, err)
+      }
+    }
+
+    const didResourceType = resources[0]?.resource?.resourceType || 'Patient'
+    setDidType(didResourceType as any)
+    setAllResources(resources)
+    setStatus('')
+  } catch (err: any) {
+    console.error(err)
+    setStatus(err.message || '❌ Unexpected error')
   }
+}
+
 
   useEffect(() => {
     if (address && litClient) loadDIDData()
