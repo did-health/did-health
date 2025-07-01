@@ -54,25 +54,25 @@ export default function SelectBlockchain() {
               className="w-full h-full object-contain scale-110 transition-transform duration-300 hover:scale-125"
             />
           </div>
-<div className="p-6 md:p-8 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg space-y-2 max-w-xl mx-auto text-center">
-  <span className="block text-2xl md:text-3xl font-bold bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 bg-clip-text text-transparent bg-[length:200%_200%] animate-gradient">
-    {t('didHealth.title')}
-  </span>
-  <span className="text-sm md:text-base text-red-600 dark:text-red-400">
-    {t('didHealth.subtitle')}
-  </span>
-  <p className="text-sm text-gray-600 dark:text-gray-400">
-  <Link to="/help" className="underline hover:text-red-500">
-    {t('selectBlockchain.moreAnswers')}
-  </Link>
-</p>
-</div>
+          <div className="p-6 md:p-8 bg-white dark:bg-zinc-900 rounded-2xl shadow-lg space-y-2 max-w-xl mx-auto text-center">
+            <span className="block text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-500 via-green-600 to-green-700 bg-clip-text text-transparent bg-[length:200%_200%] animate-gradient">
+              {t('didHealth.title')}
+            </span>
+            <span className="text-sm md:text-base text-green-600 dark:text-green-400">
+              {t('didHealth.subtitle')}
+            </span>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              <Link to="/help" className="underline hover:text-green-500">
+                {t('selectBlockchain.moreAnswers')}
+              </Link>
+            </p>
+          </div>
 
           <h1 className="text-3xl font-bold leading-snug">
-            <span className="block bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 bg-clip-text text-transparent bg-[length:200%_200%] animate-gradient">
+            <span className="block bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 bg-clip-text text-transparent bg-[length:200%_200%] animate-gradient">
               {t('selectBlockchain.title')}
             </span>
-            <span className="text-red-600 dark:text-red-400">
+            <span className="text-blue-600 dark:text-blue-400">
               {t('selectBlockchain.subtitle')}
             </span> 
 
