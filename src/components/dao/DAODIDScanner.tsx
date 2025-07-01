@@ -6,7 +6,7 @@ import { useOnboardingState } from '../../store/OnboardingState'
 import FHIRResource from '../fhir/FHIRResourceView'
 import ConnectWallet from '../eth/WalletConnectETH'
 import { ConnectLit } from '../lit/ConnectLit'
-import { Client as XmtpClient } from '@xmtp/xmtp-js'
+
 import { useAccount } from 'wagmi'
 import { useWalletClient } from 'wagmi'
 import logo from '../../assets/did-health.png'
@@ -23,7 +23,7 @@ export function DidHealthQRScanner() {
       if (!walletClient || !walletAddress) return;
       
       try {
-        const client = await XmtpClient.create({
+        /*const client = await XmtpClient.create({
           getAddress: async () => walletAddress,
           signMessage: async (message: string | ArrayLike<number>) => {
             if (!walletClient) return '';
@@ -34,7 +34,7 @@ export function DidHealthQRScanner() {
             return signature;
           },
         });
-        setXmtpClient(client);
+        setXmtpClient(client);*/
       } catch (error) {
         console.error('Error initializing XMTP client:', error);
       }
