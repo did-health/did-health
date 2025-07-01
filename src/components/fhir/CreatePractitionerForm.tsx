@@ -8,15 +8,13 @@ import logo from '../../assets/did-health.png'
 import type { Practitioner } from 'fhir/r4'
 interface CreatePractitionerFormProps {
   defaultValues: Practitioner
-  onSubmit: (updatedFHIR: Practitioner) => Promise<void>
 }
 
-const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ defaultValues, onSubmit }) => {
+const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ defaultValues }) => {
   const navigate = useNavigate()
   const { fhirResource, setFHIRResource } = useOnboardingState()
   const [practitioner, setPractitioner] = useState<Practitioner>(defaultValues)
   const [showCamera, setShowCamera] = useState(false)
-  const [status, setStatus] = useState<string>('')
   const webcamRef = useRef<Webcam>(null)
 
   useEffect(() => {
@@ -60,19 +58,13 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
     })
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const updatePractitioner = () => {
     if (!practitioner) return
-    
-    setStatus('💾 Submitting updated FHIR...')
-    const updatedPractitioner = JSON.parse(JSON.stringify(practitioner))
-    
+    const updatedPractitioner = { ...practitioner }
     if (!updatedPractitioner.id) {
       updatedPractitioner.id = uuidv4()
     }
-    
-    setPractitioner(updatedPractitioner)
-    await onSubmit(updatedPractitioner)
+    setFHIRResource(updatedPractitioner)
   }
 
   if (!practitioner) return null
@@ -80,12 +72,13 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
   return (
     <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-gray-50 dark:bg-gray-950">
       <div className="w-full max-w-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
-        {status && <p className="text-sm text-gray-600 mb-4">{status}</p>}
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-          {fhirResource?.resourceType === 'Practitioner' ? 'Update Practitioner' : 'Create Practitioner'}
-        </h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-4">
+
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
+          {fhirResource?.resourceType === 'Practitioner' ? 'Edit' : 'Create'} did:health Practitioner Record
+        </h2>
+        <div className="space-y-4">
+          {/* Demographics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">First Name</label>
               <input id="firstName" type="text" name="name.0.given.0" value={practitioner.name?.[0]?.given?.[0] || ''} onChange={handleInputChange} className="input" />
@@ -171,20 +164,13 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
           </div>
           <div className="flex justify-end space-x-4">
             <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
+              onClick={updatePractitioner}
               className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               {practitioner.id ? '💾 Update Practitioner' : '✅ Save Practitioner Record'}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )

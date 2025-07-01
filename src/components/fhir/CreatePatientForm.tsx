@@ -19,6 +19,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
   const webcamRef = useRef<Webcam | null>(null)
   const [patient, setPatient] = useState<Patient>(defaultValues)
   const [showCamera, setShowCamera] = useState(false)
+  const [status, setStatus] = useState<string>('')
 
 
   useEffect(() => {
@@ -51,13 +52,16 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!patient) return
+    setStatus('💾 Submitting updated FHIR...')
     const updatedPatient = { ...patient }
     if (!updatedPatient.id) {
       updatedPatient.id = uuidv4()
     }
+    setFHIRResource(updatedPatient)
+    setStatus('✅ FHIR updated successfully')
     console.log('FHIR Patient Resource:', updatedPatient)
     setFHIRResource(updatedPatient)
     //navigate('/onboarding/ethereum')
@@ -75,8 +79,8 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
 
 
   return (
-    <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-gray-50 dark:bg-gray-950">
-      <div className="w-full max-w-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
+    <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-background">
+      <div className="w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg p-6">
         <div className="flex justify-center items-center h-24 mb-6">
           <div className="w-24 h-24 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
             <img
@@ -86,11 +90,11 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
             />
           </div>
         </div>
-       
-<form onSubmit={handleSubmit} className="space-y-6">
-  <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
-    🧬 {patient?.id ? 'Edit' : 'Create'} did:health Patient Record
-  </h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {status && <p className="text-sm text-gray-600 mb-4">{status}</p>}
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
+            🧬 {patient?.id ? 'Edit' : 'Create'} did:health Patient Record
+          </h2>
 
   {/* Demographics */}
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

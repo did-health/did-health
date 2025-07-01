@@ -205,16 +205,24 @@ export default function UpdateDIDUri() {
     }
   }
 
-  const handleUpdateClick = () => {
+  const handleUpdateClick = async () => {
     if (!fhir) {
       setStatus('❌ No FHIR resource loaded.')
       return
     }
-    
-    // Submit the form when clicking update
-    const form = document.querySelector('form')
-    if (form) {
-      form.requestSubmit()
+
+    try {
+      setModalOpen(true)
+      setStatus('📝 Updating FHIR resource...')
+      
+      // Update the FHIR resource in the store
+      const { setFHIRResource } = useOnboardingState.getState()
+      setFHIRResource(fhir)
+      
+      setStatus('✅ FHIR resource updated successfully')
+    } catch (err: any) {
+      console.error('Error updating FHIR:', err)
+      setStatus(`❌ Error updating FHIR: ${err.message || 'Unknown error'}`)
     }
   }
 
