@@ -19,6 +19,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
   const webcamRef = useRef<Webcam | null>(null)
   const [patient, setPatient] = useState<Patient>(defaultValues)
   const [showCamera, setShowCamera] = useState(false)
+  const [status, setStatus] = useState<string>('')
 
 
   useEffect(() => {
@@ -51,16 +52,18 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const updatePatient = () => {
     if (!patient) return
     const updatedPatient = { ...patient }
     if (!updatedPatient.id) {
       updatedPatient.id = uuidv4()
     }
-    console.log('FHIR Patient Resource:', updatedPatient)
+    // Update the FHIR resource in Zustand
     setFHIRResource(updatedPatient)
-    //navigate('/onboarding/ethereum')
+    // Call the parent's onSubmit handler with the updated data
+    onSubmit(updatedPatient)
+    setStatus('✅ FHIR updated successfully')
+    console.log('FHIR Patient Resource:', updatedPatient)
   }
 
   if (!patient) return null
@@ -75,8 +78,8 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
 
 
   return (
-    <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-gray-50 dark:bg-gray-950">
-      <div className="w-full max-w-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
+    <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-background">
+      <div className="w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg p-6">
         <div className="flex justify-center items-center h-24 mb-6">
           <div className="w-24 h-24 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
             <img
@@ -86,11 +89,11 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
             />
           </div>
         </div>
-       
-<form onSubmit={handleSubmit} className="space-y-6">
-  <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
-    🧬 {patient?.id ? 'Edit' : 'Create'} did:health Patient Record
-  </h2>
+        <div className="space-y-4">
+          {status && <p className="text-sm text-gray-600 mb-4">{status}</p>}
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
+            🧬 {patient?.id ? 'Edit' : 'Create'} did:health Patient Record
+          </h2>
 
   {/* Demographics */}
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -287,11 +290,14 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
 
   {/* Submit */}
   <div className="pt-6">
-    <button type="submit" className="btn-primary w-full text-white bg-red-600 hover:bg-red-700 px-5 py-3 rounded-lg shadow">
-      {patient?.id ? '💾 Update Patient Record' : '✅ Save Patient Record'}
-    </button>
+            <button
+              onClick={updatePatient}
+              className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              {patient.id ? '💾 Update Patient' : '✅ Save Patient Record'}
+            </button>
   </div>
-</form>
+</div>
 
       </div>
     </div>

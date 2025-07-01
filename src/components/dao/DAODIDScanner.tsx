@@ -2,12 +2,11 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { QrReader } from 'react-qr-reader'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
-import { sendConsentRequestMessage } from '../../lib/xmtpConsentSender'
 import { useOnboardingState } from '../../store/OnboardingState'
 import FHIRResource from '../fhir/FHIRResourceView'
 import ConnectWallet from '../eth/WalletConnectETH'
 import { ConnectLit } from '../lit/ConnectLit'
-import { Client as XmtpClient } from '@xmtp/xmtp-js'
+
 import { useAccount } from 'wagmi'
 import { useWalletClient } from 'wagmi'
 import logo from '../../assets/did-health.png'
@@ -24,7 +23,7 @@ export function DidHealthQRScanner() {
       if (!walletClient || !walletAddress) return;
       
       try {
-        const client = await XmtpClient.create({
+        /*const client = await XmtpClient.create({
           getAddress: async () => walletAddress,
           signMessage: async (message: string | ArrayLike<number>) => {
             if (!walletClient) return '';
@@ -35,7 +34,7 @@ export function DidHealthQRScanner() {
             return signature;
           },
         });
-        setXmtpClient(client);
+        setXmtpClient(client);*/
       } catch (error) {
         console.error('Error initializing XMTP client:', error);
       }
@@ -90,7 +89,7 @@ export function DidHealthQRScanner() {
           const practitionerId = 'Practitioner/dummy-id'; // Replace with actual practitioner ID logic
                   
           // Send consent request using XMTP
-          if (xmtpClient) {
+          /*if (xmtpClient) {
             sendConsentRequestMessage(xmtpClient, recipient, patientId, practitionerId)
               .then(() => {
                 setStatus('✅ Consent request sent');
@@ -101,7 +100,7 @@ export function DidHealthQRScanner() {
               });
           } else {
             setStatus('❌ Please connect your wallet first');
-          }
+          }*/
         }
       } catch (err: any) {
         console.error(err)

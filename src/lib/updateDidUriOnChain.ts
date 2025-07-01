@@ -39,7 +39,7 @@ console.log('📡 Calling method on:', contract.target || contract.address)
 console.log('🧪 Raw DID being passed:', JSON.stringify(healthDid))
 const parts = healthDid.split(':');
   if (parts.length < 4 || parts[0] !== 'did' || parts[1] !== 'health') {
-    throw new Error(`❌ Invalid DID format: ${did}`);
+    throw new Error(`❌ Invalid DID format: ${healthDid}`);
   }
   const thisDid =  `${parts[2]}:${parts[3]}`;
 const actualOwner = await contract.getDidOwner(thisDid)
@@ -49,8 +49,19 @@ console.log("🧾 On-chain registered owner is:", actualOwner)
 
   // Call updateDIDData(_healthDid, _uri)
   const tx = await contract.updateDIDData(thisDid, newUri)
-  await tx.wait()
+  const receipt = await tx.wait()
+
+  // Verify the update by fetching the updated IPFS URL
+  const updatedDoc = await contract.getHealthDID(thisDid)
+  const [,, updatedIpfsUri] = updatedDoc
 
   console.log(`✅ Updated DID URI on-chain: ${tx.hash}`)
-  return tx.hash
+  console.log(`✅ New IPFS URL: ${updatedIpfsUri}`)
+  console.log(`✅ Transaction receipt:`, receipt)
+
+  return {
+    txHash: tx.hash,
+    newIpfsUri: updatedIpfsUri,
+    receipt
+  }
 }

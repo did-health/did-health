@@ -125,8 +125,14 @@ const handleApply = async () => {
     setStep(3)
   } catch (err: any) {
     console.error('❌ Failed to apply:', err)
-    setStatus('❌ Failed to apply. Please try again.')
-    setError('Failed to apply. Please try again.')
+    const errorMessage = err?.message?.toLowerCase() || ''
+    if (errorMessage.includes('already applied')) {
+      setStatus('✅ You have already applied to the DAO')
+      setError('You have already applied to the DAO')
+    } else {
+      setStatus('❌ Failed to apply. Please try again.')
+      setError('Failed to apply. Please try again.')
+    }
   } finally {
     setApplying(false)
   }
