@@ -35,8 +35,8 @@
     "openInMetaMask": "Open in MetaMask"
   },
    "selectBlockchain": {
-    "title": "Choose Your Blockchain",
-    "subtitle": "to Create Your did:health",
+    "title": "Create Your did:health",
+    "subtitle": "Step 1: Choose a Blockchain",
     "checkDid": "Already registered? Click here to view your DID.",
     "moreAnswers": "Need more answers? Click herer"
   },

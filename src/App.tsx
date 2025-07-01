@@ -10,6 +10,7 @@ import ResolveDIDSolana from './components/solana/ResolveDIDSolana'
 import ResolveDIDCosmos from './components/cosmos/ResolveDIDCosmos'
 import UpdateDIDUri from './components/eth/UpdateDidETH'
 import Chat from './components/chat/Chat'
+import { XmtpProvider } from './providers/XmtpProvider'
 import OnboardingSolana from './components/solana/OnboardingSolana'
 import OnboardingDAO from './components/dao/OnboardingDAO'
 import DAOAdminPage from './components/dao/DAOAdmin'
@@ -28,7 +29,11 @@ function App() {
       <Routes>
         <Route path="/" element={<SelectBlockChain />} />
         <Route path="/help" element={<Help />} />
-        <Route path="/chat" element={<Chat />} />
+        <Route path="/chat" element={
+          <XmtpProvider>
+            <Chat />
+          </XmtpProvider>
+        } />
         <Route path="/ethereum/did" element={<ResolveDIDETH />} />
         <Route path="/ethereum/did/alt" element={<AltFHIRData />} />
         <Route path="/ethereum/did/update" element={<UpdateDIDUri />} />

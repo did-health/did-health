@@ -13,7 +13,8 @@ import { addAltDataOnChain, type ChainName, contracts } from '../../lib/addAltDa
 import PatientDirectivesStudio from './pcaio/PatientDirectivesStudio'
 import CreateEndpointForm from './CreateEndpointForm'
 import deployedContracts from '../../generated/deployedContracts'
-import { ethers, JsonRpcProvider, Contract } from 'ethers'
+import { JsonRpcProvider } from '@ethersproject/providers'
+import { ethers } from 'ethers'
 
 export default function AltFHIRData() {
   const { address } = useAccount()
@@ -68,7 +69,7 @@ if (!registryEntry) {
     if (!registryEntry) throw new Error(`❌ No HealthDIDRegistry deployed for chain ${chainName}`)
 
     const provider = new JsonRpcProvider(registryEntry.rpcUrl)
-    const contract = new Contract(registryEntry.address, registryEntry.abi, provider)
+    const contract = new ethers.Contract(registryEntry.address, registryEntry.abi, provider)
 
     const data = await contract.getHealthDID(chainPart + ':' + idPart)
 

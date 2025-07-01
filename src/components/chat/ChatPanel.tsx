@@ -1,23 +1,21 @@
 // ChatPanel.tsx
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
 import { JsonRpcProvider } from 'ethers';
-import { useXmtp } from '../../hooks/useXmtp';
+import { useXmtp } from '../../providers/XmtpProvider';
 import type { MultipleAccessControlConditions } from '@lit-protocol/types';
 import { createFHIRMessageBundle } from '../fhir/MessageBundle';
 import { Favorites } from './Favorites';
 import type { ILitNodeClient } from '@lit-protocol/types';
 import deployedContracts from '../../generated/deployedContracts';
 import { encryptFHIRFile } from '../../lib/litEncryptFile';
-import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3';
-import type { FavoritesRef } from './Favorites';
 import { createMessageAccessControlConditions } from './MessageAccessControl';
-import { validateAccessControlConditionsSchema } from '@lit-protocol/access-control-conditions';
-import { getLitChainByChainId } from '../../lib/getChains';
-import logo from '../../assets/did-health.png'
+import logo from '../../assets/did-health.png';
 import { ConnectLit } from '../lit/ConnectLit';
-import { Client, type Identifier } from '@xmtp/browser-sdk';
-import type { AccessControlConditions } from '@lit-protocol/types';
+import { Buffer } from 'buffer';
+import type { Signer, Identifier } from '@xmtp/browser-sdk';
+import type { FavoritesRef } from './Favorites';
+
 interface ChatPanelProps {
     isConnected: boolean;
     recipientDid: string | null;
@@ -70,15 +68,75 @@ export function ChatPanel({
     chainId,
 }: ChatPanelProps) {
     const favoritesRef = useRef<FavoritesRef>(null);
-    const { xmtpClient, initXmtp, error: xmtpError } = useXmtp({
-      address: walletAddress,
-      walletClient: chainId ? deployedContracts['testnet'].arbitrumSepolia.DidHealthDAO.rpcUrl : '',
-      isConnected: isConnected
-    });
+    const { xmtpClient, initXmtp, error: xmtpError, isInitializing } = useXmtp();
 
     useEffect(() => {
-        if (isConnected && !xmtpClient && walletAddress && chainId) {
-            initXmtp().catch((err: any) => {
+      const initializeXMTP = async () => {
+        if (!isConnected || !walletAddress || !chainId) {
+          return;
+        }
+
+        // Create signer
+        const provider = new JsonRpcProvider(`https://arb-sepolia.g.alchemy.com/v2/demo`);
+        const providerSigner = await provider.getSigner();
+        const signer: Signer = {
+          async getIdentifier(): Promise<Identifier> {
+            const addr = walletAddress.toLowerCase();
+            return { identifier: addr, identifierKind: 'Ethereum' as const };
+          },
+          async signMessage(message: string | Uint8Array): Promise<Buffer> {
+            const signature = await providerSigner.signMessage(
+              typeof message === 'string' ? message : Buffer.from(message).toString('hex')
+            );
+            return Buffer.from(signature, 'hex');
+          },
+          getChainId(): bigint {
+            return BigInt(provider._network.chainId);
+          },
+          type: 'SCW' as const
+        };
+
+        // Initialize XMTP if not already initialized
+        if (!xmtpClient && !isInitializing) {
+          await initXmtp(signer).catch((err: any) => {
+            console.error('Failed to initialize XMTP:', err);
+            setStatus(`❌ XMTP Error: ${err.message || 'Failed to initialize'}`);
+          });
+        }
+      };
+
+      initializeXMTP();
+    }, [isConnected, initXmtp, xmtpClient, walletAddress, chainId, isInitializing]);
+
+    useEffect(() => {
+        if (!isConnected || !walletAddress || !chainId) {
+            return;
+        }
+
+        if (!xmtpClient) {
+            // Create a proper Signer instance that matches XMTP's expected interface
+            const provider = new ethers.JsonRpcProvider(chainId ? `https://eth-${chainId === 1 ? 'mainnet' : 'goerli'}.alchemyapi.io/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}` : '');
+            const signer = {
+                async getIdentifier(): Promise<Identifier> {
+                    const addr = walletAddress?.toLowerCase();
+                    if (!addr) {
+                        throw new Error('No wallet address found');
+                    }
+                    return {
+                        identifier: addr,
+                        identifierKind: 'Ethereum' as const
+                    };
+                },
+                async signMessage(message: string | Uint8Array): Promise<Buffer> {
+                    const providerSigner = await provider.getSigner();
+                    const signature = await providerSigner.signMessage(
+                        typeof message === 'string' ? message : Buffer.from(message).toString('hex')
+                    );
+                    return Buffer.from(signature, 'hex');
+                }
+            } as Signer;
+
+            initXmtp(signer).catch((err: any) => {
                 console.error('Failed to initialize XMTP:', err);
                 setStatus(`❌ XMTP Error: ${err.message || 'Failed to initialize'}`);
             });
@@ -89,11 +147,21 @@ export function ChatPanel({
         return (
             <div className="p-4 text-center">
                 <div className="text-yellow-600 mb-2">
-                    Initializing XMTP...
+                    {walletAddress ? 'Initializing XMTP...' : 'Please connect your wallet'}
                 </div>
                 {xmtpError && (
                     <div className="text-red-600">
                         Error: {xmtpError}
+                    </div>
+                )}
+                {!walletAddress && (
+                    <div className="mt-4">
+                        <button 
+                            onClick={() => window.ethereum?.request({ method: 'eth_requestAccounts' })}
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                        >
+                            Connect Wallet
+                        </button>
                     </div>
                 )}
             </div>
@@ -168,12 +236,6 @@ export function ChatPanel({
 
     return (
         <div className="flex flex-col h-full w-full p-4 space-y-4">
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                    <img src={logo} alt="DID:Health Logo" className="h-8 w-8 mr-2" />
-                    <h2 className="text-2xl font-bold">Secure Chat</h2>
-                </div>
-            </div>
             <ConnectLit />
             {!isConnected && (
                 <div className="bg-red-50 p-4 rounded-lg">

@@ -4,6 +4,7 @@ import { useOnboardingState } from '../../store/OnboardingState';
 import { ChatPanel } from './ChatPanel';
 import { MemberSearch } from './MemberSearch';
 import { Inbox } from './Inbox';
+import logo from '../../assets/did-health.png';
 
 interface Message {
   from: string;
@@ -44,6 +45,12 @@ export default function Chat() {
       <div className="flex-1 overflow-auto p-6">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <img src={logo} alt="DID:Health Logo" className="h-8 w-8 mr-2" />
+                <h1 className="text-3xl font-bold">did:health Chat</h1>
+              </div>
+            </div>
             <MemberSearch
               filters={filters}
               onFilterChange={(e) => {
