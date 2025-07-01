@@ -52,19 +52,18 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
     })
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const updatePatient = () => {
     if (!patient) return
-    setStatus('💾 Submitting updated FHIR...')
     const updatedPatient = { ...patient }
     if (!updatedPatient.id) {
       updatedPatient.id = uuidv4()
     }
+    // Update the FHIR resource in Zustand
     setFHIRResource(updatedPatient)
+    // Call the parent's onSubmit handler with the updated data
+    onSubmit(updatedPatient)
     setStatus('✅ FHIR updated successfully')
     console.log('FHIR Patient Resource:', updatedPatient)
-    setFHIRResource(updatedPatient)
-    //navigate('/onboarding/ethereum')
   }
 
   if (!patient) return null
@@ -90,7 +89,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
             />
           </div>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           {status && <p className="text-sm text-gray-600 mb-4">{status}</p>}
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
             🧬 {patient?.id ? 'Edit' : 'Create'} did:health Patient Record
@@ -291,11 +290,14 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
 
   {/* Submit */}
   <div className="pt-6">
-    <button type="submit" className="btn-primary w-full text-white bg-red-600 hover:bg-red-700 px-5 py-3 rounded-lg shadow">
-      {patient?.id ? '💾 Update Patient Record' : '✅ Save Patient Record'}
-    </button>
+            <button
+              onClick={updatePatient}
+              className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              {patient.id ? '💾 Update Patient' : '✅ Save Patient Record'}
+            </button>
   </div>
-</form>
+</div>
 
       </div>
     </div>

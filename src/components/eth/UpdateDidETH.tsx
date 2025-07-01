@@ -205,25 +205,21 @@ export default function UpdateDIDUri() {
     }
   }
 
-  const handleUpdateClick = async () => {
+  const handleUpdateClick = () => {
     if (!fhir) {
       setStatus('❌ No FHIR resource loaded.')
       return
     }
-
-    try {
-      setModalOpen(true)
-      setStatus('📝 Updating FHIR resource...')
-      
-      // Update the FHIR resource in the store
-      const { setFHIRResource } = useOnboardingState.getState()
-      setFHIRResource(fhir)
-      
-      setStatus('✅ FHIR resource updated successfully')
-    } catch (err: any) {
-      console.error('Error updating FHIR:', err)
-      setStatus(`❌ Error updating FHIR: ${err.message || 'Unknown error'}`)
+    
+    // Wait for the form to update the FHIR resource
+    const updatedFHIR = useOnboardingState.getState().fhirResource
+    if (!updatedFHIR) {
+      setStatus('❌ No updated FHIR resource found.')
+      return
     }
+    
+    // Call the update handler with the updated FHIR resource
+    handleUpdateDID(updatedFHIR)
   }
 
   const handleUpdateDID = async (updatedFHIR: any) => {
@@ -231,9 +227,15 @@ export default function UpdateDIDUri() {
       const resourceType = updatedFHIR?.resourceType
       const { encryptionSkipped } = useOnboardingState.getState()
       
-      let skipEncryption = encryptionSkipped || 
-        ['Practitioner', 'Organization'].includes(resourceType) ||
-        (!fhir?.resourceUrl?.endsWith('.enc') && !fhir?.resourceUrl?.endsWith('.lit'))
+      // Patients and Devices should always be encrypted, regardless of encryptionSkipped setting
+      let skipEncryption = false
+      if (resourceType === 'Patient' || resourceType === 'Device') {
+        skipEncryption = false
+      } else {
+        skipEncryption = encryptionSkipped || 
+          ['Practitioner', 'Organization'].includes(resourceType) ||
+          (!fhir?.resourceUrl?.endsWith('.enc') && !fhir?.resourceUrl?.endsWith('.lit'))
+      }
 
       setModalOpen(true)
 
