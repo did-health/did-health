@@ -1,25 +1,29 @@
 import { useState, useCallback } from 'react';
 import {
   Client,
-  type Signer,
   type ClientOptions,
+  type Signer,
+  type Client as XmtpClient,
 } from '@xmtp/browser-sdk';
-import { useOnboardingState } from '../store/OnboardingState';
 
 export interface UseXmtpResult {
-  xmtpClient: Client<unknown> | null;
+  xmtpClient: XmtpClient<unknown> | null;
   initXmtp: (signer: Signer, options?: ClientOptions) => Promise<void>;
   isInitializing: boolean;
   error: string | null;
 }
 
-/**
- * useXmtp
- * Manages XMTP client lifecycle using a provided Signer (EOA or Smart Wallet)
- * and handles auto-cleanup of old installations if the 5/5 limit is hit.
- */
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const log = (step: string, ...msg: any[]) =>
+  console.log(`🟢 [XMTP] [${step}]`, ...msg);
+const warn = (step: string, ...msg: any[]) =>
+  console.warn(`🟡 [XMTP] [${step}]`, ...msg);
+const errorLog = (step: string, ...msg: any[]) =>
+  console.error(`🔴 [XMTP] [${step}]`, ...msg);
+
 export const useXmtp = (): UseXmtpResult => {
-  const [xmtpClient, setXmtpClient] = useState<Client<unknown> | null>(null);
+  const [xmtpClient, setXmtpClient] = useState<XmtpClient<unknown> | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,50 +31,63 @@ export const useXmtp = (): UseXmtpResult => {
     async (signer: Signer, options?: ClientOptions) => {
       setIsInitializing(true);
       setError(null);
+      const env = options?.env || 'dev';
 
-      try {
-        const client = await Client.create(signer, {
-          env: 'dev',
+      const tryCreate = async (skipInstall = false) => {
+        log('init', `Creating XMTP client (skipInstall=${skipInstall})...`);
+        return await Client.create(signer, {
+          env,
+          ...(skipInstall ? { skipInstallationRegistration: true } : {}),
           ...options,
         });
+      };
 
+      try {
+        const client = await tryCreate();
         setXmtpClient(client);
-        return;
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.warn('Initial XMTP init failed:', msg);
+        log('init', 'XMTP client initialized ✅');
+      } catch (e: any) {
+        const msg = e.message || String(e);
+        errorLog('init', msg);
 
-        // Handle installation limit error
-        if (msg.includes('5/5 installations')) {
-          try {
-            const tempClient = await Client.create(signer, {
-              env: 'dev',
-              skipContactPublishing: true,
-            });
-
-            const installs = await tempClient.installations.list();
-            const toDelete = installs.slice(0, installs.length - 1);
-            await Promise.all(toDelete.map(i => i.delete()));
-
-            console.warn(`🧹 Cleaned ${toDelete.length} XMTP installations`);
-
-            // Retry init
-            const retryClient = await Client.create(signer, {
-              env: 'dev',
-              ...options,
-            });
-
-            setXmtpClient(retryClient);
-            return;
-          } catch (cleanupErr: unknown) {
-            const cleanMsg = cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr);
-            console.error('Cleanup failed:', cleanMsg);
-            setError(`Cleanup failed: ${cleanMsg}`);
-            setXmtpClient(null);
-          }
-        } else {
+        if (!msg.includes('5/5 installations')) {
           setError(msg);
-          setXmtpClient(null);
+          setIsInitializing(false);
+          return;
+        }
+
+        warn('revoke', 'Install limit reached — attempting revocation');
+
+        try {
+          const failedClient = await tryCreate(true);
+
+          const inboxId = failedClient.inboxId;
+          if (!inboxId) {
+            throw new Error('Failed to get inbox ID');
+          }
+          const inboxState = await Client.inboxStateFromInboxIds([inboxId], env);
+          const firstState = inboxState?.[0];
+          const installations = firstState?.installations || [];
+
+          if (!installations.length) {
+            throw new Error('No installations found to revoke.');
+          }
+
+          log('revoke', `Revoking ${installations.length} installations...`);
+          await Client.revokeInstallations(
+            signer,
+            inboxId,
+            installations.map((i) => i.bytes),
+            env
+          );
+          log('revoke', 'Revocation complete. Retrying init...');
+
+          const retryClient = await tryCreate();
+          setXmtpClient(retryClient);
+          log('init', 'Retried XMTP client initialized ✅');
+        } catch (revErr) {
+          errorLog('revoke', 'Revoke failed:', revErr);
+          setError(revErr instanceof Error ? revErr.message : String(revErr));
         }
       } finally {
         setIsInitializing(false);
