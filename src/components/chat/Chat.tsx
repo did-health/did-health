@@ -9,6 +9,7 @@ import { Inbox } from './Inbox';
 import { ChatPanel } from './ChatPanel';
 import logo from '../../assets/did-health.png';
 import type { Signer as XmtpSigner } from '@xmtp/browser-sdk';
+import { Client, type Client as XmtpClient } from '@xmtp/browser-sdk';
 
 const Chat = () => {
   const { address, isConnected } = useAccount();
@@ -26,7 +27,8 @@ const Chat = () => {
     web3SpaceDid,
   } = useOnboardingState();
 
-  const { xmtpClient, initXmtp, isInitializing, error } = useXmtp();
+  const { xmtpClient: xmtpClientGeneric, initXmtp, isInitializing, error } = useXmtp();
+  const xmtpClient = xmtpClientGeneric as XmtpClient;
 
   const [recipientDid, setRecipientDid] = useState<string | null>(null);
   const [messageText, setMessageText] = useState('');
@@ -135,7 +137,7 @@ const Chat = () => {
             walletAddress={walletAddress}
             litClient={litClient}
             email={email || ''}
-            web3SpaceDid={web3SpaceDid}
+            web3SpaceDid={web3SpaceDid || ''}
             chainId={chainId}
             xmtpClient={xmtpClient}
           />

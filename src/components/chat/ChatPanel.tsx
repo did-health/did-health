@@ -1,6 +1,6 @@
 import React from 'react';
 import { ethers } from 'ethers';
-import { Client as XmtpClient } from '@xmtp/browser-sdk';
+import { Client, type Client as XmtpClient } from '@xmtp/browser-sdk';
 import type { LitNodeClient } from '@lit-protocol/lit-node-client';
 import deployedContracts from '../../generated/deployedContracts';
 import { parseDidHealth } from '../../utils/did';

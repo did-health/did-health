@@ -87,6 +87,8 @@
     "tailwindcss-animate": "^1.0.7",
     "terser": "^5.43.0",
     "typescript": "^5.2.2",
-    "vite": "^5.4.19"
+    "vite": "^5.4.19",
+    "vite-plugin-top-level-await": "^1.5.0",
+    "vite-plugin-wasm": "^3.4.1"
   }
 }
