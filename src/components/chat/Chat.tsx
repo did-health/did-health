@@ -79,29 +79,59 @@ const Chat = () => {
     init();
   }, [walletConnected, litConnected, storageReady, walletAddress, xmtpClient, isInitializing]);
 
-  // Check readiness
-  const isReady = isConnected && walletConnected && litConnected && storageReady && xmtpClient;
+// Check readiness flags
+const isXmtpReady = !!xmtpClient;
+const isReady =
+  isConnected &&
+  walletConnected &&
+  litConnected &&
+  storageReady &&
+  isXmtpReady;
 
-  if (!isConnected) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4">
-        <div className="text-xl font-semibold">Connect Wallet</div>
-        <div className="text-gray-600">Please connect your wallet to start chatting</div>
-        <ConnectWallet />
-      </div>
-    );
-  }
+useEffect(() => {
+  console.log('🧩 Chat readiness state:', {
+    isConnected,
+    walletConnected,
+    litConnected,
+    storageReady,
+    xmtpClientReady: isXmtpReady,
+  });
+}, [isConnected, walletConnected, litConnected, storageReady, isXmtpReady]);
 
-  if (!isReady) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4">
-        <div className="text-xl font-semibold">Initializing chat...</div>
-        <div className="text-gray-600">
-          {error || 'Please wait while we set up your chat environment'}
-        </div>
+if (!isConnected) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-4">
+      <div className="text-xl font-semibold">Connect Wallet</div>
+      <div className="text-gray-600">Please connect your wallet to start chatting</div>
+      <ConnectWallet />
+    </div>
+  );
+}
+
+if (!isReady) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-4">
+      <div className="text-xl font-semibold">Initializing chat...</div>
+      <div className="text-gray-600">
+        {error || 'Waiting for wallet, Lit, storage, and XMTP to be ready'}
       </div>
-    );
-  }
+      <pre className="text-xs bg-gray-100 p-2 rounded max-w-md overflow-auto">
+        {JSON.stringify(
+          {
+            isConnected,
+            walletConnected,
+            litConnected,
+            storageReady,
+            xmtpClientReady: isXmtpReady,
+          },
+          null,
+          2
+        )}
+      </pre>
+    </div>
+  );
+}
+
 
   return (
     <main className="p-6 sm:p-10 max-w-3xl mx-auto text-gray-800 dark:text-white">
@@ -127,7 +157,7 @@ const Chat = () => {
           />
 
           <ChatPanel
-            isConnected={walletConnected}
+            isConnected={isConnected}
             recipientDid={recipientDid}
             setRecipientDid={setRecipientDid}
             messageText={messageText}
@@ -142,7 +172,7 @@ const Chat = () => {
             xmtpClient={xmtpClient}
           />
 
-          <Inbox walletAddress={walletAddress} litClient={litClient} />
+          <Inbox walletAddress={walletAddress} litClient={litClient} xmtpClient={xmtpClient} />
         </div>
       </div>
     </main>

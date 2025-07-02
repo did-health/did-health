@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useXmtp } from '../../providers/XmtpProvider';
+// Removed useXmtp import since we're now using the prop directly
 import { decryptFHIRFile } from '../../lib/litEncryptFile';
+import { Client } from '@xmtp/browser-sdk';
 import FHIRResource from '../fhir/FHIRResourceView';
 
 interface Message {
@@ -15,11 +16,12 @@ interface Message {
 interface InboxProps {
   walletAddress: string | null;
   litClient: any;
+  xmtpClient: Client | null;
 }
 
-export function Inbox({ walletAddress, litClient }: InboxProps) {
+export function Inbox({ walletAddress, litClient, xmtpClient }: InboxProps) {
   const [isVisible, setIsVisible] = useState(true);
-  const { xmtpClient, isInitializing } = useXmtp();
+  const isInitializing = false;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
