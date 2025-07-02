@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { useAccount, useChainId } from 'wagmi';
 import ConnectWallet from '../eth/WalletConnectETH';
-import { useXmtp } from '../../hooks/useXmtp';
+import { useXmtp } from '../../lib/useXmtp';
 import { useOnboardingState } from '../../store/OnboardingState';
 import { MemberSearch } from './MemberSearch';
 import { Inbox } from './Inbox';
@@ -164,7 +164,7 @@ if (!isReady) {
             setMessageText={setMessageText}
             status={status}
             setStatus={setStatus}
-            walletAddress={walletAddress}
+            walletAddress={walletAddress || ''}
             litClient={litClient}
             email={email || ''}
             web3SpaceDid={web3SpaceDid || ''}
