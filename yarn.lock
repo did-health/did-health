@@ -8284,15 +8284,15 @@
     "@web3-storage/filecoin-client" "^3.3.5"
     "@web3-storage/upload-client" "^17.1.4"
 
-"@xmtp/browser-sdk@^3.0.1":
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/@xmtp/browser-sdk/-/browser-sdk-3.0.1.tgz#2bd322e92f471447489073a7e430649889437d90"
-  integrity sha512-VFD81aKAz4dTvlLRMtCOYdIdbczirxCd9maH8YMSxIBn7IVQNl/47TQdJbsQtgyqWZ1H4IkB09Fhh75nY/Cu3g==
+"@xmtp/browser-sdk@latest":
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/@xmtp/browser-sdk/-/browser-sdk-3.0.3.tgz#0c5f8af7262f5706e6483eacabc322e8036b0dce"
+  integrity sha512-oY2dCWXUjxRMYpKdst97oF54IXyNeFFs4ptAdfFFQzn2/r1T6YayPu0mENfLRbVeEQmRSSH9E9yBIyBKdfsmFQ==
   dependencies:
     "@xmtp/content-type-group-updated" "^2.0.2"
     "@xmtp/content-type-primitives" "^2.0.2"
     "@xmtp/content-type-text" "^2.0.2"
-    "@xmtp/wasm-bindings" "1.2.5"
+    "@xmtp/wasm-bindings" "1.2.6"
     uuid "^11.1.0"
 
 "@xmtp/content-type-group-updated@^2.0.2":
@@ -8327,10 +8327,10 @@
     rxjs "^7.8.0"
     undici "^5.8.1"
 
-"@xmtp/wasm-bindings@1.2.5":
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/@xmtp/wasm-bindings/-/wasm-bindings-1.2.5.tgz#47e154915bb37424124c3dd18f82507307324f0a"
-  integrity sha512-HNF+mwbb0DoL2sMeDOFI9dmkxAm4hoydePXUZL9YHfXZvrG3Q3vW3QrgqR6eAxr1trG9ANZutq0YaEXXs0ixjQ==
+"@xmtp/wasm-bindings@1.2.6":
+  version "1.2.6"
+  resolved "https://registry.yarnpkg.com/@xmtp/wasm-bindings/-/wasm-bindings-1.2.6.tgz#3fce40776d1c0104616c2f1f2646444e00b0dc19"
+  integrity sha512-+54aqLt11cKGwq100t+WHyKIaG/VAN1aghZGMwGKd+DLTB4P030sw26Qbz2hvt+LB4GkL3mNtgoOlyQr18TOjQ==
 
 "@xrplf/isomorphic@^1.0.0", "@xrplf/isomorphic@^1.0.1":
   version "1.0.1"
