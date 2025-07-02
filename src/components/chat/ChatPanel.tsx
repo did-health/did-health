@@ -1,293 +1,139 @@
-// ChatPanel.tsx
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { ethers } from 'ethers';
-import { JsonRpcProvider } from 'ethers';
-import { useXmtp } from '../../providers/XmtpProvider';
-import type { MultipleAccessControlConditions } from '@lit-protocol/types';
-import { createFHIRMessageBundle } from '../fhir/MessageBundle';
-import { Favorites } from './Favorites';
-import type { ILitNodeClient } from '@lit-protocol/types';
+import { Client as XmtpClient } from '@xmtp/browser-sdk';
+import type { LitNodeClient } from '@lit-protocol/lit-node-client';
 import deployedContracts from '../../generated/deployedContracts';
-import { encryptFHIRFile } from '../../lib/litEncryptFile';
-import { createMessageAccessControlConditions } from './MessageAccessControl';
-import logo from '../../assets/did-health.png';
+import { parseDidHealth } from '../../utils/did';
 import { ConnectLit } from '../lit/ConnectLit';
-import { Buffer } from 'buffer';
-import type { Signer, Identifier } from '@xmtp/browser-sdk';
-import type { FavoritesRef } from './Favorites';
 
 interface ChatPanelProps {
-    isConnected: boolean;
-    recipientDid: string | null;
-    setRecipientDid: (did: string | null) => void;
-    messageText: string;
-    setMessageText: (text: string) => void;
-    status: string;
-    setStatus: (status: string) => void;
-    walletAddress: string | null;
-    litClient: ILitNodeClient | null;
-    email: string;
-    web3SpaceDid: string | null;
-    chainId: number | null;
+  isConnected: boolean;
+  recipientDid: string | null;
+  setRecipientDid: (did: string | null) => void;
+  messageText: string;
+  setMessageText: (text: string) => void;
+  status: string;
+  setStatus: (status: string) => void;
+  walletAddress: string | null;
+  litClient: LitNodeClient | null;
+  email: string;
+  web3SpaceDid: string;
+  chainId: number;
+  xmtpClient: XmtpClient | null;
 }
 
-interface Message {
-    id: string;
-    sender: string;
-    content: string;
-    timestamp: Date;
-    decrypted: boolean;
-    decryptedContent?: any;
-}
-
-function parseDidHealth(did: string): { chainId: number; lookupKey: string } {
-  const parts = did.trim().split(':');
-  if (parts.length !== 4 || parts[0] !== 'did' || parts[1] !== 'health') {
-    throw new Error('❌ Invalid DID format. Use: did:health:<chainId>:<name>');
-  }
-  const chainId = parseInt(parts[2], 10);
-  if (isNaN(chainId)) throw new Error(`❌ Invalid chain ID: ${parts[2]}`);
-  return {
-    chainId,
-    lookupKey: `${chainId}:${parts[3]}`,
-  };
-}
-
-export function ChatPanel({
-    isConnected,
-    recipientDid,
-    setRecipientDid,
-    messageText,
-    setMessageText,
-    status,
-    setStatus,
-    walletAddress,
-    litClient,
-    email,
-    web3SpaceDid,
-    chainId,
-}: ChatPanelProps) {
-    const favoritesRef = useRef<FavoritesRef>(null);
-    const { xmtpClient, initXmtp, error: xmtpError, isInitializing } = useXmtp();
-
-    useEffect(() => {
-      const initializeXMTP = async () => {
-        if (!isConnected || !walletAddress || !chainId) {
-          return;
-        }
-
-        // Create signer
-        const provider = new JsonRpcProvider(`https://arb-sepolia.g.alchemy.com/v2/demo`);
-        const providerSigner = await provider.getSigner();
-        const signer: Signer = {
-          async getIdentifier(): Promise<Identifier> {
-            const addr = walletAddress.toLowerCase();
-            return { identifier: addr, identifierKind: 'Ethereum' as const };
-          },
-          async signMessage(message: string | Uint8Array): Promise<Buffer> {
-            const signature = await providerSigner.signMessage(
-              typeof message === 'string' ? message : Buffer.from(message).toString('hex')
-            );
-            return Buffer.from(signature, 'hex');
-          },
-          getChainId(): bigint {
-            return BigInt(provider._network.chainId);
-          },
-          type: 'SCW' as const
-        };
-
-        // Initialize XMTP if not already initialized
-        if (!xmtpClient && !isInitializing) {
-          await initXmtp(signer).catch((err: any) => {
-            console.error('Failed to initialize XMTP:', err);
-            setStatus(`❌ XMTP Error: ${err.message || 'Failed to initialize'}`);
-          });
-        }
-      };
-
-      initializeXMTP();
-    }, [isConnected, initXmtp, xmtpClient, walletAddress, chainId, isInitializing]);
-
-    useEffect(() => {
-        if (!isConnected || !walletAddress || !chainId) {
-            return;
-        }
-
-        if (!xmtpClient) {
-            // Create a proper Signer instance that matches XMTP's expected interface
-            const provider = new ethers.JsonRpcProvider(chainId ? `https://eth-${chainId === 1 ? 'mainnet' : 'goerli'}.alchemyapi.io/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}` : '');
-            const signer = {
-                async getIdentifier(): Promise<Identifier> {
-                    const addr = walletAddress?.toLowerCase();
-                    if (!addr) {
-                        throw new Error('No wallet address found');
-                    }
-                    return {
-                        identifier: addr,
-                        identifierKind: 'Ethereum' as const
-                    };
-                },
-                async signMessage(message: string | Uint8Array): Promise<Buffer> {
-                    const providerSigner = await provider.getSigner();
-                    const signature = await providerSigner.signMessage(
-                        typeof message === 'string' ? message : Buffer.from(message).toString('hex')
-                    );
-                    return Buffer.from(signature, 'hex');
-                }
-            } as Signer;
-
-            initXmtp(signer).catch((err: any) => {
-                console.error('Failed to initialize XMTP:', err);
-                setStatus(`❌ XMTP Error: ${err.message || 'Failed to initialize'}`);
-            });
-        }
-    }, [isConnected, initXmtp, xmtpClient, walletAddress, chainId]);
-
-    if (!xmtpClient) {
-        return (
-            <div className="p-4 text-center">
-                <div className="text-yellow-600 mb-2">
-                    {walletAddress ? 'Initializing XMTP...' : 'Please connect your wallet'}
-                </div>
-                {xmtpError && (
-                    <div className="text-red-600">
-                        Error: {xmtpError}
-                    </div>
-                )}
-                {!walletAddress && (
-                    <div className="mt-4">
-                        <button 
-                            onClick={() => window.ethereum?.request({ method: 'eth_requestAccounts' })}
-                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                        >
-                            Connect Wallet
-                        </button>
-                    </div>
-                )}
-            </div>
-        );
-    }
-
+export const ChatPanel: React.FC<ChatPanelProps> = ({
+  isConnected,
+  recipientDid,
+  setRecipientDid,
+  messageText,
+  setMessageText,
+  status,
+  setStatus,
+  walletAddress,
+  litClient,
+  email,
+  web3SpaceDid,
+  chainId,
+  xmtpClient,
+}) => {
+ 
     const sendMessage = async () => {
         try {
-            const env = 'testnet' // or 'mainnet'
-            if (!recipientDid) throw new Error('Please select a recipient');
-            if (!walletAddress) throw new Error('Please connect your wallet');
-            if (!xmtpClient) throw new Error('XMTP client not initialized');
-            if (!litClient) throw new Error('Please wait for Lit Protocol initialization');
-            
-            const { chainId, lookupKey } = parseDidHealth(recipientDid);
-            
-            // Add recipient to favorites
-            favoritesRef.current?.addFavorite(recipientDid);
-
-            // Get recipient wallet address from DID
-            console.log('🔍 Starting DID initialization process');
-            console.log('Environment:', env);
-            
-            const network = deployedContracts[env as keyof typeof deployedContracts];
-            if (!network) {
-                throw new Error(`❌ Network not found for env ${env}`);
-            }
-
-            const registryEntry = network[chainId.toString() as keyof typeof network]?.HealthDIDRegistry;
-            if (!registryEntry) {
-                throw new Error(`❌ No HealthDIDRegistry deployed for chain ${chainId}`);
-            }
-
-            console.log('Using RPC URL:', registryEntry.rpcUrl);
-            console.log('Using contract address:', registryEntry.address);
-
-            const provider = new JsonRpcProvider(registryEntry.rpcUrl);
-            console.log('Created provider instance');
-
-            try {
-                const signer = await provider.getSigner();
-                console.log('Got signer instance');
-                
-                const wallet = await signer.getAddress();
-                console.log('Got wallet address:', wallet);
- 
-                const contract = new ethers.Contract(registryEntry.address, registryEntry.abi, provider)
-                const data = await contract.getHealthDID(lookupKey)
-
-                if (!data || data.owner === ethers.ZeroAddress) {
-                    throw new Error(`❌ DID "${lookupKey}" not found on chain ${chainId}`)
-      }
-                console.log('Got DID owner data:', data);
-                
-                if (!data || data.owner === ethers.ZeroAddress) {
-                    throw new Error(`❌ DID not found on chain ${chainId}`);
-                }
-                const recipientWallet = data.owner;
-                console.log('Recipient wallet:', recipientWallet);
-                
-                return { wallet, recipientWallet };
-            } catch (error) {
-                console.error('❌ Initialization error:', error);
-                throw error;
-            }
-
+          if (!recipientDid) throw new Error('Please select a recipient');
+          if (!walletAddress) throw new Error('Please connect your wallet');
+          if (!xmtpClient) throw new Error('XMTP not ready');
+          if (!litClient) throw new Error('Lit not initialized');
+          if (!messageText.trim()) throw new Error('Message is empty');
+      
+          const env = 'dev'; // or 'production'
+          const { chainId: didChainId, name: lookupKey } = parseDidHealth(recipientDid);
+      
+          const network = deployedContracts[env as keyof typeof deployedContracts];
+          const chainEntry = Object.values(network).find(
+            (entry: any) => entry.HealthDIDRegistry?.chainId === parseInt(didChainId)
+          );
+      
+          if (!chainEntry || !chainEntry.HealthDIDRegistry) {
+            throw new Error(`No HealthDIDRegistry deployed for chain ${didChainId}`);
+          }
+      
+          const registry = chainEntry.HealthDIDRegistry;
+          const provider = new ethers.JsonRpcProvider(registry.rpcUrl);
+          const contract = new ethers.Contract(registry.address, registry.abi, provider);
+          const didData = await contract.getHealthDID(lookupKey);
+      
+          if (!didData || didData.owner === ethers.ZeroAddress) {
+            throw new Error(`DID ${lookupKey} not found`);
+          }
+      
+          const recipientWallet = didData.owner.toLowerCase();
+      
+          // 1. Check if the recipient can be messaged
+          const reachability = await xmtpClient.canMessage([recipientWallet]);
+          if (!reachability.get(recipientWallet)) {
+            throw new Error('Recipient is not reachable on XMTP');
+          }
+      
+          // Create a new DM conversation directly with the wallet address
+          const conversation = await xmtpClient.conversations.newDm(recipientWallet);
+      
+          // 4. Optimistically send
+          conversation.sendOptimistic(messageText);
+      
+          // 5. Publish the message to the XMTP network
+          await conversation.publishMessages();
+      
+          setStatus('Message sent!');
+          setMessageText('');
         } catch (err: any) {
-            console.error('❌ Initialization error:', err);
-            throw err;
-        }   
-    };
+          console.error('Send message failed:', err);
+          setStatus(err.message || 'Unknown error');
+        }
+      };
+      
+      
 
-    return (
-        <div className="flex flex-col h-full w-full p-4 space-y-4">
-            <ConnectLit />
-            {!isConnected && (
-                <div className="bg-red-50 p-4 rounded-lg">
-                    <p className="text-sm">Please connect your wallet to start chatting</p>
-                </div>
-            )}
-            {!recipientDid && isConnected && (
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                    <p className="text-sm">Please select a recipient to start chatting</p>
-                </div>
-            )}
-            <Favorites
-                ref={favoritesRef}
-                onSelect={setRecipientDid}
-                litClient={litClient || undefined}
-            />
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Recipient's DID:Health</label>
-                <input
-                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter recipient's DID:Health (did:health:chainId:name)"
-                    value={recipientDid || ''}
-                    onChange={(e) => setRecipientDid(e.target.value)}
-                />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                <textarea
-                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[200px] resize-none"
-                    placeholder="Type your message here..."
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                />
-            </div>
-            <button
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                onClick={sendMessage}
-            >
-                <span className="mr-2">🚀</span> Send Secure Message
-            </button>
-            {status && (
-                <div
-                    className={`p-3 rounded-lg ${status.startsWith('❌')
-                            ? 'bg-red-50 text-red-700'
-                            : status.startsWith('✅')
-                                ? 'bg-green-50 text-green-700'
-                                : 'bg-blue-50 text-blue-700'
-                        } fixed inset-x-0 bottom-0 z-50 mb-4 mx-4`}
-                >
-                    <p className="text-sm">{status}</p>
-                </div>
-            )}
+  return (
+    <div className="flex flex-col w-full p-4 space-y-4">
+      <ConnectLit />
+
+      {!recipientDid && isConnected && (
+        <div className="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg">
+          <p className="text-sm">Please select a recipient to start chatting</p>
         </div>
-    );
-}
+      )}
+
+      {recipientDid && (
+        <>
+          {/* Status display */}
+          {status && (
+            <div className="text-sm text-blue-600 dark:text-blue-300">
+              {status}
+            </div>
+          )}
+
+          {/* Message input */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="text"
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') sendMessage();
+              }}
+              placeholder="Type your message..."
+              className="flex-grow px-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700"
+            />
+            <button
+              onClick={sendMessage}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            >
+              Send
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
