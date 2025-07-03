@@ -161,7 +161,7 @@ export default function OnboardingEth() {
                 if (!isFHIRResource(fhirResource)) {
                   return (
                     <p className="text-sm text-red-500">
-                      ❌ Unsupported FHIR resource type: {fhirResource.resourceType}
+                      ❌ Unsupported FHIR resource type
                     </p>
                   )
                 }
