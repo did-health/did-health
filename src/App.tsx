@@ -21,7 +21,7 @@ import { DAOStatus } from './components/dao/DAOStatus'
 import {DidHealthQRScanner} from './components/dao/DAODIDScanner'
 import  DIDResolver  from './components/DIDResolver';
 import { XmtpInstallationsPage } from './components/chat/XmtpInstalls'
-import OnboardingCosmos from './components/cosmos/OnboardingCosmos'
+import { OnboardingCosmos } from './components/cosmos/OnboardingCosmos'
 function App() {
   return (
 

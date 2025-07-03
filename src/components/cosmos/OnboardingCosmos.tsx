@@ -11,16 +11,22 @@ import { SetEncryption } from '../lit/SetEncryption';
 import { SelectDIDFormCosmos } from './SelectDIDFormCosmos';
 import { RegisterDIDCosmos } from './RegisterDIDCosmos';
 import { Link } from 'react-router-dom';
-import logo from '../../assets/did-health-logo.svg';
-import coslogo from '../../assets/cosmos-logo.svg';
+import logo from '../../assets/did-health.png';
+import coslogo from '../../assets/cosmos-atom-logo.svg';
 import { dhealthChain as ChainConfig } from './WalletConnectCosmos';
 import { Wallet } from './WalletConnectCosmos';
 
-const transformedChain = {
-  ...ChainConfig,
-  walletUrl: 'https://wallet.keplr.app',
-  walletName: 'Keplr',
-  walletIcon: 'https://wallet.keplr.app/favicon.ico'
+const chainConfig = {
+  chainId: dhealthChain.chainId,
+  chainName: dhealthChain.chainName,
+  rpc: dhealthChain.rpc,
+  rest: dhealthChain.rest,
+  stakeCurrency: dhealthChain.stakeCurrency,
+  bip44: dhealthChain.bip44,
+  bech32Config: dhealthChain.bech32Config,
+  currencies: dhealthChain.currencies,
+  feeCurrencies: dhealthChain.feeCurrencies,
+  features: ['stargate', 'ibc-transfer', 'ibc-go', 'cosmwasm']
 } as const;
 
 export const OnboardingCosmos = () => {
@@ -39,7 +45,7 @@ export const OnboardingCosmos = () => {
 
   return (
     <ChainProvider
-      chains={[transformedChain]}
+      chains={[chainConfig]}
       wallets={keplrWallets}
       throwErrors={false}
     >
