@@ -1,7 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChainProvider } from '@cosmos-kit/react';
-import { dhealthChain } from '../../generated/cosmosChains';
 import { wallets as keplrWallets } from '@cosmos-kit/keplr';
 import type { StepCardProps } from '../types';
 import { useOnboardingState } from '../../store/OnboardingState';
@@ -17,17 +16,18 @@ import { dhealthChain as ChainConfig } from './WalletConnectCosmos';
 import { Wallet } from './WalletConnectCosmos';
 
 const chainConfig = {
-  chainId: dhealthChain.chainId,
-  chainName: dhealthChain.chainName,
-  rpc: dhealthChain.rpc,
-  rest: dhealthChain.rest,
-  stakeCurrency: dhealthChain.stakeCurrency,
-  bip44: dhealthChain.bip44,
-  bech32Config: dhealthChain.bech32Config,
-  currencies: dhealthChain.currencies,
-  feeCurrencies: dhealthChain.feeCurrencies,
-  features: ['stargate', 'ibc-transfer', 'ibc-go', 'cosmwasm']
-} as const;
+  chainId: ChainConfig.chain_id,
+  chain_name: ChainConfig.chain_name,
+  rpc: ChainConfig.rpc,
+  rest: ChainConfig.rest,
+
+  bip44: ChainConfig.bip44,
+
+  features: ChainConfig.features,
+
+  decimals: ChainConfig.decimals,
+
+} as Record<string, any>;
 
 export const OnboardingCosmos = () => {
   const { t } = useTranslation();
@@ -63,7 +63,7 @@ export const OnboardingCosmos = () => {
               </div>
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-white mb-4">
-              {t('welcomeTo')} DID:Health Cosmos
+              {t('welcomeTo')} did:health Cosmos
             </h1>
             <p className="text-gray-600 dark:text-gray-300 max-w-md mx-auto">
               {t('connectYourCosmosWalletToStart')}

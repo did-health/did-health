@@ -9,45 +9,79 @@ import { useOnboardingState } from '../../store/OnboardingState';
 const DHEALTH_CHAIN_ID = 'dhealth-1';
 
 export const dhealthChain = {
-  chainId: DHEALTH_CHAIN_ID,
-  chainName: 'dhealth',
+  chain_name: 'dhealth',
+  chain_type: 'cosmos',
+  chain_id: DHEALTH_CHAIN_ID,
   rpc: 'https://rpc.dhealth.cosmos.directory:443',
   rest: 'https://api.dhealth.cosmos.directory:443',
-  stakeCurrency: {
-    coinDenom: 'DHT',
-    coinMinimalDenom: 'udht',
-    coinDecimals: 6,
-    coinGeckoId: 'dhealth',
+  stake_currency: {
+    coin_denom: 'DHT',
+    coin_minimal_denom: 'udht',
+    coin_decimals: 6,
+    coin_gecko_id: 'dhealth',
   },
-  bip44: { coinType: 118 },
-  bech32Config: {
-    bech32PrefixAccAddr: 'dhealth',
-    bech32PrefixAccPub: 'dhealthpub',
-    bech32PrefixValAddr: 'dhealthvaloper',
-    bech32PrefixValPub: 'dhealthvaloperpub',
-    bech32PrefixConsAddr: 'dhealthvalcons',
-    bech32PrefixConsPub: 'dhealthvalconspub',
+  bip44: { coin_type: 118 },
+  bech32_config: {
+    bech32_prefix_acc_addr: 'dhealth',
+    bech32_prefix_acc_pub: 'dhealthpub',
+    bech32_prefix_val_addr: 'dhealthvaloper',
+    bech32_prefix_val_pub: 'dhealthvaloperpub',
+    bech32_prefix_cons_addr: 'dhealthvalcons',
+    bech32_prefix_cons_pub: 'dhealthvalconspub',
   },
   currencies: [
     {
-      coinDenom: 'DHT',
-      coinMinimalDenom: 'udht',
-      coinDecimals: 6,
-      coinGeckoId: 'dhealth',
-      coinImageUrl: 'https://raw.githubusercontent.com/cosmos/chain-registry/master/dhealth/images/dht.png'
+      coin_denom: 'DHT',
+      coin_minimal_denom: 'udht',
+      coin_decimals: 6,
+      coin_gecko_id: 'dhealth',
+      coin_image_url: 'https://raw.githubusercontent.com/cosmos/chain-registry/master/dhealth/images/dht.png'
     }
   ],
-  feeCurrencies: [
+  fee_currencies: [
     {
-      coinDenom: 'DHT',
-      coinMinimalDenom: 'udht',
-      coinDecimals: 6,
-      coinGeckoId: 'dhealth',
-      coinImageUrl: 'https://raw.githubusercontent.com/cosmos/chain-registry/master/dhealth/images/dht.png'
+      coin_denom: 'DHT',
+      coin_minimal_denom: 'udht',
+      coin_decimals: 6,
+      coin_gecko_id: 'dhealth',
+      gas_price_step: {
+        low: 0.001,
+        average: 0.0025,
+        high: 0.004,
+      },
+      coin_image_url: 'https://raw.githubusercontent.com/cosmos/chain-registry/master/dhealth/images/dht.png'
     }
   ],
-  features: ['stargate', 'ibc-transfer', 'ibc-go']
-};
+  features: ['stargate', 'ibc-transfer', 'ibc-go', 'cosmwasm'],
+  coin_type: 118,
+  decimals: 6,
+  gas_price: 0.0025,
+  gas_price_step: {
+    low: 0.001,
+    average: 0.0025,
+    high: 0.004,
+  },
+  coin_gecko_id: 'dhealth',
+  coin_image_url: 'https://raw.githubusercontent.com/cosmos/chain-registry/master/dhealth/images/dht.png',
+  explorer_url: 'https://dhealth.cosmos.directory',
+  chain_type_pretty: 'Cosmos',
+  chain_type_pretty_short: 'Cosmos',
+  chain_type_pretty_shortest: 'C',
+  chain_type_pretty_shortest_color: '#2563eb',
+  chain_type_pretty_shortest_color_dark: '#3b82f6',
+  chain_type_pretty_shortest_color_light: '#60a5fa',
+  chain_type_pretty_shortest_color_lighter: '#93c5fd',
+  chain_type_pretty_shortest_color_lightest: '#bfdbfe',
+  chain_type_pretty_shortest_color_darker: '#1d4ed8',
+  chain_type_pretty_shortest_color_darkest: '#1e40af',
+  chain_type_pretty_shortest_color_contrast: '#ffffff',
+  chain_type_pretty_shortest_color_contrast_dark: '#000000',
+  chain_type_pretty_shortest_color_contrast_light: '#ffffff',
+  chain_type_pretty_shortest_color_contrast_lighter: '#ffffff',
+  chain_type_pretty_shortest_color_contrast_lightest: '#ffffff',
+  chain_type_pretty_shortest_color_contrast_darkest: '#000000',
+  chain_type_pretty_shortest_color_contrast_darker: '#000000'
+} as const;
 
 
 
