@@ -38,7 +38,7 @@
     "title": "Create Your did:health",
     "subtitle": "Step 1: Choose a Blockchain",
     "checkDid": "Already registered? Click here to view your DID.",
-    "moreAnswers": "Need more answers? Click herer"
+    "moreAnswers": "Need more answers? Click here"
   },
   "blockchain": {
     "ethereum": {
