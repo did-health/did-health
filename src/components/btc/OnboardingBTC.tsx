@@ -3,14 +3,54 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ConnectWalletBTC } from './WalletConnectBTC'
 import { ConnectLit } from '../lit/ConnectLit'
+import { useOnboardingState } from '../../store/OnboardingState'
 import { SetupStorage } from '../SetupStorage'
 import { CreateDIDForm } from '../fhir/CreateDIDType'
-import { SelectDIDFormBTC } from './SelectDIDFormBTC'
+
 import RegisterDIDBTC from './RegisterDIDBTC'
-import { useOnboardingState } from '../../store/OnboardingState'
 import { SetEncryption } from '../lit/SetEncryption'
+import CreatePatientForm from '../fhir/CreatePatientForm'
+import CreateOrganizationForm from '../fhir/CreateOrganizationForm'
+import CreatePractitionerForm from '../fhir/CreatePractitionerForm'
+import CreateDeviceForm from '../fhir/CreateDeviceForm'
 import logo from '../../assets/did-health.png'
-import btclogo from '../../assets/bitcoin-btc-logo.svg' // Replace with actual path to Bitcoin logo
+import btclogo from '../../assets/bitcoin-btc-logo.svg'
+import type { Patient, Practitioner, Organization, Device } from 'fhir/r4'
+
+type FHIRResource = Patient | Practitioner | Organization | Device
+
+type OnboardingState = {
+  walletConnected: boolean
+  walletAddress: string | null
+  litConnected: boolean
+  storageReady: boolean
+  fhirResource: FHIRResource | null
+  did: string | null
+  litClient: any | null
+  email: string | null
+  web3SpaceDid: string | null
+  sessionSigs?: any | null
+  accessControlConditions: any | null
+  encryptionSkipped: boolean
+  ipfsUri: string | null
+  chainId: number | string | null
+  w3upClient: any | null
+
+  setWalletConnected: (value: boolean) => void
+  setWalletAddress: (address: string) => void
+  setLitConnected: (value: boolean) => void
+  setStorageReady: (value: boolean) => void
+  setFHIRResource: (resource: FHIRResource) => void
+  setDID: (did: string) => void
+  setLitClient: (client: any) => void
+  setEmail: (email: string) => void
+  setWeb3SpaceDid: (did: string) => void
+  setAccessControlConditions: (value: any) => void
+  setEncryptionSkipped: (value: boolean) => void
+  setIpfsUri: (uri: string | null) => void
+  setChainId: (chainId: number | string | null) => void
+  setW3upClient: (client: any) => void
+}
 type StepCardProps = {
   step: string
   title: string
@@ -30,7 +70,14 @@ export default function OnboardingEth() {
     setDID,
     encryptionSkipped,
     walletAddress,
-  } = useOnboardingState()
+    setFHIRResource,
+    setW3upClient
+  } = useOnboardingState() as OnboardingState
+
+  const handleSubmit = async (updatedFHIR: any) => {
+    console.log('💾 Submitting updated FHIR:', updatedFHIR)
+    setFHIRResource(updatedFHIR)
+  }
 
   return (
     <main className="p-6 sm:p-10 max-w-3xl mx-auto text-gray-800 dark:text-white">
@@ -82,7 +129,7 @@ export default function OnboardingEth() {
 
         {walletConnected && litConnected && (
           <StepCard step="3" title={t('setupStorage')}>
-            <SetupStorage />
+            <SetupStorage onReady={(client) => setW3upClient(client)} />
           </StepCard>
         )}
 
@@ -98,12 +145,40 @@ export default function OnboardingEth() {
               ✅ {t('created')} <strong>{fhirResource.resourceType}</strong>
             </p>
             <div className="mt-2">
-              <Link
-                to={`/create/${fhirResource.resourceType.toLowerCase()}`}
-                className="inline-flex items-center text-sm text-blue-600 hover:underline dark:text-blue-400"
-              >
-                ✏️ {t('edit')} {fhirResource.resourceType}
-              </Link>
+              {(() => {
+                if (!fhirResource) {
+                  return null
+                }
+                
+                // Type guard to ensure resourceType is a valid FHIR resource type
+                const isFHIRResource = (resource: FHIRResource): resource is FHIRResource => {
+                  return resource.resourceType === 'Patient' || 
+                         resource.resourceType === 'Organization' ||
+                         resource.resourceType === 'Practitioner' ||
+                         resource.resourceType === 'Device'
+                }
+
+                if (!isFHIRResource(fhirResource)) {
+                  return (
+                    <p className="text-sm text-red-500">
+                      ❌ Unsupported FHIR resource type: {fhirResource.resourceType}
+                    </p>
+                  )
+                }
+
+                switch (fhirResource.resourceType) {
+                  case 'Patient':
+                    return <CreatePatientForm defaultValues={fhirResource} onSubmit={handleSubmit} />
+                  case 'Organization':
+                    return <CreateOrganizationForm defaultValues={fhirResource} onSubmit={handleSubmit} />
+                  case 'Practitioner':
+                    return <CreatePractitionerForm defaultValues={fhirResource} onSubmit={handleSubmit} />
+                  case 'Device':
+                    return <CreateDeviceForm defaultValues={fhirResource} onSubmit={handleSubmit} />
+                  default:
+                    return null
+                }
+              })()}
             </div>
           </StepCard>
         )}
@@ -166,7 +241,6 @@ export default function OnboardingEth() {
                     </div>
                   )
                 })}
-
                 <button
                   onClick={() => {
                     useOnboardingState.getState().setAccessControlConditions(null)
@@ -180,14 +254,25 @@ export default function OnboardingEth() {
           </StepCard>
         )}
 
-        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && !did && (
-            <StepCard step="6" title={t('chooseDID')}>
-            <SelectDIDFormBTC onDIDAvailable={(did: string) => setDID(did)} />
-            </StepCard>
-        )}
-        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
+        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
           <StepCard step="6" title={t('chooseDID')}>
-            {did}
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                Your DID is automatically generated from your Bitcoin wallet address:
+              </p>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <code className="text-sm font-mono">did:health:btc:{walletAddress}</code>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(`did:health:btc:${walletAddress}`)}
+                    className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 transition-colors"
+                    title="Copy DID"
+                  >
+                    📋 Copy
+                  </button>
+                </div>
+              </div>
+            </div>
           </StepCard>
         )}
 

@@ -40,13 +40,18 @@ export default function ResolveDIDBitcoin() {
             if (!contentRes.ok) continue
 
             const text = await contentRes.text()
-            const ipfsMatch = text.trim().match(/^ipfs:\/\/([a-zA-Z0-9]+)/)
-            if (!ipfsMatch) continue
+            let parsed: { did: string; ipfsUri: string }
 
-            const cid = ipfsMatch[1]
-            const ipfsUri = `ipfs://${cid}`
-            const docUrl = `https://w3s.link/ipfs/${cid}`
+            try {
+              parsed = JSON.parse(text.trim())
+            } catch {
+              continue // Not valid JSON, skip
+            }
 
+            if (parsed?.did !== did || !parsed?.ipfsUri?.startsWith('ipfs://')) continue
+
+            const ipfsUri = parsed.ipfsUri
+            const docUrl = ipfsUri.replace('ipfs://', 'https://w3s.link/ipfs/')
             const docRes = await fetch(docUrl)
             if (!docRes.ok) continue
 
@@ -54,17 +59,12 @@ export default function ResolveDIDBitcoin() {
             if (didDocJson?.id !== did) continue
 
             setDidDoc(didDocJson)
-            setResolvedUri(ipfsUri || '')
+            setResolvedUri(ipfsUri)
             setStatus('✅ DID Document resolved!')
 
             const qr = await generateQRCode(JSON.stringify(didDocJson))
-            if (qr) {
-              setQrCode(qr)
-            } else {
-              setStatus('⚠️ Failed to generate QR code')
-            }
+            if (qr) setQrCode(qr)
 
-            // Fetch the FHIR resource if linked
             const fhirEndpoint = didDocJson?.service?.find((s: any) =>
               s.type === 'FHIRResource' || s.id?.includes('#fhir')
             )?.serviceEndpoint

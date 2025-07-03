@@ -52,6 +52,10 @@ export default function RegisterDIDBTC() {
         fhirUri = await storeEncryptedFileByHash(encryptedBlob, hash, resourceType)
       }
 
+      // Generate DID from wallet address
+      const did = `did:health:btc:${walletAddress}`;
+      
+      // Create DID document
       const didDoc = {
         id: did,
         controller: walletAddress,
@@ -62,18 +66,42 @@ export default function RegisterDIDBTC() {
             serviceEndpoint: fhirUri,
           },
         ],
+        verificationMethod: [
+          {
+            id: `${did}#controller`,
+            type: 'BitcoinAddress2021',
+            controller: did,
+            bitcoinAddress: walletAddress
+          }
+        ]
       }
 
+      // Upload DID document to IPFS
       setStatus('📝 Uploading DID Document to IPFS...')
-      const didDocUri = await storePlainFHIRFile(didDoc, `${fhirResource.id}-didDocument`, 'didDocument')
+      const didDocUri = await storePlainFHIRFile(didDoc, `${fhirResource?.id || crypto.randomUUID()}-didDocument`, 'didDocument')
       setDidUri(didDocUri)
-      setStatus('✅ DID Document uploaded. Please inscribe it on Bitcoin using Ordinals.')
-      if (did) {
-        setDID(did)
+      setDID(did)
+
+      // Create inscription payload with full JSON structure
+      const inscriptionPayload = {
+        did: did,
+        ipfsUri: `ipfs://${didDocUri.split('://')[1]}`,
+        metadata: {
+          version: '1.0.0',
+          timestamp: new Date().toISOString(),
+          chain: 'bitcoin',
+          network: 'mainnet',
+          type: 'did-registration',
+          walletAddress: walletAddress
+        }
       }
+
+      setStatus('✅ DID Document uploaded. Please inscribe it on Bitcoin using Ordinals.')
+      return inscriptionPayload
     } catch (err: any) {
       console.error(err)
       setStatus(`❌ Error: ${err.message}`)
+      return null
     }
   }
 
@@ -91,11 +119,17 @@ export default function RegisterDIDBTC() {
                   <div className="flex items-center gap-2 mt-2">
                     <code className="block break-all text-xs">{didUri}</code>
                     <button
-                      onClick={() => navigator.clipboard.writeText(didUri)}
+                      onClick={() => {
+                        const didData = {
+                          did: did,
+                          ipfsUri: didUri
+                        }
+                        navigator.clipboard.writeText(JSON.stringify(didData, null, 2))
+                      }}
                       className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 transition-colors"
-                      title="Copy URL"
+                      title="Copy DID and IPFS URI as JSON"
                     >
-                      📋 Copy
+                      📋 Copy JSON
                     </button>
                   </div>
                   <p className="mt-2 text-green-700">

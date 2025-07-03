@@ -9,6 +9,7 @@ import ResolveDIDBTC from './components/btc/ResolveDIDBTC'
 import ResolveDIDSolana from './components/solana/ResolveDIDSolana'
 import ResolveDIDCosmos from './components/cosmos/ResolveDIDCosmos'
 import UpdateDIDUri from './components/eth/UpdateDidETH'
+import UpdateDidBTC from './components/btc/UpdateDIDBTC'
 import Chat from './components/chat/Chat'
 import { XmtpProvider } from './providers/XmtpProvider'
 import OnboardingSolana from './components/solana/OnboardingSolana'
@@ -20,6 +21,7 @@ import { DAOStatus } from './components/dao/DAOStatus'
 import {DidHealthQRScanner} from './components/dao/DAODIDScanner'
 import  DIDResolver  from './components/DIDResolver';
 import { XmtpInstallationsPage } from './components/chat/XmtpInstalls'
+import OnboardingCosmos from './components/cosmos/OnboardingCosmos'
 function App() {
   return (
 
@@ -38,6 +40,7 @@ function App() {
         <Route path="/ethereum/did" element={<ResolveDIDETH />} />
         <Route path="/ethereum/did/alt" element={<AltFHIRData />} />
         <Route path="/ethereum/did/update" element={<UpdateDIDUri />} />
+        <Route path="/btc/did/update" element={<UpdateDidBTC />} />
         <Route path="/btc/did" element={<ResolveDIDBTC />} /> 
         <Route path="/solana/did" element={<ResolveDIDSolana/>} />       
         <Route path="/cosmos/did" element={<ResolveDIDCosmos />} />       
@@ -51,7 +54,7 @@ function App() {
         <Route path="/onboarding/ethereum" element={<OnboardingEth />} />
         <Route path="/onboarding/bitcoin" element={<OnboardingBTC />} />
         <Route path="/onboarding/solana" element={<OnboardingSolana />} />
-        <Route path="/onboarding/cosmos" element={<OnboardingBTC />} />      
+        <Route path="/onboarding/cosmos" element={<OnboardingCosmos />} />      
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

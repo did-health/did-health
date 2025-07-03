@@ -10,7 +10,7 @@ import { RegisterDIDCosmos } from './RegisterDIDCosmos';
 import { SetEncryption } from '../lit/SetEncryption';
 import { useOnboardingState } from '../../store/OnboardingState';
 import logo from '../../assets/did-health.png';
-import coslogo from '../../assets/cosmos-logo.svg'; // Replace with actual path to Cosmos logo
+import coslogo from '../../assets/cosmos-atom-logo.svg'; 
 export default function OnboardingCosmos() {
     const { t } = useTranslation();
     const {
