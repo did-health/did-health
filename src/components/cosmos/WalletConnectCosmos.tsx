@@ -34,7 +34,8 @@ export const dhealthChain = {
       coinMinimalDenom: 'udht',
       coinDecimals: 6,
       coinGeckoId: 'dhealth',
-    },
+      coinImageUrl: 'https://raw.githubusercontent.com/cosmos/chain-registry/master/dhealth/images/dht.png'
+    }
   ],
   feeCurrencies: [
     {
@@ -42,9 +43,10 @@ export const dhealthChain = {
       coinMinimalDenom: 'udht',
       coinDecimals: 6,
       coinGeckoId: 'dhealth',
-    },
+      coinImageUrl: 'https://raw.githubusercontent.com/cosmos/chain-registry/master/dhealth/images/dht.png'
+    }
   ],
-  features: ['stargate', 'ibc-transfer'],
+  features: ['stargate', 'ibc-transfer', 'ibc-go']
 };
 
 

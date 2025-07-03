@@ -13,15 +13,116 @@ import { SetEncryption } from '../lit/SetEncryption';
 import { useOnboardingState } from '../../store/OnboardingState';
 import logo from '../../assets/did-health.png';
 import coslogo from '../../assets/cosmos-atom-logo.svg';
-import { StepCard } from './StepCard';
+interface StepCardProps {
+  step: string;
+  title: string;
+  children: React.ReactNode;
+}
+
+function StepCard({ step, title, children }: StepCardProps) {
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+      <div className="flex items-center mb-4">
+        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-4">
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">{step}</span>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
+      </div>
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
 
 const keplrWallet = {
   name: 'keplr',
   type: 'extension',
   icon: 'https://raw.githubusercontent.com/chainapsis/keplr-wallet/main/src/assets/icon.png',
+  ChainWallet: {
+    name: 'keplr',
+    type: 'extension',
+    icon: 'https://raw.githubusercontent.com/chainapsis/keplr-wallet/main/src/assets/icon.png',
+    getProvider: () => window.keplr,
+    getWallet: (chainId: string) => {
+      return {
+        type: 'extension',
+        name: 'keplr',
+        chainId,
+        getProvider: () => window.keplr,
+        getWallet: (chainId: string) => window.keplr,
+        initingClient: false,
+        initClientDone: false,
+        initClientError: null,
+        status: 'disconnected',
+        address: null,
+        client: null,
+        wallet: null,
+        connect: async () => {
+          if (window.keplr) {
+            await window.keplr.enable(chainId);
+          }
+        },
+        disconnect: () => {},
+        sign: async (data: any) => {
+          if (window.keplr) {
+            return await window.keplr.signAmino(chainId, data);
+          }
+          return null;
+        },
+        signDirect: async (data: any) => {
+          if (window.keplr) {
+            return await window.keplr.signDirect(chainId, data);
+          }
+          return null;
+        },
+        signArbitrary: async (data: any) => {
+          if (window.keplr) {
+            return await window.keplr.signArbitrary(chainId, data);
+          }
+          return null;
+        }
+      };
+    }
+  },
   getProvider: () => window.keplr,
   getWallet: (chainId: string) => {
-    return window.keplr?.enable(chainId);
+    return {
+      type: 'extension',
+      name: 'keplr',
+      chainId,
+      getProvider: () => window.keplr,
+      getWallet: (chainId: string) => window.keplr,
+      initingClient: false,
+      initClientDone: false,
+      initClientError: null,
+      status: 'disconnected',
+      address: null,
+      client: null,
+      wallet: null,
+      connect: async () => {
+        if (window.keplr) {
+          await window.keplr.enable(chainId);
+        }
+      },
+      disconnect: () => {},
+      sign: async (data: any) => {
+        if (window.keplr) {
+          return await window.keplr.signAmino(chainId, data);
+        }
+        return null;
+      },
+      signDirect: async (data: any) => {
+        if (window.keplr) {
+          return await window.keplr.signDirect(chainId, data);
+        }
+        return null;
+      },
+      signArbitrary: async (data: any) => {
+        if (window.keplr) {
+          return await window.keplr.signArbitrary(chainId, data);
+        }
+        return null;
+      }
+    };
   }
 };
 
@@ -41,8 +142,8 @@ export default function OnboardingCosmos() {
 
   return (
     <ChainProvider
-      chains={['dhealth-1']}
-      wallets={[dhealthChain]}
+      chains={[dhealthChain]}
+      wallets={[keplrWallet]}
       throwErrors={false}
     >
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
