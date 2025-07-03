@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Client,
   type ClientOptions,
@@ -26,6 +26,19 @@ export const useXmtp = (): UseXmtpResult => {
   const [xmtpClient, setXmtpClient] = useState<XmtpClient<unknown> | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dbLock, setDbLock] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
+
+  // Cleanup function to release any database locks
+  useEffect(() => {
+    return () => {
+      if (dbLock) {
+        log('cleanup', 'Releasing database lock');
+        setDbLock(false);
+      }
+    };
+  }, [dbLock]);
 
   const initXmtp = useCallback(
     async (signer: Signer, options?: ClientOptions) => {
@@ -33,26 +46,83 @@ export const useXmtp = (): UseXmtpResult => {
       setError(null);
       const env = options?.env || 'dev';
 
-      const tryCreate = async (skipInstall = false) => {
-        log('init', `Creating XMTP client (skipInstall=${skipInstall})...`);
-        return await Client.create(signer, {
+      // Check if we already have a client
+      if (xmtpClient) {
+        log('init', 'Already have XMTP client, reusing...');
+        setIsInitializing(false);
+        return;
+      }
+
+      // Try to acquire database lock
+      if (dbLock) {
+        warn('db', 'Database lock already held, waiting...');
+        await sleep(1000);
+        return initXmtp(signer, options);
+      }
+
+      try {
+        setDbLock(true);
+        
+        // Try to get existing client first
+        const existingClient = await Client.create(signer, {
           env,
-          ...(skipInstall ? { skipInstallationRegistration: true } : {}),
           ...options,
         });
+        setXmtpClient(existingClient);
+        log('init', 'Using existing XMTP client ✅');
+        setIsInitializing(false);
+        setDbLock(false);
+        return;
+      } catch (e) {
+        log('init', 'No existing client found, creating new one...');
+      }
+
+      const tryCreate = async (skipInstall = false) => {
+        log('init', `Creating XMTP client (skipInstall=${skipInstall})...`);
+        try {
+          const client = await Client.create(signer, {
+            env,
+            ...(skipInstall ? { skipInstallationRegistration: true } : {}),
+            ...options,
+          });
+          return client;
+        } catch (err) {
+          throw new Error(`Failed to create client: ${err}`);
+        }
       };
 
       try {
+        // First try with skipInstall to avoid database conflicts
+        try {
+          const client = await tryCreate(true);
+          setXmtpClient(client);
+          log('init', 'XMTP client initialized with skipInstall ✅');
+          setDbLock(false);
+          return;
+        } catch (e) {
+          // If skipInstall fails, try regular init
+          log('init', 'SkipInstall failed, trying regular init...');
+        }
+
         const client = await tryCreate();
         setXmtpClient(client);
         log('init', 'XMTP client initialized ✅');
+        setDbLock(false);
       } catch (e: any) {
         const msg = e.message || String(e);
         errorLog('init', msg);
 
         if (!msg.includes('5/5 installations')) {
+          // Handle database access errors
+          if (msg.includes('NoModificationAllowedError') || msg.includes('vfs error')) {
+            warn('db', 'Database access error, retrying in 1 second...');
+            setDbLock(false);
+            await sleep(1000);
+            return initXmtp(signer, options);
+          }
           setError(msg);
           setIsInitializing(false);
+          setDbLock(false);
           return;
         }
 
@@ -73,14 +143,26 @@ export const useXmtp = (): UseXmtpResult => {
             throw new Error('No installations found to revoke.');
           }
 
-          log('revoke', `Revoking ${installations.length} installations...`);
+          // Only revoke the oldest installation to avoid revoking all
+          const oldestInstallation = installations[0];
+          log('revoke', `Revoking oldest installation...`);
           await Client.revokeInstallations(
             signer,
             inboxId,
-            installations.map((i) => i.bytes),
+            [oldestInstallation.bytes],
             env
           );
           log('revoke', 'Revocation complete. Retrying init...');
+
+          // Add exponential backoff for retries
+          const backoffTime = Math.pow(2, retryCount) * 1000;
+          log('revoke', `Waiting ${backoffTime}ms before retry...`);
+          await sleep(backoffTime);
+          setRetryCount(retryCount + 1);
+
+          if (retryCount >= MAX_RETRIES) {
+            throw new Error('Max retries reached');
+          }
 
           const retryClient = await tryCreate();
           setXmtpClient(retryClient);
@@ -91,6 +173,7 @@ export const useXmtp = (): UseXmtpResult => {
         }
       } finally {
         setIsInitializing(false);
+        setDbLock(false);
       }
     },
     []

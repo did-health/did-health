@@ -19,7 +19,7 @@ import DAOMemberSearch from './components/dao/DAOMemberSearch'
 import { DAOStatus } from './components/dao/DAOStatus'
 import {DidHealthQRScanner} from './components/dao/DAODIDScanner'
 import  DIDResolver  from './components/DIDResolver';
-
+import { XmtpInstallationsPage } from './components/chat/XmtpInstalls'
 function App() {
   return (
 
@@ -29,6 +29,7 @@ function App() {
       <Routes>
         <Route path="/" element={<SelectBlockChain />} />
         <Route path="/help" element={<Help />} />
+        <Route path="/xmtp" element={<XmtpInstallationsPage />} />
         <Route path="/chat" element={
           <XmtpProvider>
             <Chat />

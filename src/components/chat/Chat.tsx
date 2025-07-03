@@ -8,8 +8,7 @@ import { MemberSearch } from './MemberSearch';
 import { Inbox } from './Inbox';
 import { ChatPanel } from './ChatPanel';
 import logo from '../../assets/did-health.png';
-import type { Signer as XmtpSigner } from '@xmtp/browser-sdk';
-import { Client, type Client as XmtpClient } from '@xmtp/browser-sdk';
+import { Client, type Signer } from '@xmtp/browser-sdk';
 
 const Chat = () => {
   const { address, isConnected } = useAccount();
@@ -28,12 +27,36 @@ const Chat = () => {
   } = useOnboardingState();
 
   const { xmtpClient: xmtpClientGeneric, initXmtp, isInitializing, error } = useXmtp();
-  const xmtpClient = xmtpClientGeneric as XmtpClient;
+  const xmtpClient = xmtpClientGeneric as Client | undefined;
 
   const [recipientDid, setRecipientDid] = useState<string | null>(null);
   const [messageText, setMessageText] = useState('');
   const [status, setStatus] = useState('');
   const [filters, setFilters] = useState({ name: '', zip: '' });
+
+  // Handle wallet connection on mount
+  useEffect(() => {
+    const checkWalletConnection = async () => {
+      try {
+        if (typeof window !== 'undefined' && window.ethereum) {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts && accounts.length > 0) {
+            setWalletConnected(true);
+            setWalletAddress(accounts[0]);
+          } else {
+            setWalletConnected(false);
+            setWalletAddress('');
+          }
+        }
+      } catch (e) {
+        console.error('Error checking wallet connection:', e);
+        setWalletConnected(false);
+        setWalletAddress('');
+      }
+    };
+
+    checkWalletConnection();
+  }, []);
 
   // Set onboarding state from wallet info
   useEffect(() => {
@@ -52,10 +75,25 @@ const Chat = () => {
 
     const init = async () => {
       try {
+        // Check if wallet is still connected
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (!accounts || accounts.length === 0) {
+          console.warn('Wallet disconnected');
+          return;
+        }
+
+        // Add delay to avoid race conditions
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
 
-        const xmtpSigner: XmtpSigner = {
+        if (!signer) {
+          console.error('No signer available');
+          return;
+        }
+
+        const xmtpSigner: Signer = {
           type: 'EOA' as const,
           async getIdentifier() {
             return {
@@ -64,6 +102,9 @@ const Chat = () => {
             };
           },
           async signMessage(message: string | Uint8Array) {
+            if (!signer) {
+              throw new Error('Signer not available');
+            }
             const msg = typeof message === 'string' ? message : Buffer.from(message).toString('utf8');
             const sig = await signer.signMessage(msg);
             return Buffer.from(sig.replace(/^0x/, ''), 'hex');
@@ -71,12 +112,38 @@ const Chat = () => {
         };
 
         await initXmtp(xmtpSigner);
-      } catch (e) {
-        console.error('Error setting up XMTP:', e);
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          console.error('Error setting up XMTP:', e.message);
+        } else {
+          console.error('Unknown error setting up XMTP:', e);
+        }
+        
+        // Handle specific errors
+        if (e instanceof Error) {
+          if (e.message.includes('eth_requestAccounts')) {
+            console.log('Retrying XMTP initialization after delay...');
+            setTimeout(init, 2000);
+          } else if (e.message.includes('identity update')) {
+            console.log('Retrying identity registration...');
+            setTimeout(init, 5000);
+          }
+        }
       }
     };
 
     init();
+
+    // Cleanup
+    return () => {
+      if (xmtpClient) {
+        try {
+          (xmtpClient as Client).close();
+        } catch (e: unknown) {
+          console.error('Error closing XMTP client:', e);
+        }
+      }
+    };
   }, [walletConnected, litConnected, storageReady, walletAddress, xmtpClient, isInitializing]);
 
 // Check readiness flags
