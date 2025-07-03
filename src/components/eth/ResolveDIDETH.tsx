@@ -15,7 +15,25 @@ export default function ResolveDIDETH() {
   const { address: connectedWalletAddress, isConnected } = useAccount()
 
   const [status, setStatus] = useState('')
-  const [didDoc, setDidDoc] = useState<any | null>(null)
+  interface DIDDocument {
+    id: string;
+    controller: string;
+    service: Array<{
+      id: string;
+      type: string;
+      serviceEndpoint: string;
+    }>;
+    verificationMethod: any[];
+    reputationScore: number;
+    credentials: {
+      hasWorldId: boolean;
+      hasPolygonId: boolean;
+      hasSocialId: boolean;
+    };
+    altIpfsUris?: string[];
+  }
+
+  const [didDoc, setDidDoc] = useState<DIDDocument | null>(null)
   const [fhir, setFhir] = useState<any | null>(null)
   const [qrCode, setQrCode] = useState<string>('')
   const [accessControlConditions, setAccessControlConditions] = useState<any | null>(null)
