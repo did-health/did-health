@@ -183,9 +183,10 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
             </label>
             <select
               name="identifier.1.type.coding.0.code"
-              value={organization.identifier?.[1].type?.coding?.[0].code || ''}
+              value={organization.identifier?.[1]?.type?.coding?.[0]?.code || ''}
               onChange={handleInputChange}
               className="input"
+              disabled={organization.identifier?.length < 2}
             >
               <option value="">Select identifier type</option>
               <option value="NPI">NPI</option>
