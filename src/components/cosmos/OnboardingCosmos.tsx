@@ -1,58 +1,46 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 import { ChainProvider } from '@cosmos-kit/react';
-import { WalletStatus } from '@cosmos-kit/core';
-
-import { Wallet as WalletModal, dhealthChain } from './WalletConnectCosmos';
+import { dhealthChain } from '../../generated/cosmosChains';
+import { wallets as keplrWallets } from '@cosmos-kit/keplr';
+import type { StepCardProps } from '../types';
+import { useOnboardingState } from '../../store/OnboardingState';
 import { ConnectLit } from '../lit/ConnectLit';
 import { SetupStorage } from '../SetupStorage';
-import { CreateDIDForm } from '../fhir/CreateDIDType';
+import { SetEncryption } from '../lit/SetEncryption';
 import { SelectDIDFormCosmos } from './SelectDIDFormCosmos';
 import { RegisterDIDCosmos } from './RegisterDIDCosmos';
-import { SetEncryption } from '../lit/SetEncryption';
-import { useOnboardingState } from '../../store/OnboardingState';
-import logo from '../../assets/did-health.png';
-import coslogo from '../../assets/cosmos-atom-logo.svg';
+import { Link } from 'react-router-dom';
+import logo from '../../assets/did-health-logo.svg';
+import coslogo from '../../assets/cosmos-logo.svg';
+import { dhealthChain as ChainConfig } from './WalletConnectCosmos';
+import { Wallet } from './WalletConnectCosmos';
 
-interface StepCardProps {
-  step: string;
-  title: string;
-  children: React.ReactNode;
-}
+const transformedChain = {
+  ...ChainConfig,
+  walletUrl: 'https://wallet.keplr.app',
+  walletName: 'Keplr',
+  walletIcon: 'https://wallet.keplr.app/favicon.ico'
+} as const;
 
-function StepCard({ step, title, children }: StepCardProps) {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-      <div className="flex items-center mb-4">
-        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-4">
-          <span className="text-blue-600 dark:text-blue-400 font-semibold">{step}</span>
-        </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
-      </div>
-      <div className="space-y-4">{children}</div>
-    </div>
-  );
-}
-
-export default function OnboardingCosmos() {
+export const OnboardingCosmos = () => {
   const { t } = useTranslation();
-  const {
-    walletConnected,
+  const { 
+    walletConnected, 
+    walletAddress,
     litConnected,
     storageReady,
     fhirResource,
-    did,
     accessControlConditions,
-    setDID,
     encryptionSkipped,
-    walletAddress,
+    did,
+    setDID
   } = useOnboardingState();
 
   return (
     <ChainProvider
-      chains={[dhealthChain]}
-      walletModal={WalletModal}
+      chains={[transformedChain]}
+      wallets={keplrWallets}
       throwErrors={false}
     >
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
@@ -79,7 +67,7 @@ export default function OnboardingCosmos() {
           {/* Steps */}
           <div className="space-y-8">
             <StepCard step="1" title={t('connectWallet')}>
-              <WalletModal />
+              <Wallet />
             </StepCard>
 
             {walletConnected && (
@@ -98,7 +86,10 @@ export default function OnboardingCosmos() {
 
             {walletConnected && litConnected && storageReady && !fhirResource && (
               <StepCard step="4" title={t('createFHIR')}>
-                <CreateDIDForm />
+                <SelectDIDFormCosmos onDIDAvailable={(did) => {
+                  // Handle DID availability here
+                  console.log('DID available:', did);
+                }} />
               </StepCard>
             )}
 
@@ -205,4 +196,23 @@ export default function OnboardingCosmos() {
       </div>
     </ChainProvider>
   );
+}
+export function StepCard({ step, title, children }: StepCardProps) {
+  return (
+    <section className="relative bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-8 transition-transform hover:scale-[1.01] hover:shadow-2xl group">
+      <div className="absolute -top-5 left-6">
+        <div className="bg-blue-600 dark:bg-blue-400 text-white dark:text-gray-900 text-xs font-bold px-3 py-1 rounded-full shadow-md tracking-wider uppercase">
+          Step {step}
+        </div>
+      </div>
+
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white mb-6 mt-2 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors">
+        {title}
+      </h2>
+
+      <div className="space-y-4 text-gray-700 dark:text-gray-300 text-[16px] leading-relaxed">
+        {children}
+      </div>
+    </section>
+  )
 }
