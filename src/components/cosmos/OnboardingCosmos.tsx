@@ -2,8 +2,9 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ChainProvider } from '@cosmos-kit/react';
-import { Wallet } from './WalletConnectCosmos';
-import { dhealthChain } from './WalletConnectCosmos';
+import { WalletStatus } from '@cosmos-kit/core';
+
+import { Wallet as WalletModal, dhealthChain } from './WalletConnectCosmos';
 import { ConnectLit } from '../lit/ConnectLit';
 import { SetupStorage } from '../SetupStorage';
 import { CreateDIDForm } from '../fhir/CreateDIDType';
@@ -13,6 +14,7 @@ import { SetEncryption } from '../lit/SetEncryption';
 import { useOnboardingState } from '../../store/OnboardingState';
 import logo from '../../assets/did-health.png';
 import coslogo from '../../assets/cosmos-atom-logo.svg';
+
 interface StepCardProps {
   step: string;
   title: string;
@@ -33,99 +35,6 @@ function StepCard({ step, title, children }: StepCardProps) {
   );
 }
 
-const keplrWallet = {
-  name: 'keplr',
-  type: 'extension',
-  icon: 'https://raw.githubusercontent.com/chainapsis/keplr-wallet/main/src/assets/icon.png',
-  ChainWallet: {
-    name: 'keplr',
-    type: 'extension',
-    icon: 'https://raw.githubusercontent.com/chainapsis/keplr-wallet/main/src/assets/icon.png',
-    getProvider: () => window.keplr,
-    getWallet: (chainId: string) => {
-      return {
-        type: 'extension',
-        name: 'keplr',
-        chainId,
-        getProvider: () => window.keplr,
-        getWallet: (chainId: string) => window.keplr,
-        initingClient: false,
-        initClientDone: false,
-        initClientError: null,
-        status: 'disconnected',
-        address: null,
-        client: null,
-        wallet: null,
-        connect: async () => {
-          if (window.keplr) {
-            await window.keplr.enable(chainId);
-          }
-        },
-        disconnect: () => {},
-        sign: async (data: any) => {
-          if (window.keplr) {
-            return await window.keplr.signAmino(chainId, data);
-          }
-          return null;
-        },
-        signDirect: async (data: any) => {
-          if (window.keplr) {
-            return await window.keplr.signDirect(chainId, data);
-          }
-          return null;
-        },
-        signArbitrary: async (data: any) => {
-          if (window.keplr) {
-            return await window.keplr.signArbitrary(chainId, data);
-          }
-          return null;
-        }
-      };
-    }
-  },
-  getProvider: () => window.keplr,
-  getWallet: (chainId: string) => {
-    return {
-      type: 'extension',
-      name: 'keplr',
-      chainId,
-      getProvider: () => window.keplr,
-      getWallet: (chainId: string) => window.keplr,
-      initingClient: false,
-      initClientDone: false,
-      initClientError: null,
-      status: 'disconnected',
-      address: null,
-      client: null,
-      wallet: null,
-      connect: async () => {
-        if (window.keplr) {
-          await window.keplr.enable(chainId);
-        }
-      },
-      disconnect: () => {},
-      sign: async (data: any) => {
-        if (window.keplr) {
-          return await window.keplr.signAmino(chainId, data);
-        }
-        return null;
-      },
-      signDirect: async (data: any) => {
-        if (window.keplr) {
-          return await window.keplr.signDirect(chainId, data);
-        }
-        return null;
-      },
-      signArbitrary: async (data: any) => {
-        if (window.keplr) {
-          return await window.keplr.signArbitrary(chainId, data);
-        }
-        return null;
-      }
-    };
-  }
-};
-
 export default function OnboardingCosmos() {
   const { t } = useTranslation();
   const {
@@ -143,7 +52,7 @@ export default function OnboardingCosmos() {
   return (
     <ChainProvider
       chains={[dhealthChain]}
-      wallets={[keplrWallet]}
+      walletModal={WalletModal}
       throwErrors={false}
     >
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
@@ -170,7 +79,7 @@ export default function OnboardingCosmos() {
           {/* Steps */}
           <div className="space-y-8">
             <StepCard step="1" title={t('connectWallet')}>
-              <Wallet />
+              <WalletModal />
             </StepCard>
 
             {walletConnected && (
