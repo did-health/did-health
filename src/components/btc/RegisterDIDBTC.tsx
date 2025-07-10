@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useOnboardingState } from '../../store/OnboardingState'
 import { encryptFHIRFile } from '../../lib/litEncryptFile'
 import { storeEncryptedFileByHash, storePlainFHIRFile } from '../../lib/storeFIleWeb3'

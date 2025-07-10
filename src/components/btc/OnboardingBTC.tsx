@@ -1,6 +1,5 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 import { ConnectWalletBTC } from './WalletConnectBTC'
 import { ConnectLit } from '../lit/ConnectLit'
 import { useOnboardingState } from '../../store/OnboardingState'
@@ -67,7 +66,6 @@ export default function OnboardingEth() {
     fhirResource,
     did,
     accessControlConditions,
-    setDID,
     encryptionSkipped,
     walletAddress,
     setFHIRResource,
@@ -135,7 +133,9 @@ export default function OnboardingEth() {
 
         {walletConnected && litConnected && storageReady && !fhirResource && (
           <StepCard step="4" title={t('createFHIR')}>
-            <CreateDIDForm />
+            <CreateDIDForm onSubmit={function (_resource: Patient | Practitioner | Organization | Device): void {
+              throw new Error('Function not implemented.')
+            } } />
           </StepCard>
         )}
 

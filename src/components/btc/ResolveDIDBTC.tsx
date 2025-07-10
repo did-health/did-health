@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { ConnectWalletBTC } from './WalletConnectBTC'
 import { ConnectLit } from '../lit/ConnectLit'
 import { generateQRCode } from '../../lib/QRCodeGeneration'

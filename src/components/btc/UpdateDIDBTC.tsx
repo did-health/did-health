@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useOnboardingState } from '../../store/OnboardingState'
 import { decryptFHIRFile } from '../../lib/litEncryptFile'
 import { encryptFHIRFile } from '../../lib/litEncryptFile'
 import { storeEncryptedFileByHash, storePlainFHIRFile } from '../../lib/storeFIleWeb3'
-import { generateQRCode } from '../../lib/QRCodeGeneration'
 import { ConnectWalletBTC } from './WalletConnectBTC'
 import { ConnectLit } from '../lit/ConnectLit'
 import CreatePatientForm from '../fhir/CreatePatientForm'
@@ -58,7 +57,6 @@ export default function UpdateDidBTC() {
           if (json?.id === did) {
             setDidDoc(json)
 
-            const qr = await generateQRCode(JSON.stringify(json))
             const fhirEndpoint = json.service?.find((s: any) => s.type === 'FHIRResource')?.serviceEndpoint
 
             if (!fhirEndpoint) throw new Error('❌ No FHIR endpoint in DID document.')
