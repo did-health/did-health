@@ -1,15 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useOnboardingState } from '../../store/OnboardingState'
 import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
 import { storePlainFHIRFile } from '../../lib/storeFIleWeb3'
 import { v4 as uuidv4 } from 'uuid'
-
-interface FormProps {
-  defaultValues: any;
-  onSubmit: (updatedFHIR: any) => Promise<void>;
-}
 import { encryptFHIRFile } from '../../lib/litEncryptFile'
 import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3'
 import { updateDIDUriOnChain } from '../../lib/updateDidUriOnChain'
@@ -69,7 +64,7 @@ function StatusModal({ isOpen, status, onClose }: { isOpen: boolean; status: str
 
 export default function UpdateDIDUri() {
   const { address, isConnected } = useAccount()
-  const { litClient, litConnected, accessControlConditions } = useOnboardingState()
+  const { litClient, litConnected } = useOnboardingState()
 
   const [status, setStatus] = useState('')
   const [didDoc, setDidDoc] = useState<any | null>(null)
@@ -127,97 +122,19 @@ export default function UpdateDIDUri() {
     }
   }, [address, isConnected, litConnected, litClient])
 
-  const handleFormSubmit = async (updatedFHIR: any) => {
-    try {
-      console.log('💾 Submitting updated FHIR:', updatedFHIR)
-      useOnboardingState.getState().setFHIRResource(updatedFHIR)
-      
-      const resourceType = updatedFHIR?.resourceType
-      const { encryptionSkipped } = useOnboardingState.getState()
-      
-      // Only update FHIR resource in store during creation
-      if (!didDoc?.id) {
-        setStatus('✅ FHIR resource updated in store!')
-        return
-      }
-
-      // For updates, handle encryption and DID update
-      let skipEncryption = encryptionSkipped || 
-        ['Practitioner', 'Organization'].includes(resourceType) ||
-        (!fhir?.resourceUrl?.endsWith('.enc') && !fhir?.resourceUrl?.endsWith('.lit'))
-
-      setModalOpen(true)
-
-      let fileToUpload: Blob
-      let hash = ''
-      let url: string
-
-      if (skipEncryption) {
-        setStatus('📄 Uploading unencrypted FHIR resource...')
-        url = await storePlainFHIRFile(updatedFHIR, updatedFHIR.id || uuidv4(), resourceType)
-        setStatus('📤 Uploaded unencrypted file to Web3.Storage')
-      } else {
-        const { accessControlConditions } = useOnboardingState.getState()
-        if (!accessControlConditions || accessControlConditions.length === 0) {
-          setStatus('❌ No access control conditions set. Cannot encrypt.')
-          return
-        }
-
-        setStatus('🔐 Encrypting updated FHIR...')
-        const blob = new Blob([JSON.stringify(updatedFHIR)], { type: 'application/json' })
-        const litChain = chainName || 'ethereum'
-
-        if (!litClient) {
-          setStatus('❌ Lit client not initialized. Please try again.')
-          return
-        }
-
-        const result = await encryptFHIRFile({
-          file: blob,
-          litClient,
-          chain: litChain,
-          accessControlConditions,
-        })
-
-        fileToUpload = new Blob([result.encryptedJSON], { type: 'application/json' })
-        hash = result.hash
-
-        setStatus('📤 Uploading to Web3.Storage...')
-        url = await storeEncryptedFileByHash(fileToUpload, hash, resourceType)
-      }
-
-      // Update DID on chain
-      setStatus('📝 Updating smart contract...')
-      const updateResult = await updateDIDUriOnChain({
-        healthDid: didDoc?.id || address,
-        newUri: url,
-        chainName
-      })
-      
-      if (!updateResult) {
-        throw new Error('Failed to update DID on chain')
-      }
-
-      setStatus(`✅ DID updated successfully! IPFS URL: ${url}`)
-    } catch (err: any) {
-      console.error('Error updating DID:', err)
-      setStatus(`❌ Error updating DID: ${err.message || 'Unknown error'}`)
-    }
-  }
-
   const handleUpdateClick = () => {
     if (!fhir) {
       setStatus('❌ No FHIR resource loaded.')
       return
     }
-    
+
     // Wait for the form to update the FHIR resource
     const updatedFHIR = useOnboardingState.getState().fhirResource
     if (!updatedFHIR) {
       setStatus('❌ No updated FHIR resource found.')
       return
     }
-    
+
     // Call the update handler with the updated FHIR resource
     handleUpdateDID(updatedFHIR)
   }
@@ -226,13 +143,13 @@ export default function UpdateDIDUri() {
     try {
       const resourceType = updatedFHIR?.resourceType
       const { encryptionSkipped } = useOnboardingState.getState()
-      
+
       // Patients and Devices should always be encrypted, regardless of encryptionSkipped setting
       let skipEncryption = false
       if (resourceType === 'Patient' || resourceType === 'Device') {
         skipEncryption = false
       } else {
-        skipEncryption = encryptionSkipped || 
+        skipEncryption = encryptionSkipped ||
           ['Practitioner', 'Organization'].includes(resourceType) ||
           (!fhir?.resourceUrl?.endsWith('.enc') && !fhir?.resourceUrl?.endsWith('.lit'))
       }
@@ -284,7 +201,7 @@ export default function UpdateDIDUri() {
         newUri: url,
         chainName
       })
-      
+
       if (!updateResult) {
         throw new Error('Failed to update DID on chain')
       }
@@ -326,14 +243,14 @@ export default function UpdateDIDUri() {
 
       <ConnectWallet />
       <ConnectLit />
-        {/* ✅ Show resolved DID */}
-  {didDoc?.id && (
-    <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-700 text-sm text-gray-800 dark:text-gray-200">
-      <p className="font-medium text-gray-600 dark:text-gray-400 mb-1">Resolved DID:</p>
-      <code className="block break-words text-indigo-700 dark:text-indigo-400">{didDoc.id}</code>
-      <p className="mt-1 text-xs text-gray-500">🔗 Found on: {chainName}</p>
-    </div>
-  )}
+      {/* ✅ Show resolved DID */}
+      {didDoc?.id && (
+        <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-700 text-sm text-gray-800 dark:text-gray-200">
+          <p className="font-medium text-gray-600 dark:text-gray-400 mb-1">Resolved DID:</p>
+          <code className="block break-words text-indigo-700 dark:text-indigo-400">{didDoc.id}</code>
+          <p className="mt-1 text-xs text-gray-500">🔗 Found on: {chainName}</p>
+        </div>
+      )}
 
       {status && <p className="text-sm text-gray-600">{status}</p>}
       {renderForm()}
