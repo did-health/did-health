@@ -1,20 +1,38 @@
 import { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useOnboardingState } from '../../store/OnboardingState'
-import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
+import { ConnectWallet } from './WalletConnectETH'
+import { ConnectLit } from '../lit/ConnectLit'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
+import { resolveDidHealth } from '../../lib/DIDDocument'
 import { storePlainFHIRFile } from '../../lib/storeFIleWeb3'
 import { v4 as uuidv4 } from 'uuid'
 import { encryptFHIRFile } from '../../lib/litEncryptFile'
 import { storeEncryptedFileByHash } from '../../lib/storeFIleWeb3'
 import { updateDIDUriOnChain } from '../../lib/updateDidUriOnChain'
-import { ConnectWallet } from './WalletConnectETH'
-import { ConnectLit } from '../lit/ConnectLit'
 import CreatePatientForm from '../fhir/CreatePatientForm'
 import CreateOrganizationForm from '../fhir/CreateOrganizationForm'
 import CreatePractitionerForm from '../fhir/CreatePractitionerForm'
 import CreateDeviceForm from '../fhir/CreateDeviceForm'
 import { SetEncryption } from '../lit/SetEncryption'
+
+interface DIDDocument {
+  id: string;
+  controller: string;
+  service: Array<{
+    id: string;
+    type: string;
+    serviceEndpoint: string;
+  }>;
+  verificationMethod: never[];
+  reputationScore: number;
+  credentials: {
+    hasWorldId: boolean;
+    hasPolygonId: boolean;
+    hasSocialId: boolean;
+  };
+  ipfsUri?: string;
+}
 
 // Modal component
 function StatusModal({ isOpen, status, onClose }: { isOpen: boolean; status: string; onClose: () => void }) {
@@ -62,34 +80,67 @@ function StatusModal({ isOpen, status, onClose }: { isOpen: boolean; status: str
   )
 }
 
-export default function UpdateDIDUri() {
-  const { address, isConnected } = useAccount()
+export default function UpdateDIDETH() {
   const { litClient, litConnected } = useOnboardingState()
+  const { address: connectedWalletAddress, isConnected } = useAccount()
 
   const [status, setStatus] = useState('')
-  const [didDoc, setDidDoc] = useState<any | null>(null)
+  const [didDoc, setDidDoc] = useState<DIDDocument | null>(null)
   const [fhir, setFhir] = useState<any | null>(null)
-  const [chainName, setChainName] = useState<string>('')
+  const [qrCode, setQrCode] = useState<string>('')
+  const [accessControlConditions, setAccessControlConditions] = useState<any | null>(null)
+  const [resolvedChainName, setResolvedChainName] = useState<string>('')
+  const [didFHIRResources, setDidFHIRResources] = useState<
+    { uri: string; resource: any; error?: string }[]
+  >([])
   const [modalOpen, setModalOpen] = useState(false)
+  const [chainName, setChainName] = useState<string>('ethereum')
 
   useEffect(() => {
     const load = async () => {
       try {
-        if (!address || !litConnected || !litClient) return
+        if (!connectedWalletAddress || !litConnected || !litClient) return
 
         setStatus('🔍 Resolving DID...')
-        const result = await resolveDidHealthAcrossChains(address)
-        if (!result) throw new Error('❌ DID not found')
+        setDidDoc(null)
+        setFhir(null)
+        setQrCode('')
+        setChainName('')
+        setDidFHIRResources([])
 
+        if (!isConnected || !connectedWalletAddress) {
+          setStatus('❌ Wallet not connected')
+          return
+        }
+
+        // Only try to resolve on the main chain (Sepolia)
+        const chainId = 11155111 // Sepolia
+        const result = await resolveDidHealth(chainId, connectedWalletAddress)
+        if (!result) {
+          setStatus('❌ No DID found on supported chains')
+          return
+        }
+
+        setStatus('✅ DID resolved!')
         const { doc, chainName } = result
-        setDidDoc(doc)
         setChainName(chainName)
+        setDidDoc(doc)
 
-        const fhirService = doc?.service?.find((s: any) => s.type === 'FHIRResource')
-        if (!fhirService?.serviceEndpoint) throw new Error('❌ No FHIR resource endpoint')
+        // Extract FHIRResource service endpoints
+        const fhirServices = doc.service?.filter(
+          (s: any) => s.serviceEndpoint
+        ) || []
 
-        const resourceUrl = fhirService.serviceEndpoint
-        const isEncrypted = resourceUrl.endsWith('.enc') || resourceUrl.endsWith('.lit')
+        if (fhirServices.length === 0) {
+          setStatus('✅ DID resolved, but no FHIR resources found')
+          return
+        }
+
+        setDidFHIRResources(fhirServices)
+        const primary = fhirServices[0]
+        const resourceUrl = primary.serviceEndpoint
+
+        const isEncrypted = primary.serviceEndpoint.endsWith('.enc') || primary.serviceEndpoint.endsWith('.lit')
 
         setStatus(`📦 Fetching FHIR resource from ${resourceUrl}...`)
         const response = await fetch(resourceUrl)
@@ -117,10 +168,10 @@ export default function UpdateDIDUri() {
       }
     }
 
-    if (isConnected && address && litConnected && litClient) {
+    if (isConnected && connectedWalletAddress && litConnected && litClient) {
       load()
     }
-  }, [address, isConnected, litConnected, litClient])
+  }, [connectedWalletAddress, isConnected, litConnected, litClient])
 
   const handleUpdateClick = () => {
     if (!fhir) {

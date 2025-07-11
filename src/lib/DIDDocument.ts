@@ -47,7 +47,17 @@ export async function resolveDidHealth(chainId: number, address: string) {
     throw new Error(`❌ Missing chain or registry info`);
   }
 
-  const provider = new JsonRpcProvider(chain.rpcUrls.default.http[0]);
+  // Get the correct RPC URL based on chainId
+  const chainUrls = {
+    11155111: `https://eth-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
+    421614: `https://arb-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
+    84532: `https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
+    11155420: `https://opt-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
+    534351: `https://scroll-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
+    300: `https://zksync-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`
+  };
+
+  const provider = new JsonRpcProvider(chainUrls[chainId as keyof typeof chainUrls]);
   const contract = new ethers.Contract(registryInfo.address, registryInfo.abi, provider);
 //console.log('****************' + contract)
   const result = await contract.addressDidMapping(address.toLowerCase());

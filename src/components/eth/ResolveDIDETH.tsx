@@ -5,7 +5,7 @@ import { ConnectWallet } from './WalletConnectETH'
 import { ConnectLit } from '../lit/ConnectLit'
 import { generateQRCode } from '../../lib/QRCodeGeneration'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
-import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
+import { resolveDidHealth, resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
 import FHIRResource from '../fhir/FHIRResourceView'
 import logo from '../../assets/did-health.png'
 import { DAOStatus } from '../dao/DAOStatus'
@@ -44,7 +44,13 @@ export default function ResolveDIDETH() {
 
   const handleResolve = async () => {
     try {
-      setStatus('🔍 Resolving DID across all supported chains...')
+      // Only resolve if we don't already have a DID
+      if (didDoc?.id) {
+        setStatus('✅ DID already resolved')
+        return
+      }
+
+      setStatus('🔍 Resolving DID...')
       setDidDoc(null)
       setFhir(null)
       setQrCode('')
@@ -55,61 +61,73 @@ export default function ResolveDIDETH() {
         setStatus('❌ Wallet not connected')
         return
       }
-  
-      // 🔎 Resolve on-chain DID registry
-      const result = await resolveDidHealthAcrossChains(connectedWalletAddress)
-      if (!result) {
-        throw new Error('❌ You do not have a did:health on any supported chain yet.')
+
+      // Only try to resolve on the main chain (Sepolia)
+      const chainId = 11155111 // Sepolia
+      try {
+        const result = await resolveDidHealth(chainId, connectedWalletAddress)
+        if (!result) {
+          setStatus('❌ No DID found on supported chains')
+          return
+        }
+        const { doc, chainName } = result
+        setResolvedChainName(chainName)
+        setDidDoc(doc)
+        setStatus('✅ DID resolved!')
+      } catch (err) {
+        if (err instanceof Error && err.message.includes('No DID found for address')) {
+          setStatus('❌ No DID found on supported chains')
+          return
+        }
+        throw err
       }
-  
-      setStatus('✅ DID resolved!')
-      console.log(result)
       const { doc, chainName } = result
       setResolvedChainName(chainName)
-
-      console.log(doc)
       setDidDoc(doc)
 
-      // 🔗 Generate QR code
+      // Generate QR code
       const qr = await generateQRCode(JSON.stringify(doc))
       setQrCode(qr ?? '')
-  
-      // 🔍 Extract FHIRResource service endpoints
+
+      // Extract FHIRResource service endpoints
       const fhirServices = doc.service?.filter(
         (s: any) => s.serviceEndpoint
       ) || []
-  
-      console.log(fhirServices)
+
       if (fhirServices.length === 0) {
-        throw new Error('❌ No FHIRResource service endpoints found in DID Document')
+        setStatus('✅ DID resolved, but no FHIR resources found')
       }
-  
-      setDidFHIRResources(fhirServices) // optionally store them all for UI
-  
-      // 📦 Load first FHIR resource for preview
+
+      setDidFHIRResources(fhirServices)
       const primary = fhirServices[0]
       const resourceUrl = primary.serviceEndpoint
       const isEncrypted = resourceUrl.endsWith('.enc') || resourceUrl.endsWith('.lit')
-  
+
       setStatus(`📦 Fetching FHIR resource from ${resourceUrl}...`)
       const response = await fetch(resourceUrl)
-      if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`)
-  
+      if (!response.ok) {
+        setStatus(`❌ Failed to fetch FHIR resource: ${response.statusText}`)
+        return
+      }
+
       const json = await response.json()
-  
+      console.log('****************' + JSON.stringify(json))
       if (isEncrypted) {
         setStatus('🔐 Decrypting with Lit Protocol...')
-        const accChain = json.accessControlConditions?.[0]?.chain || 'ethereum'
-        setAccessControlConditions(json.accessControlConditions || null)
-  
-        const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
-        setFhir(decrypted)
-        setStatus('✅ Decrypted FHIR resource loaded!')
+        try {
+          const accChain = json.accessControlConditions?.[0]?.chain || 'ethereum'
+          const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
+          setFhir(decrypted)
+          setStatus('✅ Decrypted FHIR resource loaded!')
+        } catch (decryptErr) {
+          console.error('❌ Decryption error:', decryptErr)
+          setStatus('❌ Failed to decrypt FHIR resource')
+        }
       } else {
         setFhir(json)
         setStatus('✅ Plaintext FHIR resource loaded!')
       }
-  
+
     } catch (err: any) {
       console.error('❌ Resolve error:', err)
       setStatus(err.message || '❌ Unexpected error during resolution')
@@ -118,10 +136,11 @@ export default function ResolveDIDETH() {
   
 
   useEffect(() => {
-    if (isConnected && connectedWalletAddress && litConnected && litClient) {
+    // Only resolve if we have a wallet connection and no existing DID
+    if (isConnected && connectedWalletAddress && !didDoc?.id) {
       handleResolve()
     }
-  }, [isConnected, connectedWalletAddress, litConnected, litClient])
+  }, [isConnected, connectedWalletAddress])
 
   return (
     <main className="p-6 space-y-6 max-w-xl mx-auto">
@@ -146,7 +165,7 @@ export default function ResolveDIDETH() {
 
       {status && <p className="text-sm text-gray-700 mt-4">{status}</p>}
 
-      {status.includes('❌ You do not have a did:health') && (
+      {(status.includes('❌ No DID found on supported chains') || status.includes('❌ No DID found for address')) && (
         <div className="mt-4">
           <button
             onClick={() => (window.location.href = '/')}
