@@ -229,6 +229,11 @@ export default function OnboardingEth() {
           <StepCard step="6" title={t('chooseDID')}>
             <div>
               <span>{did}</span>
+              <button className="btn btn-ghost btn-xs" onClick={() => {
+                useOnboardingState.getState().setDID("")
+            }}>
+              Reset
+            </button>
               <button
                 type="button"
                 onClick={() => {

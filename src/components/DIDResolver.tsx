@@ -15,7 +15,7 @@ interface DIDDocument {
   reputationScore: number
 }
 
-function parseDidHealth(did: string): { chainId: number; lookupKey: string } {
+export function parseDidHealth(did: string): { chainId: number; lookupKey: string } {
   const parts = did.trim().split(':')
   if (parts.length !== 4 || parts[0] !== 'did' || parts[1] !== 'health') {
     throw new Error('❌ Invalid DID format. Use: did:health:<chainId>:<name>')

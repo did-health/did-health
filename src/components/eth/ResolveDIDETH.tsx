@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { useOnboardingState } from '../../store/OnboardingState'
 import { ConnectWallet } from './WalletConnectETH'
@@ -23,14 +23,14 @@ export default function ResolveDIDETH() {
       type: string;
       serviceEndpoint: string;
     }>;
-    verificationMethod: any[];
+    verificationMethod: never[];
     reputationScore: number;
     credentials: {
       hasWorldId: boolean;
       hasPolygonId: boolean;
       hasSocialId: boolean;
     };
-    altIpfsUris?: string[];
+    ipfsUri?: string;
   }
 
   const [didDoc, setDidDoc] = useState<DIDDocument | null>(null)
@@ -50,45 +50,58 @@ export default function ResolveDIDETH() {
       setQrCode('')
       setResolvedChainName('')
       setDidFHIRResources([])
-
+  
       if (!isConnected || !connectedWalletAddress) {
         setStatus('❌ Wallet not connected')
         return
       }
-
+  
+      // 🔎 Resolve on-chain DID registry
       const result = await resolveDidHealthAcrossChains(connectedWalletAddress)
       if (!result) {
-        throw new Error('❌ You do not have a did:health on the Ethereum ecosystem yet. Please create one.')
+        throw new Error('❌ You do not have a did:health on any supported chain yet.')
       }
-
+  
+      setStatus('✅ DID resolved!')
+      console.log(result)
       const { doc, chainName } = result
-      setDidDoc(doc)
       setResolvedChainName(chainName)
 
+      console.log(doc)
+      setDidDoc(doc)
+
+      // 🔗 Generate QR code
       const qr = await generateQRCode(JSON.stringify(doc))
       setQrCode(qr ?? '')
-
-      const fhirService = doc?.service?.find(
-        (s: any) => s.type === 'FHIRResource' || s.id?.includes('#fhir')
-      )
-      if (!fhirService?.serviceEndpoint) {
-        throw new Error('❌ No FHIR resource endpoint found in DID Document')
+  
+      // 🔍 Extract FHIRResource service endpoints
+      const fhirServices = doc.service?.filter(
+        (s: any) => s.serviceEndpoint
+      ) || []
+  
+      console.log(fhirServices)
+      if (fhirServices.length === 0) {
+        throw new Error('❌ No FHIRResource service endpoints found in DID Document')
       }
-
-      const resourceUrl = fhirService.serviceEndpoint
+  
+      setDidFHIRResources(fhirServices) // optionally store them all for UI
+  
+      // 📦 Load first FHIR resource for preview
+      const primary = fhirServices[0]
+      const resourceUrl = primary.serviceEndpoint
       const isEncrypted = resourceUrl.endsWith('.enc') || resourceUrl.endsWith('.lit')
-
+  
       setStatus(`📦 Fetching FHIR resource from ${resourceUrl}...`)
       const response = await fetch(resourceUrl)
       if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`)
-
+  
       const json = await response.json()
+  
       if (isEncrypted) {
         setStatus('🔐 Decrypting with Lit Protocol...')
-        console.log('******** Access Control Conditions:', json.accessControlConditions)
-        setAccessControlConditions(json.accessControlConditions || null)
         const accChain = json.accessControlConditions?.[0]?.chain || 'ethereum'
-        console.log('******** Access Control Conditions Chain:', accChain)
+        setAccessControlConditions(json.accessControlConditions || null)
+  
         const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
         setFhir(decrypted)
         setStatus('✅ Decrypted FHIR resource loaded!')
@@ -96,36 +109,13 @@ export default function ResolveDIDETH() {
         setFhir(json)
         setStatus('✅ Plaintext FHIR resource loaded!')
       }
-
-      // Process altIpfsUris
-      if (doc?.altIpfsUris?.length > 0) {
-        setStatus(`📡 Fetching ${doc.altIpfsUris.length} alternate FHIR resources...`)
-        const results = await Promise.all(
-          doc.altIpfsUris.map(async (uri: string) => {
-            try {
-              const isEnc = uri.endsWith('.enc') || uri.endsWith('.lit')
-              const res = await fetch(uri)
-              if (!res.ok) throw new Error(`HTTP ${res.status}`)
-              const json = await res.json()
-              const resource = isEnc
-                ? await getLitDecryptedFHIR(json, litClient, {
-                    chain: json?.accessControlConditions?.[0]?.chain || 'ethereum',
-                  })
-                : json
-              return { uri, resource }
-            } catch (err: any) {
-              return { uri, resource: null, error: err.message }
-            }
-          })
-        )
-        setDidFHIRResources(results)
-      }
-
+  
     } catch (err: any) {
-      console.error(err)
-      setStatus(err.message)
+      console.error('❌ Resolve error:', err)
+      setStatus(err.message || '❌ Unexpected error during resolution')
     }
   }
+  
 
   useEffect(() => {
     if (isConnected && connectedWalletAddress && litConnected && litClient) {
@@ -196,7 +186,7 @@ export default function ResolveDIDETH() {
                       <li key={idx}>
                         <span className="font-semibold">{svc.type}:</span>{' '}
                         <a href={svc.serviceEndpoint} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-words">
-                          {svc.serviceEndpoint}
+                          🔥 View FHIR Resource
                         </a>
                       </li>
                     ))}
@@ -257,9 +247,9 @@ export default function ResolveDIDETH() {
             </div>
           )}
 
-          {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && (
+          {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && connectedWalletAddress && (
             <div className="mt-6 text-center">
-              <DAOStatus walletAddress={connectedWalletAddress} did={didDoc?.id || ''} />
+              <DAOStatus walletAddress={connectedWalletAddress} did={didDoc?.id ?? ''} />
             </div>
           )}
 

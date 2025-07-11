@@ -142,9 +142,14 @@ export default function UpdateDIDUri() {
   const handleUpdateDID = async (updatedFHIR: any) => {
     try {
       const resourceType = updatedFHIR?.resourceType
-      const { encryptionSkipped } = useOnboardingState.getState()
-
-      // Patients and Devices should always be encrypted, regardless of encryptionSkipped setting
+      const { encryptionSkipped, accessControlConditions } = useOnboardingState.getState()
+  
+      if (!didDoc?.id) {
+        setStatus('❌ DID Document not loaded')
+        return
+      }
+  
+      // Determine encryption logic
       let skipEncryption = false
       if (resourceType === 'Patient' || resourceType === 'Device') {
         skipEncryption = false
@@ -153,65 +158,77 @@ export default function UpdateDIDUri() {
           ['Practitioner', 'Organization'].includes(resourceType) ||
           (!fhir?.resourceUrl?.endsWith('.enc') && !fhir?.resourceUrl?.endsWith('.lit'))
       }
-
+  
       setModalOpen(true)
-
-      let fileToUpload: Blob
-      let hash = ''
-      let url: string
-
+  
+      let fhirUrl: string
+      setStatus(skipEncryption ? '📄 Uploading plain FHIR...' : '🔐 Encrypting FHIR...')
+  
       if (skipEncryption) {
-        setStatus('📄 Uploading unencrypted FHIR resource...')
-        url = await storePlainFHIRFile(updatedFHIR, updatedFHIR.id || uuidv4(), resourceType)
-        setStatus('📤 Uploaded unencrypted file to Web3.Storage')
+        fhirUrl = await storePlainFHIRFile(updatedFHIR, updatedFHIR.id || uuidv4(), resourceType)
+        setStatus('📤 Uploaded unencrypted FHIR')
       } else {
-        const { accessControlConditions } = useOnboardingState.getState()
-        if (!accessControlConditions || accessControlConditions.length === 0) {
-          setStatus('❌ No access control conditions set. Cannot encrypt.')
-          return
-        }
-
-        setStatus('🔐 Encrypting updated FHIR...')
-        const blob = new Blob([JSON.stringify(updatedFHIR)], { type: 'application/json' })
-        const litChain = chainName || 'ethereum'
-
         if (!litClient) {
-          setStatus('❌ Lit client not initialized. Please try again.')
+          setStatus('❌ Lit client not initialized')
           return
         }
-
-        const result = await encryptFHIRFile({
+        if (!accessControlConditions || accessControlConditions.length === 0) {
+          setStatus('❌ Missing access control conditions')
+          return
+        }
+  
+        const blob = new Blob([JSON.stringify(updatedFHIR)], { type: 'application/json' })
+        const { encryptedJSON, hash } = await encryptFHIRFile({
           file: blob,
           litClient,
-          chain: litChain,
-          accessControlConditions,
+          chain: chainName || 'ethereum',
+          accessControlConditions
         })
-
-        fileToUpload = new Blob([result.encryptedJSON], { type: 'application/json' })
-        hash = result.hash
-
-        setStatus('📤 Uploading to Web3.Storage...')
-        url = await storeEncryptedFileByHash(fileToUpload, hash, resourceType)
+        const encryptedBlob = new Blob([encryptedJSON], { type: 'application/json' })
+        fhirUrl = await storeEncryptedFileByHash(encryptedBlob, hash, resourceType)
+        setStatus('📤 Uploaded encrypted FHIR')
       }
-
-      // Update DID on chain
-      setStatus('📝 Updating smart contract...')
-      const updateResult = await updateDIDUriOnChain({
-        healthDid: didDoc?.id || address,
-        newUri: url,
+  
+      // 🧬 Replace or insert FHIR service entry in DID Document
+      setStatus('📄 Updating DID Document...')
+      const updatedService = {
+        id: `${didDoc.id}#fhir`,
+        type: 'FHIRResource',
+        serviceEndpoint: fhirUrl
+      }
+  
+      const existingServices = Array.isArray(didDoc.service) ? didDoc.service : []
+      const updatedServices = [
+        ...existingServices.filter((s: { type: string; id?: string }) => !(s.type === 'FHIRResource' || s.id?.includes('#fhir'))),
+        updatedService
+      ]
+  
+      const updatedDidDoc = {
+        ...didDoc,
+        service: updatedServices
+      }
+  
+      // 📦 Upload updated DID Document to IPFS
+      const didDocUrl = await storePlainFHIRFile(updatedDidDoc, `did-${uuidv4()}`, 'didDocument')
+      if (!didDocUrl) throw new Error('❌ Failed to upload updated DID Document')
+  
+      // 🔗 Update the DID registry on-chain with the new DID Document URI
+      setStatus('📡 Updating on-chain DID registry...')
+      const success = await updateDIDUriOnChain({
+        healthDid: didDoc.id,
+        newUri: didDocUrl,
         chainName
       })
-
-      if (!updateResult) {
-        throw new Error('Failed to update DID on chain')
-      }
-
-      setStatus(`✅ DID updated successfully! IPFS URL: ${url}`)
+  
+      if (!success) throw new Error('❌ Smart contract update failed')
+      setStatus(`✅ DID Document updated successfully! IPFS: ${didDocUrl}`)
+  
     } catch (err: any) {
-      console.error('Error updating DID:', err)
-      setStatus(`❌ Error updating DID: ${err.message || 'Unknown error'}`)
+      console.error('❌ Error in handleUpdateDID:', err)
+      setStatus(`❌ ${err.message || 'Unexpected error updating DID'}`)
     }
   }
+
 
   const renderForm = () => {
     if (!fhir || typeof fhir.resourceType !== 'string') {
