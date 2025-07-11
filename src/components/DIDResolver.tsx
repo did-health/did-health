@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { ethers, JsonRpcProvider } from 'ethers'
 import deployedContracts from '../generated/deployedContracts'
+import { getRpcUrl } from '../lib/getChains'
 import didLogo from '../assets/did-health.png'
 import FHIRResource from '../components/fhir/FHIRResourceView'
 
@@ -30,6 +31,26 @@ export function parseDidHealth(did: string): { chainId: number; lookupKey: strin
 
 export default function DIDResolver() {
   const [input, setInput] = useState('')
+  const [autoResolved, setAutoResolved] = useState(false)
+  const [initialDid, setInitialDid] = useState<string | null>(null)
+
+  // Check for query string parameter
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const didParam = urlParams.get('q')
+    if (didParam) {
+      setInitialDid(didParam)
+      setInput(didParam)
+      setAutoResolved(true)
+    }
+  }, [])
+
+  // Resolve DID when input changes and we have an initial DID
+  React.useEffect(() => {
+    if (initialDid && input === initialDid) {
+      resolveDID()
+    }
+  }, [input, initialDid])
   const [result, setResult] = useState<DIDDocument | null>(null)
   const [fetchedFHIR, setFetchedFHIR] = useState<{ uri: string; resource: any; error?: string }[]>([])
   const [error, setError] = useState('')
@@ -50,7 +71,9 @@ export default function DIDResolver() {
 
       if (!registryEntry) throw new Error(`❌ No HealthDIDRegistry deployed for chain ${chainId}`)
 
-      const provider = new JsonRpcProvider(registryEntry.rpcUrl)
+      const rpcUrl = getRpcUrl(chainId)
+      if (!rpcUrl) throw new Error(`❌ No RPC URL configured for chain ${chainId}`)
+      const provider = new JsonRpcProvider(rpcUrl)
       const contract = new ethers.Contract(registryEntry.address, registryEntry.abi, provider)
       const data = await contract.getHealthDID(lookupKey)
 
@@ -97,6 +120,11 @@ export default function DIDResolver() {
 
   return (
     <div className="max-w-xl mx-auto p-6 space-y-4">
+      {autoResolved && (
+        <div className="text-sm text-gray-600 mb-4">
+          Resolved from query parameter: {input}
+        </div>
+      )}
       <div className="flex items-center space-x-2">
         <img src={didLogo} alt="DID:Health Logo" className="w-8 h-8" />
         <h1 className="text-2xl font-bold">did:health Resolver</h1>

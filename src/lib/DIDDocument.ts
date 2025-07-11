@@ -1,6 +1,6 @@
 import { ethers, JsonRpcProvider } from "ethers";
 import deployedContracts from "../generated/deployedContracts";
-import { chains } from '../lib/wagmiConfig';
+import { chains, getRpcUrl } from '../lib/wagmiConfig';
 
 interface ContractConfig {
   readonly address: string;
@@ -47,17 +47,13 @@ export async function resolveDidHealth(chainId: number, address: string) {
     throw new Error(`❌ Missing chain or registry info`);
   }
 
-  // Get the correct RPC URL based on chainId
-  const chainUrls = {
-    11155111: `https://eth-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
-    421614: `https://arb-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
-    84532: `https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
-    11155420: `https://opt-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
-    534351: `https://scroll-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`,
-    300: `https://zksync-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}`
-  };
+  // Get the RPC URL from wagmiConfig
+  const rpcUrl = getRpcUrl(chainId);
+  if (!rpcUrl) {
+    throw new Error(`❌ No RPC URL configured for chainId: ${chainId}`);
+  }
 
-  const provider = new JsonRpcProvider(chainUrls[chainId as keyof typeof chainUrls]);
+  const provider = new JsonRpcProvider(rpcUrl);
   const contract = new ethers.Contract(registryInfo.address, registryInfo.abi, provider);
 //console.log('****************' + contract)
   const result = await contract.addressDidMapping(address.toLowerCase());

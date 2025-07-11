@@ -70,7 +70,11 @@ export function getChainIdHex(chainId: number): string {
 
 // ✅ New: Get RPC URL by chain ID
 export function getRpcUrl(chainId: number): string | undefined {
-  return loadFullChainMetadata().find((n) => n.chainId === chainId)?.rpcUrl;
+  const network = loadFullChainMetadata().find((n) => n.chainId === chainId);
+  if (!network?.rpcUrl) return undefined;
+  
+  // Replace the template literal with the actual Alchemy key
+  return network.rpcUrl.replace('${import.meta.env.VITE_ALCHEMY_KEY}', import.meta.env.VITE_ALCHEMY_KEY);
 }
 
 export function getNetworkByChainId(chainId: number): NetworkConfig | undefined {

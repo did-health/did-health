@@ -2,6 +2,9 @@ import { createConfig, http } from 'wagmi';
 import type { Chain } from 'viem/chains';
 
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
+import { getRpcUrl } from './getChains';
+
+export { getRpcUrl };
 import {
   metaMaskWallet,
   rainbowWallet,
@@ -35,8 +38,8 @@ function buildChains(): readonly [Chain, ...Chain[]] {
       decimals: 18,
     },
     rpcUrls: {
-      default: { http: [net.rpcUrl] },
-      public: { http: [net.rpcUrl] },
+      default: { http: [getRpcUrl(net.chainId as number) || net.rpcUrl] },
+      public: { http: [getRpcUrl(net.chainId as number) || net.rpcUrl] },
     },
     blockExplorers: {
       default: {
