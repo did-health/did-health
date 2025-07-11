@@ -143,7 +143,7 @@ export default function DIDResolver() {
           disabled={!input || loading}
           className="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 disabled:opacity-50"
         >
-          {loading ? 'Resolving...' : 'Resolve DID'}
+          {loading ? 'Resolving did:health...' : 'Resolve did:health'}
         </button>
       </div>
 

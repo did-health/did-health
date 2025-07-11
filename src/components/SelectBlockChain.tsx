@@ -68,8 +68,6 @@ export default function SelectBlockchain() {
             </p>
           </div>
           <div className="text-center">
-          <h1 className="text-3xl font-bold leading-snug"> <span className="block bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 bg-clip-text text-transparent bg-[length:200%_200%] animate-gradient">
-          {t('selectBlockchain.lookupDid')}</span>
             <h2> <span className="block bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 bg-clip-text text-transparent bg-[length:200%_200%] animate-gradient">
             {t('selectBlockchain.lookupDidDescription')}</span></h2>
             <Link to="/resolve" className="inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
@@ -78,7 +76,6 @@ export default function SelectBlockchain() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </Link>
-            </h1>
           </div>
 
           <h1 className="text-3xl font-bold leading-snug">
