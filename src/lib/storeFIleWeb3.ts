@@ -53,7 +53,7 @@ export async function storeEncryptedFileByHash(
  * Example URL: https://w3s.link/ipfs/<CID>/Patient/123.json
  */
 export async function storePlainFHIRFile(
-  fhirResource: Record<string, any>, // Can also be typed as FHIR `Resource`
+  resource: Record<string, any>, // Can also be typed as FHIR `Resource`
   fileName: string,                  // e.g., '123'
   resourceType: string               // e.g., 'Patient'
 ): Promise<string> {
@@ -62,22 +62,29 @@ export async function storePlainFHIRFile(
   if (!email || !web3SpaceDid) {
     throw new Error('Missing Web3.Storage credentials in Zustand state')
   }
-
-  const client = await createW3Client()
-  await client.login(email as `${string}@${string}`)
-  await client.setCurrentSpace(web3SpaceDid as `did:${string}:${string}`)
-
-  const jsonBlob = new Blob([JSON.stringify(fhirResource, null, 2)], {
-    type: 'application/json',
-  })
-
-  const file = new File([jsonBlob], `${resourceType}/${fileName}.json`, {
-    type: 'application/json',
-  })
+  console.log('Web3.Storage credentials:', email, web3SpaceDid)
 
   try {
+    const client = await createW3Client()
+    await client.login(email as `${string}@${string}`)
+    await client.capability.access.claim({
+      audience: web3SpaceDid as `did:${string}:${string}`
+    })
+
+    await client.setCurrentSpace(web3SpaceDid as `did:${string}:${string}`)
+
+    const jsonBlob = new Blob([JSON.stringify(resource, null, 2)], {
+      type: 'application/json',
+    })
+
+    const file = new File([jsonBlob], `${resourceType}/${fileName}.json`, {
+      type: 'application/json',
+    })
     const directoryCid = await client.uploadDirectory([file])
-    return `https://w3s.link/ipfs/${directoryCid}/${resourceType}/${fileName}.json`
+    console.log('Web3.Storage upload CID', directoryCid)
+    const url = `https://w3s.link/ipfs/${directoryCid}/${resourceType}/${fileName}.json`
+    console.log('Web3.Storage url', url)
+    return url
   } catch (error: unknown) {
     console.error('❌ Error uploading to web3 storage:', error)
     throw new Error(`Failed to upload file to web3 storage: ${error instanceof Error ? error.message : String(error)}`)

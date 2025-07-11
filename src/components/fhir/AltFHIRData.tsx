@@ -2,14 +2,11 @@
 import React, { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useOnboardingState } from '../../store/OnboardingState'
-import { encryptFHIRFile } from '../../lib/litEncryptFile'
-import { storeEncryptedFileByHash, storePlainFHIRFile } from '../../lib/storeFIleWeb3'
+import { storePlainFHIRFile } from '../../lib/storeFIleWeb3'
 import { v4 as uuidv4 } from 'uuid'
 import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
-import { ConnectWallet } from './../eth/WalletConnectETH'
-import { ConnectLit } from '../lit/ConnectLit'
-import { addAltDataOnChain, type ChainName, contracts } from '../../lib/addAltDataonChain'
+import { updateDIDUriOnChain } from '../../lib/updateDidUriOnChain'
 import PatientDirectivesStudio from './pcaio/PatientDirectivesStudio'
 import CreateEndpointForm from './CreateEndpointForm'
 import deployedContracts from '../../generated/deployedContracts'
@@ -18,7 +15,7 @@ import { ethers } from 'ethers'
 
 export default function AltFHIRData() {
   const { address } = useAccount()
-  const { litClient, litConnected } = useOnboardingState()
+  const { litClient } = useOnboardingState()
 
   interface DIDDocType {
     id: string;
@@ -30,101 +27,142 @@ export default function AltFHIRData() {
   }
 
   const [didDoc, setDidDoc] = useState<DIDDocType | null>(null)
-  const [chainName, setChainName] = useState<ChainName | null>(null)
-
-  // Helper function to get all valid chain names
-  const getAllChainNames = (): ChainName[] => {
-    const testnetChains = Object.keys(contracts['testnet']) as ChainName[]
-    const mainnetChains = Object.keys(contracts['mainnet']) as ChainName[]
-    return [...testnetChains, ...mainnetChains]
-  }
+  const [chainName, setChainName] = useState<string | null>(null)
 
   const [allResources, setAllResources] = useState<any[]>([])
   const [status, setStatus] = useState('')
-  const [didType, setDidType] = useState<'Patient' | 'Practitioner' | 'Organization' | 'Device' | null>(null)
 
- const loadDIDData = async () => {
-  try {
-    if (!address || !litClient) return
-    setStatus('🔍 Resolving did:health...')
+  const createAndStoreAltFHIR = async (fhirResource: any) => {
+    try {
+      if (!address) throw new Error('❌ Wallet not connected')
+      
+      setStatus('🔍 Resolving DID...')
+      const result = await resolveDidHealthAcrossChains(address)
+      if (!result) throw new Error('❌ DID not found')
 
-    const result = await resolveDidHealthAcrossChains(address)
-    if (!result) throw new Error('❌ DID not found')
+      const { doc: resolvedDoc, chainName } = result
+      const fullDid = resolvedDoc.id // e.g., did:health:baseSepolia:rich
+      const [_did, _method, chainPart] = fullDid.split(':')
 
-    const { doc: resolvedDoc, chainName } = result
-    const fullDid = resolvedDoc.id // e.g., did:health:baseSepolia:rich
-    const [_did, _method, chainPart, idPart] = fullDid.split(':')
-    const env = import.meta.env.VITE_ENV || 'testnet'
-const chainId = parseInt(chainPart) // 👈 extract chain ID from the DID part (e.g., "84532")
+      // Store the FHIR resource
+      setStatus('💾 Storing FHIR resource...')
+      const ipfsUri = await storePlainFHIRFile(fhirResource)
 
-const registryEntry = Object.values(deployedContracts[env]).find(
-  (net: any) => net.HealthDIDRegistry?.chainId === chainId
-)?.HealthDIDRegistry
+      // Update the DID with the new FHIR resource
+      setStatus('🔄 Updating DID...')
+      const updateResult = await updateDIDUriOnChain({
+        healthDid: fullDid,
+        newUri: ipfsUri,
+        chainName
+      })
 
-if (!registryEntry) {
-  throw new Error(`❌ No HealthDIDRegistry deployed for chain ID ${chainId}`)
-}
+      // Update state with new resource
+      setAllResources(prev => [...prev, {
+        id: uuidv4(),
+        ipfsUri,
+        timestamp: new Date().toISOString(),
+        type: fhirResource.resourceType
+      }])
 
-
-    if (!registryEntry) throw new Error(`❌ No HealthDIDRegistry deployed for chain ${chainName}`)
-
-    const provider = new JsonRpcProvider(registryEntry.rpcUrl)
-    const contract = new ethers.Contract(registryEntry.address, registryEntry.abi, provider)
-
-    const data = await contract.getHealthDID(chainPart + ':' + idPart)
-
-    if (!data || data.owner === ethers.ZeroAddress) {
-      throw new Error(`❌ DID "${idPart}" not found on chain ${chainName}`)
+      setStatus('✅ FHIR resource stored and DID updated!')
+      return updateResult
+    } catch (err: any) {
+      setStatus(`❌ Error: ${err.message}`)
+      throw err
     }
-
-    const completeDoc: DIDDocType = {
-      id: `did:health:${chainPart}:${idPart}`,
-      controller: data.owner,
-      service: (data.altIpfsUris ?? []).map((uri: string, idx: number) => ({
-        id: `#service-${idx}`,
-        type: 'AlternateFHIR',
-        serviceEndpoint: uri,
-      })),
-      verificationMethod: [],
-      reputationScore: Number(data.reputationScore ?? 0),
-      credentials: {
-        hasWorldId: data.hasWorldId,
-        hasPolygonId: data.hasPolygonId,
-        hasSocialId: data.hasSocialId,
-      },
-    }
-
-    setDidDoc(completeDoc)
-    setChainName(chainName as ChainName)
-
-    // 🔄 Fetch & optionally decrypt altIpfsUris
-    const resources: any[] = []
-    for (const endpoint of completeDoc.service) {
-      try {
-        const res = await fetch(endpoint.serviceEndpoint)
-        const json = await res.json()
-        const decrypted = endpoint.serviceEndpoint.endsWith('.enc') || endpoint.serviceEndpoint.endsWith('.lit')
-          ? await getLitDecryptedFHIR(json, litClient, { chain: chainName })
-          : json
-        resources.push({
-          uri: endpoint.serviceEndpoint,
-          resource: decrypted,
-        })
-      } catch (err) {
-        console.warn(`❌ Could not load resource: ${endpoint.serviceEndpoint}`, err)
-      }
-    }
-
-    const didResourceType = resources[0]?.resource?.resourceType || 'Patient'
-    setDidType(didResourceType as any)
-    setAllResources(resources)
-    setStatus('')
-  } catch (err: any) {
-    console.error(err)
-    setStatus(err.message || '❌ Unexpected error')
   }
-}
 
+  const loadDIDData = async () => {
+    try {
+      if (!address || !litClient) return
+      setStatus('🔍 Resolving did:health...')
+
+      const result = await resolveDidHealthAcrossChains(address)
+      if (!result) throw new Error('❌ DID not found')
+
+      const { doc: resolvedDoc, chainName } = result
+      const fullDid = resolvedDoc.id // e.g., did:health:baseSepolia:rich
+      const [_did, _method, chainPart] = fullDid.split(':')
+      const env = import.meta.env.VITE_ENV || 'testnet'
+
+      const registryEntry = Object.values(deployedContracts[env]).find(
+        (net: any) => net.HealthDIDRegistry?.chainId === parseInt(chainPart)
+      )?.HealthDIDRegistry
+
+      if (!registryEntry) {
+        throw new Error(`❌ No HealthDIDRegistry deployed for chain ID ${chainPart}`)
+      }
+
+      const provider = new JsonRpcProvider(registryEntry.rpcUrl)
+      const contract = new ethers.Contract(registryEntry.address, registryEntry.abi, provider)
+
+      const data = await contract.getHealthDID(chainPart)
+
+      if (!data || data.owner === ethers.ZeroAddress) {
+        throw new Error(`❌ DID not found on chain ${chainName}`)
+      }
+
+      // Get all altIpfsUris and fetch their contents
+      const altIpfsUris = data.altIpfsUris || []
+      const fetchedResources = await Promise.all(
+        altIpfsUris.map(async (uri: string) => {
+          try {
+            const content = await fetch(`https://w3s.link/ipfs/${uri.replace('ipfs://', '')}`)
+            return {
+              id: uuidv4(),
+              ipfsUri: uri,
+              content: await content.json(),
+              timestamp: new Date().toISOString()
+            }
+          } catch (err) {
+            console.error(`❌ Failed to fetch resource from ${uri}:`, err)
+            return null
+          }
+        })
+      ).then(results => results.filter(Boolean))
+
+      setAllResources(fetchedResources)
+      
+      const completeDoc: DIDDocType = {
+        id: `did:health:${chainPart}:${address}`, // Use address as identifier
+        controller: data.owner,
+        service: altIpfsUris.map((uri: string, idx: number) => ({
+          id: `#service-${idx}`,
+          type: 'AlternateFHIR',
+          serviceEndpoint: uri,
+        })),
+        verificationMethod: [],
+        reputationScore: Number(data.reputationScore ?? 0),
+        credentials: {
+          hasWorldId: data.hasWorldId,
+          hasPolygonId: data.hasPolygonId,
+          hasSocialId: data.hasSocialId,
+        },
+      }
+
+      setDidDoc(completeDoc)
+      setChainName(chainName as string)
+      setStatus('✅ DID loaded successfully')
+
+      // Fetch and decrypt altIpfsUris
+      const decryptedResources = await Promise.all(
+        completeDoc.service.map(async (svc) => {
+          try {
+            const content = await getLitDecryptedFHIR(svc.serviceEndpoint)
+            return content
+          } catch (err) {
+            console.error(`❌ Failed to decrypt resource from ${svc.serviceEndpoint}:`, err)
+            return null
+          }
+        })
+      ).then(results => results.filter(Boolean))
+
+      setAllResources(prev => [...prev, ...decryptedResources])
+    } catch (err: any) {
+      setStatus(`❌ Error: ${err.message}`)
+      throw err
+    }
+  }
 
   useEffect(() => {
     if (address && litClient) loadDIDData()
@@ -134,113 +172,18 @@ if (!registryEntry) {
     try {
       if (!address || !didDoc || !chainName) return
 
-      const acc = useOnboardingState.getState().accessControlConditions
-      const uris: string[] = []
-
       for (const resource of resources) {
-        const resourceType = resource.resourceType
-        const shouldEncrypt = ['Patient', 'Device', 'Consent'].includes(resourceType)
-        const uuid = uuidv4()
-        let fileToUpload: Blob
-        let hash = ''
-
-        if (shouldEncrypt) {
-          if (!litClient || !litConnected || !acc || acc.length === 0) {
-            throw new Error('❌ Missing access control conditions for encryption')
-          }
-          const result = await encryptFHIRFile({
-            file: new Blob([JSON.stringify(resource)], { type: 'application/json' }),
-            litClient,
-            chain: chainName,
-            accessControlConditions: acc,
-          })
-          fileToUpload = new Blob([result.encryptedJSON], { type: 'application/json' })
-          hash = result.hash
-        } else {
-          fileToUpload = new Blob([JSON.stringify(resource)], { type: 'application/json' })
-        }
-
-        setStatus(`📤 Uploading ${resourceType}...`)
-        const uri = shouldEncrypt 
-          ? await storeEncryptedFileByHash(fileToUpload, hash, resourceType)
-          : await storePlainFHIRFile(resource, uuid, resourceType)
-        uris.push(uri)
+        await createAndStoreAltFHIR(resource)
       }
-
-// In addAltUrls
-const addAltUrls = async (uris: string[]) => {
-  if (!chainName || !address) {
-    setStatus('❌ Please connect wallet first')
-    return
-  }
-
-  try {
-    setStatus('⏳ Sending transaction to register alt data...')
-
-    // Use the wallet address as the healthDID
-    const resolved = await resolveDidHealthAcrossChains(address)
-    if (!resolved || !resolved.doc) throw new Error('❌ DID not found during transaction.')
-
-    const walletDid = resolved.doc.id 
-    console.log('**********' + walletDid)
-    // Ensure the DID is properly formatted as a 0x-prefixed string
-    const formattedDid = `0x${walletDid.replace(/^0x/, '')}` as `0x${string}`
-    const tx = await addAltDataOnChain({
-      healthDid: formattedDid,
-      uris,
-      chainName,
-    })
-
-    console.log('✅ Transaction receipt:', tx)
-
-    if (tx.status !== 'success') throw new Error('❌ Transaction failed')
-
-    setStatus('🔁 Re-fetching DID from chain...')
-    const result = await resolveDidHealthAcrossChains(address)
-
-    if (!result) {
-      throw new Error('❌ Failed to resolve DID document')
-    }
-
-    setDidDoc(result.doc)
-    await loadDIDData()
-
-    console.log('✅ Alt URLs updated and fetched:', result.doc.service)
-    setStatus(`✅ Alt URLs registered: ${uris.join(', ')}`)
-  } catch (err: any) {
-    console.error(err)
-    setStatus(`❌ Error adding alt URLs: ${err.message}`)
-  }
-}
-
-
-
-      await addAltUrls(uris)
     } catch (err: any) {
       console.error(err)
       setStatus(err.message || '❌ Upload failed')
     }
   }
 
-  const renderFormByType = () => {
-    if (!didType) return null
-
-    if (didType === 'Patient') {
-      return <PatientDirectivesStudio onComplete={handleSubmitResources} />
-    }
-
-    if (didType === 'Practitioner' || didType === 'Organization') {
-      return <CreateEndpointForm onSubmit={(endpoint) => handleSubmitResources([endpoint])} />
-    }
-
-    return <p className="text-sm text-gray-600 italic">⚠️ No alt resources supported for this DID type.</p>
-  }
-
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold">➕ Manage Alternate FHIR Resources</h1>
-      <ConnectWallet />
-      <ConnectLit />
 
       {status && <p className="text-sm text-gray-600">{status}</p>}
 
