@@ -11,6 +11,16 @@ import logo from '../../assets/did-health.png'
 import { DAOStatus } from '../dao/DAOStatus'
 
 export default function ResolveDIDETH() {
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus('📋 DID copied to clipboard!');
+      setTimeout(() => setStatus(''), 2000);
+    } catch (err) {
+      console.error('❌ Failed to copy:', err);
+      setStatus('❌ Failed to copy DID');
+    }
+  };
   const { litClient, litConnected } = useOnboardingState()
   const { address: connectedWalletAddress, isConnected } = useAccount()
 
@@ -74,6 +84,51 @@ export default function ResolveDIDETH() {
         setResolvedChainName(chainName)
         setDidDoc(doc)
         setStatus('✅ DID resolved!')
+
+  
+        // Generate QR code
+        const qr = await generateQRCode(JSON.stringify(doc))
+        setQrCode(qr ?? '')
+  
+        // Extract FHIRResource service endpoints
+        const fhirServices = doc.service?.filter(
+          (s: any) => s.serviceEndpoint
+        ) || []
+  
+        if (fhirServices.length === 0) {
+          setStatus('✅ DID resolved, but no FHIR resources found')
+        }
+  
+        setDidFHIRResources(fhirServices)
+        const primary = fhirServices[0]
+        const resourceUrl = primary.serviceEndpoint
+        const isEncrypted = resourceUrl.endsWith('.enc') || resourceUrl.endsWith('.lit')
+  
+        setStatus(`📦 Fetching FHIR resource from ${resourceUrl}...`)
+        const response = await fetch(resourceUrl)
+        if (!response.ok) {
+          setStatus(`❌ Failed to fetch FHIR resource: ${response.statusText}`)
+          return
+        }
+  
+        const json = await response.json()
+        console.log('****************' + JSON.stringify(json))
+        if (isEncrypted) {
+          setStatus('🔐 Decrypting with Lit Protocol...')
+          try {
+            const accChain = json.accessControlConditions?.[0]?.chain || 'ethereum'
+            const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
+            setFhir(decrypted)
+            setStatus('✅ Decrypted FHIR resource loaded!')
+          } catch (decryptErr) {
+            console.error('❌ Decryption error:', decryptErr)
+            setStatus('❌ Failed to decrypt FHIR resource')
+          }
+        } else {
+          setFhir(json)
+          setStatus('✅ Plaintext FHIR resource loaded!')
+        }
+  
       } catch (err) {
         if (err instanceof Error && err.message.includes('No DID found for address')) {
           setStatus('❌ No DID found on supported chains')
@@ -81,53 +136,7 @@ export default function ResolveDIDETH() {
         }
         throw err
       }
-      const { doc, chainName } = result
-      setResolvedChainName(chainName)
-      setDidDoc(doc)
-
-      // Generate QR code
-      const qr = await generateQRCode(JSON.stringify(doc))
-      setQrCode(qr ?? '')
-
-      // Extract FHIRResource service endpoints
-      const fhirServices = doc.service?.filter(
-        (s: any) => s.serviceEndpoint
-      ) || []
-
-      if (fhirServices.length === 0) {
-        setStatus('✅ DID resolved, but no FHIR resources found')
-      }
-
-      setDidFHIRResources(fhirServices)
-      const primary = fhirServices[0]
-      const resourceUrl = primary.serviceEndpoint
-      const isEncrypted = resourceUrl.endsWith('.enc') || resourceUrl.endsWith('.lit')
-
-      setStatus(`📦 Fetching FHIR resource from ${resourceUrl}...`)
-      const response = await fetch(resourceUrl)
-      if (!response.ok) {
-        setStatus(`❌ Failed to fetch FHIR resource: ${response.statusText}`)
-        return
-      }
-
-      const json = await response.json()
-      console.log('****************' + JSON.stringify(json))
-      if (isEncrypted) {
-        setStatus('🔐 Decrypting with Lit Protocol...')
-        try {
-          const accChain = json.accessControlConditions?.[0]?.chain || 'ethereum'
-          const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
-          setFhir(decrypted)
-          setStatus('✅ Decrypted FHIR resource loaded!')
-        } catch (decryptErr) {
-          console.error('❌ Decryption error:', decryptErr)
-          setStatus('❌ Failed to decrypt FHIR resource')
-        }
-      } else {
-        setFhir(json)
-        setStatus('✅ Plaintext FHIR resource loaded!')
-      }
-
+   
     } catch (err: any) {
       console.error('❌ Resolve error:', err)
       setStatus(err.message || '❌ Unexpected error during resolution')
@@ -178,10 +187,21 @@ export default function ResolveDIDETH() {
 
       {didDoc?.id && (
         <>
-          <div className="mt-4">
-            <p className="font-semibold">Resolved DID:</p>
-            <code className="block p-2 bg-gray-100 rounded break-words">{didDoc.id}</code>
-            <p className="text-sm text-gray-500 mt-1">🧠 Found on: {resolvedChainName}</p>
+          <div className="flex items-center gap-4 mt-4">
+            <div className="flex-1">
+              <p className="font-semibold">Resolved DID:</p>
+              <code className="block p-2 bg-gray-100 rounded break-words">{didDoc.id}</code>
+              <p className="text-sm text-gray-500 mt-1">🧠 Found on: {resolvedChainName}</p>
+            </div>
+            <button 
+              onClick={() => copyToClipboard(didDoc.id)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="Copy DID to clipboard"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6a3 3 0 003 3h10.5a3 3 0 003-3V9.75a3 3 0 00-3-3V6.75A5.25 5.25 0 0012 1.5zm-3 10.5a3 3 0 01-3-3H5.25a3 3 0 013-3V9.75a3 3 0 013-3h3a3 3 0 013 3v3a3 3 0 01-3 3h-3z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
 
           {qrCode && (
@@ -234,6 +254,8 @@ export default function ResolveDIDETH() {
               )}
             </div>
           </div>
+
+
 
           {accessControlConditions?.length > 0 && (
             <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[400px]">
