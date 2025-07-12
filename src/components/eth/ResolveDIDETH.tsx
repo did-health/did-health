@@ -190,7 +190,7 @@ export default function ResolveDIDETH() {
           <div className="flex items-center gap-4 mt-4">
             <div className="flex-1">
               <p className="font-semibold">Resolved DID:</p>
-              <code className="block p-2 bg-gray-100 rounded break-words">{didDoc.id}</code>
+              <code className="block p-2 bg-gray-100 rounded whitespace-pre-wrap break-all max-w-full">{didDoc.id}</code>
               <p className="text-sm text-gray-500 mt-1">🧠 Found on: {resolvedChainName}</p>
             </div>
             <button 

@@ -204,7 +204,20 @@ export default function ResolveDIDBitcoin() {
         <>
           <div className="mt-4">
             <p className="font-semibold">Resolved DID:</p>
-            <code className="block p-2 bg-gray-100 rounded break-words">{didDoc.id}</code>
+            <div className="flex items-center gap-2">
+              <code className="block p-2 bg-gray-100 rounded whitespace-pre-wrap break-all max-w-full">{didDoc.id}</code>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(didDoc.id)
+                  setStatus('✓ DID copied to clipboard!')
+                  setTimeout(() => setStatus(''), 2000)
+                }}
+                className="p-1 hover:bg-gray-200 rounded"
+                title="Copy DID to clipboard"
+              >
+                📋
+              </button>
+            </div>
           </div>
 
           {resolvedUri && (

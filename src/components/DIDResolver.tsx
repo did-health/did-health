@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ethers, JsonRpcProvider } from 'ethers'
 import deployedContracts from '../generated/deployedContracts'
 import { getRpcUrl } from '../lib/getChains'
 import { resolveDidHealthBtc } from '../lib/resolveDidHealthBtc'
+import { getLitDecryptedFHIR } from '../lib/litSessionSigs'
 import didLogo from '../assets/did-health.png'
 import FHIRResource from '../components/fhir/FHIRResourceView'
 
@@ -22,38 +23,30 @@ export function parseDidHealth(did: string): { chainId: number; lookupKey: strin
   if (parts.length !== 4 || parts[0] !== 'did' || parts[1] !== 'health') {
     throw new Error('❌ Invalid DID format. Use: did:health:<chainId>:<name> or did:health:btc:<wallet>')
   }
-  
+
   if (parts[2] === 'btc') {
-    // Validate BTC wallet address format
     const wallet = parts[3]
-    if (!wallet) {
-      throw new Error('❌ Invalid BTC wallet address')
-    }
-    // Basic BTC address format validation
-    if (!/^([13bc][a-km-zA-HJ-NP-Z1-9]{25,34})$/.test(wallet)) {
+    if (!/^([13bc][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[a-zA-HJ-NP-Z0-9]{11,71})$/.test(wallet)) {
       throw new Error('❌ Invalid BTC wallet address format')
     }
-    return {
-      chainId: 0, // Special case for BTC
-      lookupKey: wallet
-    }
+    return { chainId: 0, lookupKey: wallet }
   }
-  
+
   const chainId = parseInt(parts[2], 10)
   if (isNaN(chainId)) throw new Error(`❌ Invalid chain ID: ${parts[2]}`)
-  return {
-    chainId,
-    lookupKey: `${chainId}:${parts[3]}`,
-  }
+  return { chainId, lookupKey: `${chainId}:${parts[3]}` }
 }
 
 export default function DIDResolver() {
   const [input, setInput] = useState('')
   const [autoResolved, setAutoResolved] = useState(false)
   const [initialDid, setInitialDid] = useState<string | null>(null)
+  const [result, setResult] = useState<DIDDocument | null>(null)
+  const [fetchedFHIR, setFetchedFHIR] = useState<{ uri: string; resource: any; error?: string }[]>([])
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  // Check for query string parameter
-  React.useEffect(() => {
+  useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const didParam = urlParams.get('q')
     if (didParam) {
@@ -63,16 +56,11 @@ export default function DIDResolver() {
     }
   }, [])
 
-  // Resolve DID when input changes and we have an initial DID
-  React.useEffect(() => {
+  useEffect(() => {
     if (initialDid && input === initialDid) {
       resolveDID()
     }
   }, [input, initialDid])
-  const [result, setResult] = useState<DIDDocument | null>(null)
-  const [fetchedFHIR, setFetchedFHIR] = useState<{ uri: string; resource: any; error?: string }[]>([])
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
 
   async function resolveDID() {
     setLoading(true)
@@ -82,11 +70,13 @@ export default function DIDResolver() {
 
     try {
       const { chainId, lookupKey } = parseDidHealth(input)
-      
-      if (chainId === 0) { // BTC case
+
+      if (chainId === 0) {
         const btcDoc = await resolveDidHealthBtc(input)
+        if (!btcDoc?.ipfsUri) throw new Error('❌ BTC DID has no IPFS URI')
+
         const doc: DIDDocument = {
-          owner: '', // BTC doesn't have an owner address
+          owner: '',
           healthDid: input,
           ipfsUri: btcDoc.ipfsUri,
           altIpfsUris: [],
@@ -96,6 +86,8 @@ export default function DIDResolver() {
           reputationScore: 0,
         }
         setResult(doc)
+
+        await fetchAndMaybeDecryptFHIR(btcDoc.ipfsUri, 'bitcoin')
         return
       }
 
@@ -108,12 +100,13 @@ export default function DIDResolver() {
 
       const rpcUrl = getRpcUrl(chainId)
       if (!rpcUrl) throw new Error(`❌ No RPC URL configured for chain ${chainId}`)
+
       const provider = new JsonRpcProvider(rpcUrl)
       const contract = new ethers.Contract(registryEntry.address, registryEntry.abi, provider)
       const data = await contract.getHealthDID(lookupKey)
 
       if (!data || data.owner === ethers.ZeroAddress) {
-        throw new Error(`❌ DID "${lookupKey}" not found on chain ${chainId}`)
+        throw new Error(`❌ DID not found on chain ${chainId}`)
       }
 
       const doc: DIDDocument = {
@@ -126,26 +119,12 @@ export default function DIDResolver() {
         hasSocialId: data.hasSocialId,
         reputationScore: Number(data.reputationScore ?? 0),
       }
-
       setResult(doc)
 
-      const fetchResource = async (uri: string) => {
-        try {
-          const isEnc = uri.endsWith('.enc') || uri.endsWith('.lit')
-          const res = await fetch(uri)
-          if (!res.ok) throw new Error(`HTTP ${res.status}`)
-          const json = await res.json()
-          return { uri, resource: isEnc ? null : json }
-        } catch (err: any) {
-          return { uri, resource: null, error: err.message }
-        }
-      }
-
-      const resources = await Promise.all([
-        fetchResource(doc.ipfsUri),
-        ...doc.altIpfsUris.map(fetchResource),
+      await Promise.all([
+        fetchAndMaybeDecryptFHIR(doc.ipfsUri, 'ethereum'),
+        ...doc.altIpfsUris.map(uri => fetchAndMaybeDecryptFHIR(uri, 'ethereum')),
       ])
-      setFetchedFHIR(resources)
     } catch (err: any) {
       setError(err.message || '❌ Unknown error')
     } finally {
@@ -153,19 +132,35 @@ export default function DIDResolver() {
     }
   }
 
+  async function fetchAndMaybeDecryptFHIR(uri: string, chain: string) {
+    try {
+      const url = uri.replace('ipfs://', 'https://w3s.link/ipfs/')
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = await res.json()
+
+      if (json?.accessControlConditions) {
+        const decrypted = await getLitDecryptedFHIR(json, null, { chain })
+        setFetchedFHIR(prev => [...prev, { uri, resource: decrypted }])
+      } else {
+        setFetchedFHIR(prev => [...prev, { uri, resource: json }])
+      }
+    } catch (err: any) {
+      setFetchedFHIR(prev => [...prev, { uri, resource: null, error: err.message }])
+    }
+  }
+
   return (
     <div className="max-w-xl mx-auto p-6 space-y-4">
       {autoResolved && (
-        <div className="text-sm text-gray-600 mb-4">
-          Resolved from query parameter: {input}
-        </div>
+        <div className="text-sm text-gray-600 mb-4">Resolved from query: {input}</div>
       )}
       <div className="flex items-center space-x-2">
         <img src={didLogo} alt="DID:Health Logo" className="w-8 h-8" />
         <h1 className="text-2xl font-bold">did:health Resolver</h1>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow space-y-4">
+      <div className="bg-white p-4 rounded shadow space-y-4">
         <input
           type="text"
           value={input}
@@ -178,15 +173,15 @@ export default function DIDResolver() {
           disabled={!input || loading}
           className="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 disabled:opacity-50"
         >
-          {loading ? 'Resolving did:health...' : 'Resolve did:health'}
+          {loading ? 'Resolving...' : 'Resolve did:health'}
         </button>
       </div>
 
       {error && <div className="bg-red-100 text-red-800 p-4 rounded">{error}</div>}
 
       {result && (
-        <div className="bg-white p-4 rounded-lg shadow space-y-4">
-          <div><strong>Owner:</strong> {result.owner}</div>
+        <div className="bg-white p-4 rounded shadow space-y-4">
+          <div><strong>Owner:</strong> {result.owner || '(BTC or unassigned)'}</div>
           <div><strong>DID:</strong> {result.healthDid}</div>
           <div><strong>Reputation:</strong> {result.reputationScore}</div>
           <div><strong>World ID:</strong> {result.hasWorldId ? 'Yes' : 'No'}</div>
@@ -195,8 +190,7 @@ export default function DIDResolver() {
 
           {fetchedFHIR.map(({ uri, resource, error }, idx) => {
             const label = idx === 0 ? 'Primary Resource' : `Alternate Resource #${idx}`
-            const pathParts = uri.split('/')
-            const type = pathParts[pathParts.length - 2] || 'Resource'
+            const type = uri.split('/').at(-2) || 'Resource'
             return (
               <div key={uri} className="pt-4 border-t border-gray-200">
                 <h3 className="font-medium text-gray-700 mb-1">{label} ({type})</h3>
