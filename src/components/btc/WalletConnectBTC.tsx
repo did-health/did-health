@@ -97,14 +97,11 @@ export function ConnectWalletBTC() {
   );
 }
 
-// Extend window type for TS
+// Extend window type for Xverse
 declare global {
   interface Window {
-    unisat?: {
-      requestAccounts: () => Promise<string[]>;
-    };
     xverse?: {
-      connect: () => Promise<{ addresses: { bitcoin: string } }>;
-    };
+      connect: () => Promise<{ addresses: { bitcoin: string } }>
+    }
   }
 }

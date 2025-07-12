@@ -1,18 +1,29 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-//import legacy from '@vitejs/plugin-legacy'
-import path from 'path'
-import fs from 'fs'
-import rollupNodePolyFill from 'rollup-plugin-polyfill-node'
-import inject from '@rollup/plugin-inject'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+import fs from 'fs';
+import rollupNodePolyFill from 'rollup-plugin-polyfill-node';
+import inject from '@rollup/plugin-inject';
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
 
 export default defineConfig({
+  envDir: './',
+  envPrefix: 'VITE_',
+
+  define: {
+    global: 'globalThis',
+    'process.env': {}, // legacy support
+  },
+
   plugins: [
     react(),
-
+    wasm(),              // ✅ for .wasm files
+    topLevelAwait(),     // ✅ for top-level await in modules
   ],
-  base: './', // ensures relative paths for assets
- 
+
+  base: './',
+
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -20,19 +31,15 @@ export default defineConfig({
       process: 'process/browser',
     },
   },
+
   optimizeDeps: {
-    include: ['buffer', 'process','@xmtp/proto'],
+    include: ['buffer', 'process', '@xmtp/proto'],
     exclude: ['@xmtp/wasm-bindings', '@xmtp/browser-sdk'],
   },
-  define: {
-    global: 'globalThis',
-    'process.env': {}, // for older libraries expecting env vars
-  },
+
   build: {
-     target: ['es2020'], // ⬅️ supports BigInt literals
-           // ✅ fix for iOS Safari
+    target: ['es2020'],
     cssTarget: ['chrome61', 'safari11'],
-    
     outDir: 'dist',
     rollupOptions: {
       plugins: [
@@ -43,10 +50,11 @@ export default defineConfig({
       ],
     },
   },
+
   server: {
     host: '0.0.0.0',
     port: 3000,
     strictPort: true,
 
-  },       
-})
+  },
+});

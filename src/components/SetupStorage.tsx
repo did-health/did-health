@@ -7,21 +7,35 @@ import { ResetWeb3SpaceButton } from './buttons/ResetWeb3SpaceButton'
 export function SetupStorage({ onReady }: { onReady: (client: any) => void }) {
   const { t } = useTranslation()
   const {
-    email,
+    email: emailState,
     web3SpaceDid,
     setEmail,
     setWeb3SpaceDid,
     setStorageReady,
   } = useOnboardingState()
 
+  const email = emailState || ''
+
   const [status, setStatus] = useState('')
-  const [client, setClient] = useState<any>(null)
+  const [client, setClient] = useState<any>()
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (email && web3SpaceDid) {
-      setStatus(t('setupStorage.status.alreadySetup', { did: web3SpaceDid }))
-      setStorageReady(true)
+    // Initialize client if we have email and web3SpaceDid
+    if (email && web3SpaceDid && !client) {
+      const initializeClient = async () => {
+        try {
+          const newClient = await create()
+          setClient(newClient)
+          setStatus(t('setupStorage.status.alreadySetup', { did: web3SpaceDid }))
+          setStorageReady(true)
+        } catch (err) {
+          console.error('Error initializing client:', err)
+          setStatus(t('setupStorage.status.error'))
+          setStorageReady(false)
+        }
+      }
+      initializeClient()
     }
   }, [email, web3SpaceDid, setStorageReady, t])
 
@@ -67,8 +81,20 @@ console.log('Rendering status:', status);
     }
   }
 
-  function handleSpaceReset(newDid: string): void {
-    throw new Error('Function not implemented.')
+  async function handleSpaceReset(newDid: string): Promise<void> {
+    try {
+      if (!client) {
+        console.error('No Web3.Storage client available')
+        return
+      }
+
+      await client.setCurrentSpace(newDid)
+      setWeb3SpaceDid(newDid)
+      setStatus(t('setupStorage.status.spaceReady', { did: newDid }))
+    } catch (err) {
+      console.error('Error resetting space:', err)
+      setStatus(t('setupStorage.status.error'))
+    }
   }
 
   return (
@@ -96,23 +122,32 @@ console.log('Rendering status:', status);
             : t('setupStorage.button.verifyAndSetup')}
         </button>
       )}
-{status && (
-  <div
-    className={`p-3 rounded-md mt-2 text-sm font-medium whitespace-pre-wrap
-      ${
-        status.includes('❌') || status.includes('error')
-          ? 'bg-red-100 text-red-700'
-          : 'bg-green-100 text-green-700'
-      }
-    `}
-    role="alert"
-    aria-live="polite"
-  >
-    {status}
-  </div>
-)}
 
-      <ResetWeb3SpaceButton onSpaceReset={handleSpaceReset} agent={client} />
+      {status && (
+        <div
+          className={`p-3 rounded-md mt-2 text-sm font-medium whitespace-pre-wrap
+            ${
+              status.includes('❌') || status.includes('error')
+                ? 'bg-red-100 text-red-700'
+                : 'bg-green-100 text-green-700'
+            }
+          `}
+          role="alert"
+          aria-live="polite"
+        >
+          {status}
+        </div>
+      )}
+     {web3SpaceDid && (
+      <div className="mt-4">
+        <ResetWeb3SpaceButton 
+          onSpaceReset={handleSpaceReset} 
+          agent={client}
+          className="w-full"
+          email={email as string}
+        />
+      </div>
+     )}
     </div>
   )
 }

@@ -14,12 +14,14 @@ import type { StructureDefinition } from 'fhir/r4';
 const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences }) => {
   const [structureDefs, setStructureDefs] = useState<StructureDefinitionMap>({});
   const [mainStructureDef, setMainStructureDef] = useState<StructureDefinition | null>(null);
-  const resourceType = resource.resourceType;
+  const resourceType = resource?.resourceType || (resource && typeof resource === 'object' && Object.keys(resource).length > 0 ? 'Unknown' : 'Empty');
 
   useEffect(() => {
     const fetchStructureDefs = async () => {
       try {
-        const baseProfile = `/us-core/StructureDefinition-us-core-${resourceType.toLowerCase()}.json`;
+        const baseProfile = resourceType !== 'Empty' && resourceType !== 'Unknown'
+          ? `/us-core/StructureDefinition-us-core-${resourceType.toLowerCase()}.json`
+          : '/r4b/profiles-types.json';
         const coreTypes = '/r4b/profiles-types.json';
 
         const [mainDef, typesDef] = await Promise.all([

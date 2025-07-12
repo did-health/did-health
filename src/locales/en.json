@@ -35,10 +35,12 @@
     "openInMetaMask": "Open in MetaMask"
   },
    "selectBlockchain": {
-    "title": "Choose Your Blockchain",
-    "subtitle": "to Create Your did:health",
+    "title": "Create Your did:health",
+    "subtitle": "Step 1: Choose a Blockchain",
+    "lookupDid": "Look up did:health",
+    "lookupDidDescription": "Find your existing did:health identifier",
     "checkDid": "Already registered? Click here to view your DID.",
-    "moreAnswers": "Need more answers? Click herer"
+    "moreAnswers": "Need more answers? Click here"
   },
   "blockchain": {
     "ethereum": {

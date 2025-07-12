@@ -36,7 +36,7 @@
     "@types/lodash": "^4.17.17",
     "@vitejs/plugin-legacy": "^6.1.1",
     "@web3-storage/w3up-client": "^17.3.0",
-    "@xmtp/browser-sdk": "^3.0.1",
+    "@xmtp/browser-sdk": "latest",
     "buffer": "^6.0.3",
     "daisyui": "^5.0.43",
     "ethers": "^6.14.3",
@@ -87,6 +87,8 @@
     "tailwindcss-animate": "^1.0.7",
     "terser": "^5.43.0",
     "typescript": "^5.2.2",
-    "vite": "^5.4.19"
+    "vite": "^5.4.19",
+    "vite-plugin-top-level-await": "^1.5.0",
+    "vite-plugin-wasm": "^3.4.1"
   }
 }

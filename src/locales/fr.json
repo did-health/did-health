@@ -32,6 +32,8 @@
   "selectBlockchain": {
     "title": "Choisissez Votre Blockchain",
     "subtitle": "pour Créer votre did:health",
+    "lookupDid": "Rechercher did:health",
+"lookupDidDescription": "Trouvez votre identifiant did:health existant",
     "checkDid": "Vérifier le DID",
      "moreAnswers": "Besoin de plus de réponses ? Cliquez ici"
   },

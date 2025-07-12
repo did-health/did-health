@@ -9,19 +9,18 @@ type Props = {
 
 export function SelectDIDFormSolana({ onDIDAvailable }: Props) {
   const { connection } = useConnection();
+  const { wallet, publicKey } = useWallet();
   const { fhirResource } = useOnboardingState();
   const [didInput, setDidInput] = useState('');
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  const fullDID = `did:health:solana:${didInput}`;
+  const fullDID = `did:health:sol:${publicKey?.toString()}`;
 
   const handleCheckAvailability = async () => {
-    if (!didInput) return;
-
-    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(didInput.trim())) {
-      setStatus('❌ Invalid Solana address: must be a valid base58-encoded public key.');
+    if (!publicKey) {
+      setStatus('❌ Please connect your Solana wallet first.');
       return;
     }
 
@@ -30,8 +29,7 @@ export function SelectDIDFormSolana({ onDIDAvailable }: Props) {
     setStatus('Checking on-chain DID availability...');
 
     try {
-      const pubkey = new PublicKey(didInput);
-      const accountInfo = await connection.getAccountInfo(pubkey);
+      const accountInfo = await connection.getAccountInfo(publicKey);
 
       if (!accountInfo || !accountInfo.data || accountInfo.data.length === 0) {
         setIsAvailable(true);

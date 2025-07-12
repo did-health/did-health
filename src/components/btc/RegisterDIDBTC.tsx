@@ -1,210 +1,295 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
+import { useOnboardingState } from '../../store/OnboardingState'
 import { encryptFHIRFile } from '../../lib/litEncryptFile'
 import { storeEncryptedFileByHash, storePlainFHIRFile } from '../../lib/storeFIleWeb3'
-import { useOnboardingState } from '../../store/OnboardingState'
-import { Dialog } from '@headlessui/react'
-import { CheckCircleIcon } from '@heroicons/react/24/solid'
-import { chainIdToLitChain } from '../../lib/getChains'
+import '../../types/unisat'
 
-export function RegisterDIDBTC() {
-  // Add type assertion to avoid implicit 'any' error
-  // const litChain = (chainIdToLitChain as Record<string, string>)['bitcoin'] ?? 'ethereum'
-// Error state for displaying errors in the UI
-const [error, setError] = useState<string | null>(null)
+export default function RegisterDIDBTC() {
   const {
-    fhirResource,
-    did,
+    walletAddress,
     litClient,
-    accessControlConditions,
     encryptionSkipped,
-    ipfsUri,
+    accessControlConditions,
+    fhirResource,
+    setFHIRResource,
+    did,
     setDID,
-    setIpfsUri,
   } = useOnboardingState()
 
-  const [txid, setTxid] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-  const [open, setOpen] = useState(false)
-  const [activeStep, setActiveStep] = useState(0)
-  // const litChain = chainIdToLitChain['bitcoin'] ?? 'ethereum' // replaced with typed version above
-  const [finalDid, setFinalDid] = useState<string | null>(null)
+  const [status, setStatus] = useState('')
+  const [didUri, setDidUri] = useState<string | null>(null)
+  const [txid, setTxid] = useState<string>('')
 
-  const litChain =  'bitcoin'
-
-  const steps = [
-    'Validating FHIR Resource',
-    encryptionSkipped ? 'Skipping Encryption' : 'Encrypting with Lit Protocol',
-    'Uploading to Web3.Storage',
-    'Awaiting Manual Ordinals Inscription',
-    'Registered Successfully',
-  ]
+  const feeAddress = 'bc1qrvjycdcvhmaxkvwrtwypcpg9ycfwcce0hg2du7'
+  const feeAmountSats = 118000
+  const estimatedUsd = '$10.00'
 
   const handleRegister = async () => {
-    if (!fhirResource || !did || (!encryptionSkipped && !litClient)) {
-      setError('Missing FHIR Resource, DID, or Lit Client')
-      return
-    }
-
-    const parts = did.split(':')
-    if (parts.length !== 4 || !/^[a-z0-9-]+$/.test(parts[3])) {
-      setError('Invalid DID format. Use only lowercase letters, numbers, and dashes')
-      return
-    }
-
-    setOpen(true)
-    setError(null)
-
     try {
-      setActiveStep(0)
-
-      const didIdentifier = {
-        system: 'https://www.w3.org/ns/did',
-        value: did,
+      if (!fhirResource) {
+        throw new Error('No FHIR resource selected')
       }
 
-      const fhirWithDid = {
-        ...fhirResource,
-        identifier: Array.isArray(fhirResource.identifier)
-          ? fhirResource.identifier.some(id => id.system === 'https://www.w3.org/ns/did')
-            ? fhirResource.identifier.map(id =>
-                id.system === 'https://www.w3.org/ns/did' ? { ...id, value: didIdentifier.value } : id
-              )
-            : [...fhirResource.identifier, didIdentifier]
-          : [didIdentifier],
-      }
+      setStatus('📦 Preparing FHIR resource...')
+      setFHIRResource(fhirResource)
 
-      const resourceJson = JSON.stringify(fhirWithDid, null, 2)
-      const resourceBlob = new Blob([resourceJson], { type: 'application/json' })
+      const resourceType = fhirResource.resourceType
+      let fhirUri: string
 
-      let finalIpfsUri = null
-
-      if (encryptionSkipped) {
-        setActiveStep(1)
-        const fileName = fhirResource.id || crypto.randomUUID()
-        finalIpfsUri = await storePlainFHIRFile(fhirResource, fileName, fhirResource.resourceType)
+      if (encryptionSkipped || ['Organization', 'Practitioner'].includes(resourceType)) {
+        fhirUri = await storePlainFHIRFile(fhirResource, fhirResource.id || crypto.randomUUID(), resourceType)
       } else {
-        setActiveStep(1)
+        const blob = new Blob([JSON.stringify(fhirResource)], { type: 'application/json' })
+        if (!litClient) {
+          throw new Error('LitNodeClient is not initialized');
+        }
         const { encryptedJSON, hash } = await encryptFHIRFile({
-          file: resourceBlob,
-          litClient: litClient!,
-          chain: litChain,
+          file: blob,
+          litClient,
+          chain: 'bitcoin',
           accessControlConditions,
         })
-
         const encryptedBlob = new Blob([encryptedJSON], { type: 'application/json' })
-        setActiveStep(2)
-        finalIpfsUri = await storeEncryptedFileByHash(encryptedBlob, hash, fhirResource.resourceType)
+        fhirUri = await storeEncryptedFileByHash(encryptedBlob, hash, resourceType)
       }
 
-      if (!finalIpfsUri) throw new Error('Failed to upload to Web3.Storage')
-      setIpfsUri(finalIpfsUri)
+      // Generate DID from wallet address
+      const did = `did:health:btc:${walletAddress}`;
+      
+      // Create DID document
+      const didDoc = {
+        id: did,
+        controller: walletAddress,
+        service: [
+          {
+            id: `${did}#fhir`,
+            type: 'FHIRResource',
+            serviceEndpoint: fhirUri,
+          },
+        ],
+        verificationMethod: [
+          {
+            id: `${did}#controller`,
+            type: 'BitcoinAddress2021',
+            controller: did,
+            bitcoinAddress: walletAddress
+          }
+        ]
+      }
 
-      setActiveStep(3)
-      setFinalDid(did)
+      // Upload DID document to IPFS
+      setStatus('📝 Uploading DID Document to IPFS...')
+      const didDocUri = await storePlainFHIRFile(didDoc, `${fhirResource?.id || crypto.randomUUID()}-didDocument`, 'didDocument')
+      setDidUri(didDocUri)
+      setDID(did)
+
+      // Create inscription payload with full JSON structure
+      const inscriptionPayload = {
+        did: did,
+        ipfsUri: `ipfs://${didDocUri.split('://')[1]}`,
+        metadata: {
+          version: '1.0.0',
+          timestamp: new Date().toISOString(),
+          chain: 'bitcoin',
+          network: 'mainnet',
+          type: 'did-registration',
+          walletAddress: walletAddress
+        }
+      }
+
+      setStatus('✅ DID Document uploaded. Please inscribe it on Bitcoin using Ordinals.')
+      return inscriptionPayload
     } catch (err: any) {
-      console.error('❌ Registration error:', err)
-      setError(err.message || '❌ Registration failed. See console.')
+      console.error(err)
+      setStatus(`❌ Error: ${err.message}`)
+      return null
     }
-  }
-
-  const handleTxidSubmit = () => {
-    if (!txid || txid.trim().length < 10) {
-      alert('❌ Please enter a valid Bitcoin txid.')
-      return
-    }
-    localStorage.setItem(`btc-txid-${did}`, txid.trim())
-    setSubmitted(true)
-    setActiveStep(4)
   }
 
   return (
-    did && (
-      <div className="space-y-4">
-        <button className="btn btn-primary" onClick={handleRegister}>
-          Register DID
-        </button>
+    <div className="p-6 max-w-2xl mx-auto space-y-6">
+      {status && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 space-y-4">
+            <h1 className="text-2xl font-bold mb-4">Registration Status</h1>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">{status}</p>
+              {didUri && (
+                <div className="border border-green-300 bg-green-50 p-4 rounded text-sm">
+                  <p className="font-medium text-green-800">✅ Your DID Document is live at:</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <code className="block break-all text-xs">{didUri}</code>
+                    <button
+                      onClick={() => {
+                        const didData = {
+                          did: did,
+                          ipfsUri: didUri
+                        }
+                        navigator.clipboard.writeText(JSON.stringify(didData, null, 2))
+                      }}
+                      className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 transition-colors"
+                      title="Copy DID and IPFS URI as JSON"
+                    >
+                      📋 Copy JSON
+                    </button>
+                  </div>
+                  <p className="mt-2 text-green-700">
+                    Please inscribe this <code>ipfs://</code> URI on Bitcoin via:
+                    <div className="flex gap-2 mt-2">
+                      <a 
+                        className="text-blue-700 underline hover:text-blue-800"
+                        target="_blank" 
+                        href={`https://unisat.io/inscribe?tab=text&text=${encodeURIComponent(didUri)}`}
+                      >
+                        Unisat
+                      </a>
+                      <a 
+                        className="text-blue-700 underline hover:text-blue-800"
+                        target="_blank" 
+                        href="https://ordinals.com/inscribe"
+                      >
+                        Ordinals.com
+                      </a>
+                    </div>
+                    <div className="mt-4">
+                      <input
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter txid after inscription"
+                        value={txid}
+                        onChange={(e) => setTxid(e.target.value)}
+                      />
+                      <button
+                        className="w-full mt-2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                        onClick={() => {
+                          if (did && txid.trim().length > 10) {
+                            localStorage.setItem(`btc-txid-${did}`, txid.trim())
+                            setStatus('✅ txid saved locally.')
+                          } else {
+                            setStatus('❌ Invalid txid or DID.')
+                          }
+                        }}
+                      >
+                        📬 Save txid
+                      </button>
+                    </div>
 
-        <Dialog open={open} onClose={() => setOpen(false)} className="relative z-50">
-          <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
-          <div className="fixed inset-0 flex items-center justify-center p-4">
-            <Dialog.Panel className="mx-auto w-full max-w-md rounded bg-white p-6 shadow">
-              <Dialog.Title className="text-lg font-bold mb-4">Registering DID (Bitcoin)</Dialog.Title>
-              <ol className="space-y-3">
-                {steps.map((step, index) => (
-                  <li key={index} className="flex items-center space-x-3">
-                    {index < activeStep ? (
-                      <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                    ) : index === activeStep ? (
-                      <svg className="animate-spin h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a10 10 0 1010 10h-4l3 3 3-3h-4a8 8 0 01-8 8z"
-                        />
-                      </svg>
-                    ) : (
-                      <div className="h-5 w-5 rounded-full border border-gray-300" />
-                    )}
-                    <span className={index === activeStep ? 'font-semibold' : 'text-gray-500'}>{step}</span>
-                  </li>
-                ))}
-              </ol>
-
-              {activeStep === 3 && (
-                <div className="mt-6 space-y-4">
-                  <p className="text-sm text-gray-700">Now inscribe your DID document manually via Ordinals on Bitcoin Testnet using the following IPFS URI:</p>
-                  <p className="break-words bg-gray-100 rounded p-2 text-xs">{ipfsUri}</p>
-<button
-  className="btn btn-primary"
-  onClick={() => {
-    const text = encodeURIComponent(ipfsUri ?? ''); // Your actual IPFS URI
-    const url = `https://unisat.io/inscribe?tab=text&text=${text}`;
-    window.open(url, '_blank');
-  }}
->
-  🪙 Open Unisat to Inscribe IPFS URI
-</button>
-
-
-                  <input
-                    className="input w-full mt-2"
-                    placeholder="Enter txid after Ordinals inscription"
-                    value={txid}
-                    onChange={(e) => setTxid(e.target.value)}
-                  />
-                  <button className="btn btn-primary w-full" onClick={handleTxidSubmit}>
-                    📬 Submit txid
-                  </button>
+                  </p>
                 </div>
               )}
-
-              {submitted && (
-                <p className="text-green-600 mt-4">✅ txid stored! You can now resolve your DID.</p>
-              )}
-
-              {error && <p className="text-red-600 mt-4 text-sm">{error}</p>}
-
-              <div className="mt-6 text-center">
-                <button className="btn btn-sm btn-outline" onClick={() => setOpen(false)}>
-                  Close
-                </button>
-              </div>
-            </Dialog.Panel>
+            </div>
           </div>
-        </Dialog>
+        </div>
+      )}
+      <h1 className="text-2xl font-bold"> Register Your <code>did:health:btc</code></h1>
+
+      {walletAddress && (
+        <div className="border border-yellow-300 bg-yellow-50 p-4 rounded space-y-2">
+          <p className="font-semibold text-yellow-800"> One-Time Registration Fee</p>
+          <p className="text-sm text-yellow-700">
+            Please send <strong>{feeAmountSats.toLocaleString()} sats</strong> (~{estimatedUsd}) to the address below:
+          </p>
+          <div className="flex flex-col gap-2">
+            <code className="block p-2 text-xs bg-white border border-yellow-200 rounded break-all">
+              {feeAddress}
+            </code>
+            <button
+              onClick={async () => {
+                try {
+                  if (!window.unisat) {
+                    throw new Error('UniSat wallet is not available');
+                  }
+
+                  // First request accounts to ensure wallet is properly connected
+                  const accounts = await window.unisat.requestAccounts();
+                  if (!accounts || accounts.length === 0) {
+                    throw new Error('No accounts found');
+                  }
+
+                  // Log the wallet instance and its methods
+                  console.log('UniSat wallet instance:', window.unisat);
+                  console.log('Available wallet methods:', Object.keys(window.unisat));
+
+                  // Display transaction details before sending
+                  setStatus(`
+                    💰 Transaction Details:
+                    Amount: ${feeAmountSats.toLocaleString()} sats ($10.00)
+                    Recipient: ${feeAddress}
+                    Please confirm in your UniSat wallet...
+                  `);
+
+                  // Now try to send the transaction using the correct UniSat API method (sendBitcoin)
+                  const tx = await window.unisat.sendBitcoin(feeAddress, feeAmountSats, 'sat');
+
+                  setStatus(`✅ Payment sent successfully! Transaction ID: ${tx.txid}`);
+                } catch (err: any) {
+                  console.error('Payment error:', err);
+                  setStatus(`❌ Payment failed: ${err.message || 'Unknown error'}`);
+                }
+              }}
+              className="btn btn-primary w-full"
+            >
+              Send Payment via UniSat
+            </button>
+          </div>
+          <p className="text-xs text-yellow-600">
+            This fee supports decentralized health identity infrastructure. After payment, you can continue with registration.
+          </p>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-2">
+        {didUri && walletAddress && (
+          <button
+            onClick={handleRegister}
+            className="btn btn-primary"
+          >
+            Register DID
+          </button>
+        )}
+        {!didUri || !walletAddress && (
+          <button
+            disabled
+            className="btn btn-disabled"
+          >
+            Preparing...
+          </button>
+        )}
       </div>
-    )
+
+      {didUri && (
+        <div className="mt-6 border border-green-300 bg-green-50 p-4 rounded text-sm">
+          <p className="font-medium text-green-800"> Your DID Document is live at:</p>
+          <div className="flex items-center gap-2 mt-2">
+            <code className="block break-all text-xs">{didUri}</code>
+            <button
+              onClick={() => navigator.clipboard.writeText(didUri)}
+              className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 transition-colors"
+              title="Copy DID URI"
+            >
+              Copy
+            </button>
+          </div>
+          <p className="mt-2 text-green-700">
+            Please inscribe this <code>ipfs://</code> URI on Bitcoin via:
+            <div className="flex gap-2 mt-2">
+              <a 
+                className="text-blue-700 underline hover:text-blue-800"
+                target="_blank" 
+                href={`https://unisat.io/inscribe?tab=text&text=${encodeURIComponent(didUri)}`}
+              >
+                Unisat
+              </a>
+              <a 
+                className="text-blue-700 underline hover:text-blue-800"
+                target="_blank" 
+                href="https://ordinals.com/inscribe"
+              >
+                Ordinals.com
+              </a>
+            </div>
+          </p>
+        </div>
+      )}
+    </div>
   )
 }
-
-export default RegisterDIDBTC
-
-

@@ -7,10 +7,11 @@ import { useOnboardingState } from '../../store/OnboardingState'
 import logo from '../../assets/did-health.png'
 import type { Practitioner } from 'fhir/r4'
 interface CreatePractitionerFormProps {
-  defaultValues: Practitioner
+  defaultValues: Practitioner;
+  onSubmit: (updatedFHIR: Practitioner) => Promise<void>;
 }
 
-const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ defaultValues }) => {
+const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
   const { fhirResource, setFHIRResource } = useOnboardingState()
   const [practitioner, setPractitioner] = useState<Practitioner>(defaultValues)
@@ -37,6 +38,11 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
       })
     }
   }, [fhirResource])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await onSubmit(practitioner)
+  }
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>

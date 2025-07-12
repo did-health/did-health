@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useOnboardingState } from "../../store/OnboardingState";
 import { useConfig, useChainId } from "wagmi";
-import { switchChain } from "wagmi/actions";
-import { createPublicClient, http, defineChain } from "viem";
-import deployedContracts from "../../generated/deployedContracts";
 
+import deployedContracts from "../../generated/deployedContracts";
+import { JsonRpcProvider } from "ethers";
+import { ethers } from "ethers"; // if not already imported
+import { parseDidHealth } from "../DIDResolver"; // adjust path as needed
 type Props = {
   onDIDAvailable: (did: string) => void;
 };
@@ -25,72 +26,44 @@ export function SelectDIDFormETH({ onDIDAvailable }: Props) {
 
   const handleCheckAvailability = async () => {
     if (!didInput || !chainId) return;
-
+  
     if (!/^[a-z0-9-]+$/.test(didInput.trim())) {
       setStatus("❌ Invalid DID: only lowercase letters, numbers, and dashes allowed.");
       return;
     }
-
+  
     setChecking(true);
     setIsAvailable(null);
     setStatus("Checking on-chain DID availability...");
-
+  
     try {
-      await switchChain(config, { chainId });
-
-      // 🔍 Find matching contract + RPC for this chainId
-      let contractInfo: any = null;
-      let chainName = "Unknown Chain";
-      let rpcUrl = "http://localhost:8545";
-
-      for (const env of Object.values(deployedContracts)) {
-        for (const [networkKey, contracts] of Object.entries(env)) {
-          if (
-            contracts &&
-            typeof contracts === "object" &&
-            "HealthDIDRegistry" in contracts
-          ) {
-            const contract = (contracts as any).HealthDIDRegistry;
-            if (contract?.chainId === chainId) {
-              contractInfo = contract;
-              chainName = networkKey;
-              rpcUrl = contract.rpcUrl || rpcUrl;
-              break;
-            }
-          }
-        }
-        if (contractInfo) break;
+      const fullDID = `did:health:${chainId}:${didInput}`;
+      const { chainId: parsedChainId, lookupKey } = parseDidHealth(fullDID);
+  
+      const env = "testnet";
+      const registryEntry = Object.values(deployedContracts[env]).find(
+        (net: any) => net.HealthDIDRegistry?.chainId === parsedChainId
+      )?.HealthDIDRegistry;
+  
+      if (!registryEntry) {
+        throw new Error(`❌ No HealthDIDRegistry deployed for chain ${parsedChainId}`);
       }
-
-      if (!contractInfo?.address || !contractInfo?.abi) {
-        throw new Error(`❌ No HealthDIDRegistry deployed for chainId: ${chainId}`);
-      }
-
-      const client = createPublicClient({
-        chain: defineChain({
-          id: chainId,
-          name: chainName,
-          rpcUrls: { default: { http: [rpcUrl] } },
-          nativeCurrency: {
-            name: "ETH",
-            symbol: "ETH",
-            decimals: 18,
-          },
-        }),
-        transport: http(),
-      });
-
-      type HealthDIDResult = { owner: string };
-      let result: HealthDIDResult | undefined;
+  
+      const provider = new JsonRpcProvider(registryEntry.rpcUrl);
+      const contract = new ethers.Contract(
+        registryEntry.address,
+        registryEntry.abi,
+        provider
+      );
+  
+      let data;
       try {
-        result = await client.readContract({
-          address: contractInfo.address as `0x${string}`,
-          abi: contractInfo.abi,
-          functionName: "getHealthDID",
-          args: [`${chainId}:${didInput}`],
-        }) as HealthDIDResult;
+        data = await contract.getHealthDID(lookupKey);
       } catch (err: any) {
-        if (err.message?.includes("revert") || err.message?.includes("execution reverted")) {
+        if (
+          err.message?.includes("revert") ||
+          err.message?.includes("execution reverted")
+        ) {
           setIsAvailable(true);
           setStatus("✅ DID is available!");
           onDIDAvailable(fullDID);
@@ -98,14 +71,14 @@ export function SelectDIDFormETH({ onDIDAvailable }: Props) {
         }
         throw err;
       }
-
-      if (result?.owner && result.owner !== "0x0000000000000000000000000000000000000000") {
-        setIsAvailable(false);
-        setStatus("❌ DID is already registered.");
-      } else {
+  
+      if (!data || data.owner === ethers.ZeroAddress || data.owner === "0x0000000000000000000000000000000000000000") {
         setIsAvailable(true);
         setStatus("✅ DID is available!");
         onDIDAvailable(fullDID);
+      } else {
+        setIsAvailable(false);
+        setStatus("❌ DID is already registered.");
       }
     } catch (err: any) {
       console.error("❌ Error during DID availability check", err);

@@ -18,6 +18,7 @@ export function RegisterDID() {
     ipfsUri,
     setDID,
     setIpfsUri,
+    walletAddress,
   } = useOnboardingState()
 
   const publicClient = usePublicClient()
@@ -43,104 +44,102 @@ export function RegisterDID() {
       setError('Missing FHIR Resource, DID, or Lit Client')
       return
     }
-
+  
     const parts = did.split(':')
     if (parts.length !== 4 || !/^[a-z0-9-]+$/.test(parts[3])) {
       setError('Invalid DID format. Use only lowercase letters, numbers, and dashes')
       return
     }
-
+  
     const shortDid = `${parts[2]}:${parts[3]}`
     const chainIdDecimal = parseInt(parts[2])
-
+  
     setOpen(true)
     setError(null)
-
+  
     try {
       setActiveStep(0)
-
-      //let finalIpfsUri = ipfsUri
-      let finalIpfsUri = null
-      if (!finalIpfsUri) {
-        // Inject the DID into the FHIR resource's identifier using the correct system
-        const didIdentifier = {
-          system: 'https://www.w3.org/ns/did',
-          value: did,
-        };
-
-        const identifiers = Array.isArray(fhirResource.identifier)
-          ? fhirResource.identifier.filter(id => id && typeof id === 'object')
-          : []
-
-        const hasDid = identifiers.some(id => id.system === didIdentifier.system)
-
-        const updatedIdentifiers = hasDid
-          ? identifiers.map(id =>
-            id.system === didIdentifier.system
-              ? { ...id, value: didIdentifier.value }
-              : id
-          )
-          : [...identifiers, didIdentifier]
-
-        const fhirWithDid = {
-          ...fhirResource,
-          identifier: updatedIdentifiers,
+  
+      // ✅ Inject the DID into the FHIR identifier
+      const didIdentifier = { system: 'https://www.w3.org/ns/did', value: did }
+      const existingIds = Array.isArray(fhirResource.identifier) ? fhirResource.identifier : []
+      const newIdentifiers = existingIds.some(id => id.system === didIdentifier.system)
+        ? existingIds.map(id => id.system === didIdentifier.system ? didIdentifier : id)
+        : [...existingIds, didIdentifier]
+  
+      const fhirWithDid = { ...fhirResource, identifier: newIdentifiers }
+      const resourceBlob = new Blob([JSON.stringify(fhirWithDid, null, 2)], { type: 'application/json' })
+  
+      // ✅ Encrypt or store plain FHIR resource
+      let fhirUri: string
+      setActiveStep(1)
+  
+      if (encryptionSkipped || ['Organization', 'Practitioner'].includes(fhirResource.resourceType)) {
+        fhirUri = await storePlainFHIRFile(fhirWithDid, fhirResource.id || crypto.randomUUID(), fhirResource.resourceType)
+      } else {
+        if (!litClient) {
+          throw new Error('Lit client is not initialized');
         }
-
-        console.log('🔗 FHIR Resource with DID:', fhirWithDid)
-
-        const resourceJson = JSON.stringify(fhirWithDid, null, 2);
-        const resourceBlob = new Blob([resourceJson], { type: 'application/json' })
-
-
-        if (encryptionSkipped) {
-          setActiveStep(1)
-          const fileName = fhirResource.id || crypto.randomUUID()
-          finalIpfsUri = await storePlainFHIRFile(fhirWithDid, fileName, fhirResource.resourceType)
-        } else {
-          setActiveStep(1)
-console.log('Encrypting with access constrol conditions:' + accessControlConditions)
-          const { encryptedJSON, hash } = await encryptFHIRFile({
-            file: resourceBlob,
-            litClient: litClient!,
-            chain: litChain,
-            accessControlConditions,
-          })
-
-          const encryptedBlob = new Blob([encryptedJSON], { type: 'application/json' })
-          setActiveStep(2)
-          finalIpfsUri = await storeEncryptedFileByHash(encryptedBlob, hash, fhirResource.resourceType)
-        }
-
-        if (!finalIpfsUri) throw new Error('Failed to upload file to Web3.Storage')
-        setIpfsUri(finalIpfsUri)
+        const { encryptedJSON, hash } = await encryptFHIRFile({
+          file: resourceBlob,
+          litClient,
+          chain: litChain,
+          accessControlConditions,
+        })
+        const encryptedBlob = new Blob([encryptedJSON], { type: 'application/json' })
+        setActiveStep(2)
+        fhirUri = await storeEncryptedFileByHash(encryptedBlob, hash, fhirResource.resourceType)
       }
-
+  
+      if (!fhirUri) throw new Error('Failed to upload FHIR resource to Web3.Storage')
+  
+      // ✅ Create DID Document
+      const didDocument = {
+        id: did,
+        controller: walletAddress,
+        service: [
+          {
+            id: `${did}#fhir`,
+            type: fhirResource.resourceType,
+            serviceEndpoint: fhirUri
+          }
+        ],
+        verificationMethod: [
+          {
+            id: `${did}#controller`,
+            type: 'EcdsaSecp256k1RecoveryMethod2020',
+            controller: did,
+            ethereumAddress: walletAddress
+          }
+        ]
+      }
+  console.log(didDocument)
       setActiveStep(3)
-
-      const tx = await registerDid({ did: shortDid, ipfsUri: finalIpfsUri, chainId: chainIdDecimal })
-      console.log('📤 TX sent:', tx)
-
-      if (!publicClient) throw new Error('Public client is not available')
+      const didDocUri = await storePlainFHIRFile(didDocument, crypto.randomUUID(), 'didDocument')
+      console.log(didDocUri)
+      if (!didDocUri) throw new Error('Failed to upload DID Document')
+  
+      setIpfsUri(didDocUri)
+  
+      // ✅ Register DID on chain with DID Document URI
+      const tx = await registerDid({ did: shortDid, ipfsUri: didDocUri, chainId: chainIdDecimal })
+      if (!publicClient) throw new Error('Wallet not connected')
       const receipt = await publicClient.waitForTransactionReceipt({ hash: tx })
-      console.log('🧾 TX Receipt:', receipt)
-
+  
       if (receipt.status !== 'success') throw new Error('Transaction failed or reverted')
-
+  
       setActiveStep(4)
       setTxHash(tx)
       setFinalDid(did)
       setDID(did)
-      
-      // Wait a moment to show the checkmark
-      setTimeout(() => {
-        setActiveStep(5)
-      }, 1000)
+  
+      setTimeout(() => setActiveStep(5), 1000)
     } catch (err: any) {
       console.error('❌ Registration error:', err)
       setError(err.message || '❌ Registration failed. See console for details.')
     }
   }
+  
 
   const getExplorerLink = (txHash: string): string => {
     const chainSegment = did?.split(':')[2]

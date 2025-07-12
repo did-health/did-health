@@ -2,7 +2,7 @@ const deployedContracts = {
   testnet: {
     arbitrumSepolia: {
       DidHealthDAO: {
-        address: "0xEc486590247ab4450b0382108685C18082b45276",
+        address: "0x2b65881234035147502f4502Db0CADe81F63332f",
         abi: [
           {
             type: "constructor",
@@ -309,13 +309,13 @@ const deployedContracts = {
         chainId: 421614,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://arb-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+          "https://arb-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
         litChainKey: "arbitrum-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/arbitrum-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x9E48EB941A02482AA33356986e2d2A66259Fa375",
+        address: "0x6C33f20390AE25B154a5Bed60D59c9687F6dA935",
         abi: [
           {
             type: "constructor",
@@ -338,30 +338,6 @@ const deployedContracts = {
               },
             ],
             stateMutability: "view",
-          },
-          {
-            type: "function",
-            name: "addAltData",
-            inputs: [
-              {
-                name: "_healthDid",
-                type: "string",
-                internalType: "string",
-              },
-              {
-                name: "_uris",
-                type: "string[]",
-                internalType: "string[]",
-              },
-            ],
-            outputs: [
-              {
-                name: "",
-                type: "bool",
-                internalType: "bool",
-              },
-            ],
-            stateMutability: "nonpayable",
           },
           {
             type: "function",
@@ -551,11 +527,6 @@ const deployedContracts = {
                 internalType: "string",
               },
               {
-                name: "altIpfsUris",
-                type: "string[]",
-                internalType: "string[]",
-              },
-              {
                 name: "hasWorldId",
                 type: "bool",
                 internalType: "bool",
@@ -702,31 +673,6 @@ const deployedContracts = {
           },
           {
             type: "event",
-            name: "AltURIsAdded",
-            inputs: [
-              {
-                name: "owner",
-                type: "address",
-                indexed: true,
-                internalType: "address",
-              },
-              {
-                name: "healthDid",
-                type: "string",
-                indexed: true,
-                internalType: "string",
-              },
-              {
-                name: "uris",
-                type: "string[]",
-                indexed: false,
-                internalType: "string[]",
-              },
-            ],
-            anonymous: false,
-          },
-          {
-            type: "event",
             name: "DIDRegistered",
             inputs: [
               {
@@ -842,7 +788,7 @@ const deployedContracts = {
         chainId: 421614,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://arb-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+          "https://arb-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
         litChainKey: "arbitrum-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/arbitrum-sepolia/version/latest",
@@ -850,7 +796,7 @@ const deployedContracts = {
     },
     baseSepolia: {
       DidHealthDAO: {
-        address: "0x76dE3F3B3186365ed2C8A588592c6454383610c4",
+        address: "0x3dA72c640E278D7e5a91C18b799186d2e05c7c92",
         abi: [
           {
             type: "constructor",
@@ -1157,13 +1103,13 @@ const deployedContracts = {
         chainId: 84532,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://base-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+          "https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
         litChainKey: "base-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/base-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x32E9a844FC1Ce04A187b6C92eCbd3a2228bC817F",
+        address: "0x66745d3002245db8DEcB0b1c79415C4B8b94c5E4",
         abi: [
           {
             type: "constructor",
@@ -1186,30 +1132,6 @@ const deployedContracts = {
               },
             ],
             stateMutability: "view",
-          },
-          {
-            type: "function",
-            name: "addAltData",
-            inputs: [
-              {
-                name: "_healthDid",
-                type: "string",
-                internalType: "string",
-              },
-              {
-                name: "_uris",
-                type: "string[]",
-                internalType: "string[]",
-              },
-            ],
-            outputs: [
-              {
-                name: "",
-                type: "bool",
-                internalType: "bool",
-              },
-            ],
-            stateMutability: "nonpayable",
           },
           {
             type: "function",
@@ -1399,11 +1321,6 @@ const deployedContracts = {
                 internalType: "string",
               },
               {
-                name: "altIpfsUris",
-                type: "string[]",
-                internalType: "string[]",
-              },
-              {
                 name: "hasWorldId",
                 type: "bool",
                 internalType: "bool",
@@ -1550,31 +1467,6 @@ const deployedContracts = {
           },
           {
             type: "event",
-            name: "AltURIsAdded",
-            inputs: [
-              {
-                name: "owner",
-                type: "address",
-                indexed: true,
-                internalType: "address",
-              },
-              {
-                name: "healthDid",
-                type: "string",
-                indexed: true,
-                internalType: "string",
-              },
-              {
-                name: "uris",
-                type: "string[]",
-                indexed: false,
-                internalType: "string[]",
-              },
-            ],
-            anonymous: false,
-          },
-          {
-            type: "event",
             name: "DIDRegistered",
             inputs: [
               {
@@ -1690,7 +1582,7 @@ const deployedContracts = {
         chainId: 84532,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://base-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+          "https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
         litChainKey: "base-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/base-sepolia/version/latest",
@@ -1699,7 +1591,7 @@ const deployedContracts = {
     lineaSepolia: {},
     optimismSepolia: {
       DidHealthDAO: {
-        address: "0xb9aE75Ccc6Ba752256cc3B88E38214fa84aac5A5",
+        address: "0x4C1FC0aA763Aba3cE0F47D569fd55A29b107C3D6",
         abi: [
           {
             type: "constructor",
@@ -2006,13 +1898,13 @@ const deployedContracts = {
         chainId: 11155420,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://opt-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+          "https://opt-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
         litChainKey: "optimism-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/optimism-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x5E9f876De67824591C039d4987d2Bfb6D875960A",
+        address: "0x0BD721730c5E253223b83C06756b0654B9F9B71d",
         abi: [
           {
             type: "constructor",
@@ -2035,30 +1927,6 @@ const deployedContracts = {
               },
             ],
             stateMutability: "view",
-          },
-          {
-            type: "function",
-            name: "addAltData",
-            inputs: [
-              {
-                name: "_healthDid",
-                type: "string",
-                internalType: "string",
-              },
-              {
-                name: "_uris",
-                type: "string[]",
-                internalType: "string[]",
-              },
-            ],
-            outputs: [
-              {
-                name: "",
-                type: "bool",
-                internalType: "bool",
-              },
-            ],
-            stateMutability: "nonpayable",
           },
           {
             type: "function",
@@ -2248,11 +2116,6 @@ const deployedContracts = {
                 internalType: "string",
               },
               {
-                name: "altIpfsUris",
-                type: "string[]",
-                internalType: "string[]",
-              },
-              {
                 name: "hasWorldId",
                 type: "bool",
                 internalType: "bool",
@@ -2399,31 +2262,6 @@ const deployedContracts = {
           },
           {
             type: "event",
-            name: "AltURIsAdded",
-            inputs: [
-              {
-                name: "owner",
-                type: "address",
-                indexed: true,
-                internalType: "address",
-              },
-              {
-                name: "healthDid",
-                type: "string",
-                indexed: true,
-                internalType: "string",
-              },
-              {
-                name: "uris",
-                type: "string[]",
-                indexed: false,
-                internalType: "string[]",
-              },
-            ],
-            anonymous: false,
-          },
-          {
-            type: "event",
             name: "DIDRegistered",
             inputs: [
               {
@@ -2539,7 +2377,7 @@ const deployedContracts = {
         chainId: 11155420,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://opt-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+          "https://opt-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
         litChainKey: "optimism-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/optimism-sepolia/version/latest",
@@ -2948,7 +2786,7 @@ const deployedContracts = {
     },
     scrollSepolia: {
       DidHealthDAO: {
-        address: "0x66745d3002245db8DEcB0b1c79415C4B8b94c5E4",
+        address: "0x4f672Fa12D812b249508b569E8a3eb1426Ac7d5A",
         abi: [
           {
             type: "constructor",
@@ -3255,13 +3093,13 @@ const deployedContracts = {
         chainId: 534351,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://scroll-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+          "https://scroll-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
         litChainKey: "scroll-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/scroll-sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x94C49C61DB52B8a2C087085aAb04F0AA2A0a552c",
+        address: "0x384420330Df1beD2307454Cc657083DBE27115a1",
         abi: [
           {
             type: "constructor",
@@ -3284,30 +3122,6 @@ const deployedContracts = {
               },
             ],
             stateMutability: "view",
-          },
-          {
-            type: "function",
-            name: "addAltData",
-            inputs: [
-              {
-                name: "_healthDid",
-                type: "string",
-                internalType: "string",
-              },
-              {
-                name: "_uris",
-                type: "string[]",
-                internalType: "string[]",
-              },
-            ],
-            outputs: [
-              {
-                name: "",
-                type: "bool",
-                internalType: "bool",
-              },
-            ],
-            stateMutability: "nonpayable",
           },
           {
             type: "function",
@@ -3497,11 +3311,6 @@ const deployedContracts = {
                 internalType: "string",
               },
               {
-                name: "altIpfsUris",
-                type: "string[]",
-                internalType: "string[]",
-              },
-              {
                 name: "hasWorldId",
                 type: "bool",
                 internalType: "bool",
@@ -3648,31 +3457,6 @@ const deployedContracts = {
           },
           {
             type: "event",
-            name: "AltURIsAdded",
-            inputs: [
-              {
-                name: "owner",
-                type: "address",
-                indexed: true,
-                internalType: "address",
-              },
-              {
-                name: "healthDid",
-                type: "string",
-                indexed: true,
-                internalType: "string",
-              },
-              {
-                name: "uris",
-                type: "string[]",
-                indexed: false,
-                internalType: "string[]",
-              },
-            ],
-            anonymous: false,
-          },
-          {
-            type: "event",
             name: "DIDRegistered",
             inputs: [
               {
@@ -3788,7 +3572,7 @@ const deployedContracts = {
         chainId: 534351,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://scroll-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+          "https://scroll-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
         litChainKey: "scroll-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/scroll-sepolia/version/latest",
@@ -3796,7 +3580,7 @@ const deployedContracts = {
     },
     sepolia: {
       DidHealthDAO: {
-        address: "0xd31ca8f4288352e9fF493fb673A82c8713d8DB96",
+        address: "0x726D744e6536Cf2cfDb7df484dB1f1Df905375D4",
         abi: [
           {
             type: "constructor",
@@ -4103,13 +3887,13 @@ const deployedContracts = {
         chainId: 11155111,
         chainIdHex: "0xaa36a7",
         rpcUrl:
-          "https://eth-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+          "https://eth-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
         litChainKey: "sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x70972a16B5e6356c7D8eC8Ec06387c22d54b2C5B",
+        address: "0x05837A4e999DA0e5725eE8B287e864455CF1D589",
         abi: [
           {
             type: "constructor",
@@ -4132,30 +3916,6 @@ const deployedContracts = {
               },
             ],
             stateMutability: "view",
-          },
-          {
-            type: "function",
-            name: "addAltData",
-            inputs: [
-              {
-                name: "_healthDid",
-                type: "string",
-                internalType: "string",
-              },
-              {
-                name: "_uris",
-                type: "string[]",
-                internalType: "string[]",
-              },
-            ],
-            outputs: [
-              {
-                name: "",
-                type: "bool",
-                internalType: "bool",
-              },
-            ],
-            stateMutability: "nonpayable",
           },
           {
             type: "function",
@@ -4345,11 +4105,6 @@ const deployedContracts = {
                 internalType: "string",
               },
               {
-                name: "altIpfsUris",
-                type: "string[]",
-                internalType: "string[]",
-              },
-              {
                 name: "hasWorldId",
                 type: "bool",
                 internalType: "bool",
@@ -4496,31 +4251,6 @@ const deployedContracts = {
           },
           {
             type: "event",
-            name: "AltURIsAdded",
-            inputs: [
-              {
-                name: "owner",
-                type: "address",
-                indexed: true,
-                internalType: "address",
-              },
-              {
-                name: "healthDid",
-                type: "string",
-                indexed: true,
-                internalType: "string",
-              },
-              {
-                name: "uris",
-                type: "string[]",
-                indexed: false,
-                internalType: "string[]",
-              },
-            ],
-            anonymous: false,
-          },
-          {
-            type: "event",
             name: "DIDRegistered",
             inputs: [
               {
@@ -4636,7 +4366,7 @@ const deployedContracts = {
         chainId: 11155111,
         chainIdHex: "0xaa36a7",
         rpcUrl:
-          "https://eth-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+          "https://eth-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
         litChainKey: "sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/sepolia/version/latest",
@@ -4951,7 +4681,7 @@ const deployedContracts = {
         chainId: 300,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://zksync-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+          "https://zksync-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
         litChainKey: "zksync-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/zksync-sepolia/version/latest",
@@ -5484,7 +5214,7 @@ const deployedContracts = {
         chainId: 300,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://zksync-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
+          "https://zksync-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
         litChainKey: "zksync-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/zksync-sepolia/version/latest",
