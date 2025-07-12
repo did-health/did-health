@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { ethers, JsonRpcProvider } from 'ethers'
 import deployedContracts from '../generated/deployedContracts'
 import { getRpcUrl } from '../lib/getChains'
+import { resolveDidHealthBtc } from '../lib/resolveDidHealthBtc'
 import didLogo from '../assets/did-health.png'
 import FHIRResource from '../components/fhir/FHIRResourceView'
 
@@ -19,8 +20,25 @@ interface DIDDocument {
 export function parseDidHealth(did: string): { chainId: number; lookupKey: string } {
   const parts = did.trim().split(':')
   if (parts.length !== 4 || parts[0] !== 'did' || parts[1] !== 'health') {
-    throw new Error('❌ Invalid DID format. Use: did:health:<chainId>:<name>')
+    throw new Error('❌ Invalid DID format. Use: did:health:<chainId>:<name> or did:health:btc:<wallet>')
   }
+  
+  if (parts[2] === 'btc') {
+    // Validate BTC wallet address format
+    const wallet = parts[3]
+    if (!wallet) {
+      throw new Error('❌ Invalid BTC wallet address')
+    }
+    // Basic BTC address format validation
+    if (!/^([13bc][a-km-zA-HJ-NP-Z1-9]{25,34})$/.test(wallet)) {
+      throw new Error('❌ Invalid BTC wallet address format')
+    }
+    return {
+      chainId: 0, // Special case for BTC
+      lookupKey: wallet
+    }
+  }
+  
   const chainId = parseInt(parts[2], 10)
   if (isNaN(chainId)) throw new Error(`❌ Invalid chain ID: ${parts[2]}`)
   return {
@@ -64,6 +82,23 @@ export default function DIDResolver() {
 
     try {
       const { chainId, lookupKey } = parseDidHealth(input)
+      
+      if (chainId === 0) { // BTC case
+        const btcDoc = await resolveDidHealthBtc(input)
+        const doc: DIDDocument = {
+          owner: '', // BTC doesn't have an owner address
+          healthDid: input,
+          ipfsUri: btcDoc.ipfsUri,
+          altIpfsUris: [],
+          hasWorldId: false,
+          hasPolygonId: false,
+          hasSocialId: false,
+          reputationScore: 0,
+        }
+        setResult(doc)
+        return
+      }
+
       const env = 'testnet'
       const registryEntry = Object.values(deployedContracts[env]).find(
         (net: any) => net.HealthDIDRegistry?.chainId === chainId
@@ -136,7 +171,7 @@ export default function DIDResolver() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           className="w-full border border-gray-300 rounded px-3 py-2"
-          placeholder="did:health:<chainId>:<name>"
+          placeholder="did:health:<chainId>:<name> or did:health:btc:<wallet>"
         />
         <button
           onClick={resolveDID}
