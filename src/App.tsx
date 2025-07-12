@@ -38,7 +38,7 @@ function App() {
           </XmtpProvider>
         } />
         <Route path="/ethereum/did" element={<ResolveDIDETH />} />
-        <Route path="/ethereum/did/alt" element={<AltFHIRData />} />
+        <Route path="/did/alt" element={<AltFHIRData />} />
         <Route path="/ethereum/did/update" element={<UpdateDIDUri />} />
         <Route path="/btc/did/update" element={<UpdateDidBTC />} />
         <Route path="/btc/did" element={<ResolveDIDBTC />} /> 
