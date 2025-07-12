@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useOnboardingState } from '../../store/OnboardingState'
 import { encryptFHIRFile } from '../../lib/litEncryptFile'
 import { storeEncryptedFileByHash, storePlainFHIRFile } from '../../lib/storeFIleWeb3'
+import '../../types/unisat'
 
 export default function RegisterDIDBTC() {
   const {
@@ -179,48 +180,113 @@ export default function RegisterDIDBTC() {
           </div>
         </div>
       )}
-      <h1 className="text-2xl font-bold">🪙 Register Your <code>did:health:btc</code></h1>
+      <h1 className="text-2xl font-bold"> Register Your <code>did:health:btc</code></h1>
 
+      {walletAddress && (
+        <div className="border border-yellow-300 bg-yellow-50 p-4 rounded space-y-2">
+          <p className="font-semibold text-yellow-800"> One-Time Registration Fee</p>
+          <p className="text-sm text-yellow-700">
+            Please send <strong>{feeAmountSats.toLocaleString()} sats</strong> (~{estimatedUsd}) to the address below:
+          </p>
+          <div className="flex flex-col gap-2">
+            <code className="block p-2 text-xs bg-white border border-yellow-200 rounded break-all">
+              {feeAddress}
+            </code>
+            <button
+              onClick={async () => {
+                try {
+                  if (!window.unisat) {
+                    throw new Error('UniSat wallet is not available');
+                  }
 
+                  // First request accounts to ensure wallet is properly connected
+                  const accounts = await window.unisat.requestAccounts();
+                  if (!accounts || accounts.length === 0) {
+                    throw new Error('No accounts found');
+                  }
 
-      <div className="border border-yellow-300 bg-yellow-50 p-4 rounded space-y-2">
-        <p className="font-semibold text-yellow-800">💸 One-Time Registration Fee</p>
-        <p className="text-sm text-yellow-700">
-          Please send <strong>{feeAmountSats.toLocaleString()} sats</strong> (~{estimatedUsd}) to the address below before proceeding:
-        </p>
-        <code className="block p-2 text-xs bg-white border border-yellow-200 rounded break-all">
-          {feeAddress}
-        </code>
-        <p className="text-xs text-yellow-600">
-          This fee supports decentralized health identity infrastructure. You may continue registration after sending the payment.
-        </p>
-      </div>
+                  // Log the wallet instance and its methods
+                  console.log('UniSat wallet instance:', window.unisat);
+                  console.log('Available wallet methods:', Object.keys(window.unisat));
 
-      <div className="flex justify-end">
-        <button
-          onClick={handleRegister}
-          className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!fhirResource || !walletAddress}
-        >
-          Register DID:health:btc
-        </button>
+                  // Display transaction details before sending
+                  setStatus(`
+                    💰 Transaction Details:
+                    Amount: ${feeAmountSats.toLocaleString()} sats ($10.00)
+                    Recipient: ${feeAddress}
+                    Please confirm in your UniSat wallet...
+                  `);
+
+                  // Now try to send the transaction using the correct UniSat API method (sendBitcoin)
+                  const tx = await window.unisat.sendBitcoin(feeAddress, feeAmountSats, 'sat');
+
+                  setStatus(`✅ Payment sent successfully! Transaction ID: ${tx.txid}`);
+                } catch (err: any) {
+                  console.error('Payment error:', err);
+                  setStatus(`❌ Payment failed: ${err.message || 'Unknown error'}`);
+                }
+              }}
+              className="btn btn-primary w-full"
+            >
+              Send Payment via UniSat
+            </button>
+          </div>
+          <p className="text-xs text-yellow-600">
+            This fee supports decentralized health identity infrastructure. After payment, you can continue with registration.
+          </p>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-2">
+        {didUri && walletAddress && (
+          <button
+            onClick={handleRegister}
+            className="btn btn-primary"
+          >
+            Register DID
+          </button>
+        )}
+        {!didUri || !walletAddress && (
+          <button
+            disabled
+            className="btn btn-disabled"
+          >
+            Preparing...
+          </button>
+        )}
       </div>
 
       {didUri && (
         <div className="mt-6 border border-green-300 bg-green-50 p-4 rounded text-sm">
-          <p className="font-medium text-green-800">✅ Your DID Document is live at:</p>
+          <p className="font-medium text-green-800"> Your DID Document is live at:</p>
           <div className="flex items-center gap-2 mt-2">
             <code className="block break-all text-xs">{didUri}</code>
             <button
               onClick={() => navigator.clipboard.writeText(didUri)}
               className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 transition-colors"
-              title="Copy URL"
+              title="Copy DID URI"
             >
-              📋 Copy
+              Copy
             </button>
           </div>
           <p className="mt-2 text-green-700">
-            Please inscribe this <code>ipfs://</code> URI on Bitcoin via <a className="text-blue-700 underline" target="_blank" href={`https://unisat.io/inscribe?tab=text&text=${encodeURIComponent(didUri)}`}>Unisat</a> or your preferred Ordinals wallet.
+            Please inscribe this <code>ipfs://</code> URI on Bitcoin via:
+            <div className="flex gap-2 mt-2">
+              <a 
+                className="text-blue-700 underline hover:text-blue-800"
+                target="_blank" 
+                href={`https://unisat.io/inscribe?tab=text&text=${encodeURIComponent(didUri)}`}
+              >
+                Unisat
+              </a>
+              <a 
+                className="text-blue-700 underline hover:text-blue-800"
+                target="_blank" 
+                href="https://ordinals.com/inscribe"
+              >
+                Ordinals.com
+              </a>
+            </div>
           </p>
         </div>
       )}
