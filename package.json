@@ -67,6 +67,7 @@
     "zustand": "^5.0.5"
   },
   "devDependencies": {
+    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@rollup/plugin-inject": "^5.0.5",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/container-queries": "^0.1.1",
@@ -88,6 +89,7 @@
     "terser": "^5.43.0",
     "typescript": "^5.2.2",
     "vite": "^5.4.19",
+    "vite-plugin-node-polyfills": "^0.24.0",
     "vite-plugin-top-level-await": "^1.5.0",
     "vite-plugin-wasm": "^3.4.1"
   }
