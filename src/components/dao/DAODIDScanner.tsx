@@ -55,7 +55,7 @@ export function DidHealthQRScanner() {
         setDidDoc(doc)
 
         const fhirEndpoint = doc?.service?.find(
-          (s: any) => s.type === 'FHIRResource' || s.id?.includes('#fhir')
+          (s: any) => s.id?.includes('#fhir')
         )?.serviceEndpoint
 
         if (!fhirEndpoint) throw new Error(t('scanner.noEndpoint'))

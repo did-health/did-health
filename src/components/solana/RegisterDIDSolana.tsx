@@ -61,7 +61,7 @@ export function RegisterDIDSolana() {
         service: [
           {
             id: `${newDid}#fhir`,
-            type: 'FHIRResource',
+            type: resourceType,
             serviceEndpoint: fhirUri,
           },
         ],

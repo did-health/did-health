@@ -63,7 +63,7 @@ export default function RegisterDIDBTC() {
         service: [
           {
             id: `${did}#fhir`,
-            type: 'FHIRResource',
+            type: resourceType,
             serviceEndpoint: fhirUri,
           },
         ],

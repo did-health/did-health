@@ -48,7 +48,7 @@ export default function OnboardingDAO() {
 
       setDid(doc.id)
       const fhirService = doc?.service?.find(
-        (s: any) => s.type === 'FHIRResource' || s.id?.includes('#fhir')
+        (s: any) => s.id?.includes('#fhir')
       )
       if (!fhirService?.serviceEndpoint) throw new Error('❌ No FHIR endpoint in DID document')
 

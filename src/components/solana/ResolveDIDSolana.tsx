@@ -26,7 +26,7 @@ export default function ResolveDIDSolana() {
         setQrCode(qr ?? '')
 
         const fhirService = resolved?.service?.find(
-          (s: any) => s.type === 'FHIRResource' || s.id?.includes('#fhir') || s.type === 'IPFS'
+          (s: any) =>s.id?.includes('#fhir') || s.type === 'IPFS'
         )
 
         if (!fhirService?.serviceEndpoint) {

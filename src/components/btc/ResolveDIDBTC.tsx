@@ -127,7 +127,7 @@ export default function ResolveDIDBitcoin() {
             if (qr) setQrCode(qr)
 
             const fhirEndpoint = didDocJson?.service?.find((s: DIDService) =>
-              s.type === 'FHIRResource' || s.id?.includes('#fhir')
+              s.id?.includes('#fhir')
             )?.serviceEndpoint
 
             if (!fhirEndpoint) {

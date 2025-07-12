@@ -57,7 +57,7 @@ export default function UpdateDidBTC() {
           if (json?.id === did) {
             setDidDoc(json)
 
-            const fhirEndpoint = json.service?.find((s: any) => s.type === 'FHIRResource')?.serviceEndpoint
+            const fhirEndpoint = json.service?.find((s: any) => s.id?.includes('#fhir'))?.serviceEndpoint
 
             if (!fhirEndpoint) throw new Error('❌ No FHIR endpoint in DID document.')
 
@@ -130,7 +130,7 @@ export default function UpdateDidBTC() {
         service: [
           {
             id: `${did}#fhir`,
-            type: 'FHIRResource',
+            type: resourceType,
             serviceEndpoint: fhirUri,
           },
         ],

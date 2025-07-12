@@ -51,7 +51,7 @@ export default function ResolveDIDCosmos() {
       setQrCode(qr ?? '')
 
       const fhirService = doc?.service?.find(
-        (s: any) => s.type === 'FHIRResource' || s.id?.includes('#fhir')
+        (s: any) => s.id?.includes('#fhir')
       )
       if (!fhirService?.serviceEndpoint) {
         throw new Error('❌ No FHIR resource endpoint found in DID Document')
