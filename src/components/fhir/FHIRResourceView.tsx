@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import _get from 'lodash/get';
+import { useTranslation } from 'react-i18next';
 import {
   formatLabel,
   loadExtensionStructureDefinition,
@@ -12,9 +13,10 @@ import type { StructureDefinitionMap } from '../../types/fhir/StructureDefintion
 import type { StructureDefinition } from 'fhir/r4';
 
 const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences }) => {
+  const { t } = useTranslation(['translation', 'fhir']);
   const [structureDefs, setStructureDefs] = useState<StructureDefinitionMap>({});
   const [mainStructureDef, setMainStructureDef] = useState<StructureDefinition | null>(null);
-  const resourceType = resource?.resourceType || (resource && typeof resource === 'object' && Object.keys(resource).length > 0 ? 'Unknown' : 'Empty');
+  const resourceType = resource?.resourceType || 'Unknown';
 
   useEffect(() => {
     const fetchStructureDefs = async () => {
@@ -75,7 +77,6 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
     return value !== undefined && value !== null && !(Array.isArray(value) && value.length === 0);
   });
 
-  // Tailwind styled helper to render photo attachments
   const renderPhotoAttachment = (attachmentOrArray: any) => {
     if (Array.isArray(attachmentOrArray)) {
       return (
@@ -118,10 +119,10 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
         <thead className="bg-gray-100">
           <tr>
             <th className="px-6 py-3 text-left font-semibold text-gray-700 tracking-wide uppercase">
-              Field
+              {t('Field')}
             </th>
             <th className="px-6 py-3 text-left font-semibold text-gray-700 tracking-wide uppercase">
-              Value
+              {t('Value')}
             </th>
           </tr>
         </thead>
@@ -134,7 +135,13 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
             const value = _get(resource, relativePath);
             const typeUrl = el.type?.[0]?.profile?.[0] || el.type?.[0]?.code;
 
-            // Detect photo attachments (single or array)
+            if (path === 'subject' || path === 'encounter') return null;
+
+            const translationPath = `${resourceType}.${el.path}`;
+            const label = t(`fhir:${translationPath}.label`, formatLabel(path));
+            const short = t(`fhir:${translationPath}.short`, '');
+            const definition = t(`fhir:${translationPath}.definition`, '');
+
             const isPhotoAttachment =
               (Array.isArray(value) &&
                 value.every(
@@ -143,15 +150,12 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
                 )) ||
               (value?.contentType?.startsWith('image/') && typeof value?.data === 'string');
 
-            if (path === 'subject' || path === 'encounter') return null;
-
             return (
-              <tr
-                key={idx}
-                className="hover:bg-gray-50 transition-colors duration-200 cursor-default"
-              >
+              <tr key={idx} className="hover:bg-gray-50 transition-colors duration-200 cursor-default">
                 <td className="px-6 py-4 font-medium text-gray-800 align-top w-48 whitespace-nowrap">
-                  {formatLabel(path)}
+                  <span title={short || definition} className="underline decoration-dotted cursor-help">
+                    {label}
+                  </span>
                 </td>
                 <td className="px-6 py-4 text-gray-700 align-top max-w-3xl break-words">
                   {isPhotoAttachment
