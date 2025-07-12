@@ -5,6 +5,8 @@ import { generateQRCode } from '../../lib/QRCodeGeneration'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
 import { useOnboardingState } from '../../store/OnboardingState'
 import FHIRResource from '../fhir/FHIRResourceView'
+import logo from '../../assets/did-health.png'
+import btcLogo from '../../assets/bitcoin-btc-logo.svg'
 
 interface FHIRResource {
   accessControlConditions?: any
@@ -178,8 +180,21 @@ export default function ResolveDIDBitcoin() {
 
   return (
     <main className="p-6 space-y-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold">🔎 Resolve Your <code>did:health</code> on Bitcoin</h1>
-
+<div className="flex flex-col items-center mb-6">
+        <div className="w-32 h-32 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
+          <img src={logo} alt="DID Health Logo" className="w-full h-full object-contain" />
+        </div>
+        {didDoc?.id && (
+          <div className="mt-4">
+            <a href={`/btc/did/update?did=${didDoc.id}`} className="btn-primary w-full">
+              🔄 Update Your did:health
+            </a>
+          </div>
+        )}
+        <h1 className="text-2xl font-bold mt-4 text-center">
+          🔎 View Your <span className="text-green-600 dark:text-green-400">did:health</span> Identifier
+        </h1>
+      </div>
       <ConnectWalletBTC />
       <ConnectLit />
 
