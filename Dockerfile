@@ -19,7 +19,7 @@ COPY package.json yarn.lock ./
 RUN yarn install
 # Copy source and build
 COPY . .
-RUN NODE_OPTIONS="--max-old-space-size=4096" yarn build
+RUN NODE_OPTIONS="--max-old-space-size=8192" yarn build
 
 # Stage 2: Serve with nginx
 FROM nginx:1.25-alpine
