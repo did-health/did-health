@@ -4,6 +4,24 @@ import { ConnectLit } from '../lit/ConnectLit'
 import { generateQRCode } from '../../lib/QRCodeGeneration'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
 import { useOnboardingState } from '../../store/OnboardingState'
+import FHIRResource from '../fhir/FHIRResourceView'
+
+interface FHIRResource {
+  accessControlConditions?: any
+  [key: string]: any
+}
+
+interface DIDService {
+  type: string
+  serviceEndpoint: string
+  id?: string
+}
+
+interface DIDDocument {
+  id: string
+  service: DIDService[]
+  [key: string]: any
+}
 
 export default function ResolveDIDBitcoin() {
   const { walletAddress, litClient } = useOnboardingState()
@@ -12,6 +30,7 @@ export default function ResolveDIDBitcoin() {
   const [qrCode, setQrCode] = useState<string>('')
   const [fhir, setFhir] = useState<any | null>(null)
   const [resolvedUri, setResolvedUri] = useState<string | null>(null)
+ 
 
   const btcDid = walletAddress ? `did:health:btc:${walletAddress}` : null
 
@@ -27,45 +46,85 @@ export default function ResolveDIDBitcoin() {
         }
 
         setStatus(`🔍 Searching inscriptions for ${suffix}...`)
-        const res = await fetch(`https://open-api.unisat.io/v1/indexer/address/${suffix}/inscriptions`)
-        if (!res.ok) throw new Error(`Failed to fetch inscriptions for ${suffix}`)
+        
+        const apiKey = import.meta.env.VITE_UNISAT_KEY
+        if (!apiKey) {
+          setStatus('❌ Missing Unisat API key')
+          return
+        }
 
-        const data = await res.json()
-        const inscriptions = data?.data?.list ?? []
+        const res = await fetch(`https://open-api.unisat.io/v1/indexer/address/${suffix}/inscription-data`, {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`
+          }
+        })
+
+        if (!res.ok) {
+          const errorText = await res.text()
+          throw new Error(`API Error ${res.status}: ${errorText}`)
+        }
+
+        const apiResponse = await res.json()
+        console.log('API Response:', apiResponse)
+        if (!apiResponse || !apiResponse.data || !apiResponse.data.inscription) {
+          throw new Error('Invalid API response format')
+        }
+
+        const inscriptions = apiResponse.data.inscription
+        console.log('Found inscriptions:', inscriptions)
 
         for (const ins of inscriptions) {
+          console.log('Processing inscription:', ins)
           try {
             const inscriptionId = ins.inscriptionId
-            const contentRes = await fetch(`https://ordinals.com/content/${inscriptionId}`)
+            console.log('Inscription ID:', inscriptionId)
+            const contentRes = await fetch(`https://open-api.unisat.io/v1/indexer/inscription/content/${inscriptionId}`, {
+              headers: {
+                'Authorization': `Bearer ${apiKey}`
+              }
+            })
+            console.log('Content Response:', contentRes)
             if (!contentRes.ok) continue
 
             const text = await contentRes.text()
+            console.log('Content Text:', text)
             let parsed: { did: string; ipfsUri: string }
 
             try {
               parsed = JSON.parse(text.trim())
+              console.log('Parsed JSON:', JSON.stringify(parsed))
             } catch {
               continue // Not valid JSON, skip
             }
 
-            if (parsed?.did !== did || !parsed?.ipfsUri?.startsWith('ipfs://')) continue
+            if (parsed?.did !== did) continue
+            
+            // Handle both ipfs:// and https://w3s.link/ipfs/ formats
+            let normalizedIpfsUri = parsed.ipfsUri
+            if (normalizedIpfsUri.startsWith('https://w3s.link/ipfs/')) {
+              normalizedIpfsUri = normalizedIpfsUri.replace('https://w3s.link/ipfs/', 'ipfs://')
+            } else if (!normalizedIpfsUri.startsWith('ipfs://')) {
+              continue
+            }
 
-            const ipfsUri = parsed.ipfsUri
-            const docUrl = ipfsUri.replace('ipfs://', 'https://w3s.link/ipfs/')
+            const docUrl = normalizedIpfsUri.replace('ipfs://', 'https://w3s.link/ipfs/')
             const docRes = await fetch(docUrl)
-            if (!docRes.ok) continue
+            if (!docRes.ok) {
+              const errorText = await docRes.text()
+              throw new Error(`Failed to fetch DID document: ${errorText}`)
+            }
 
-            const didDocJson = await docRes.json()
+            const didDocJson = await docRes.json() as DIDDocument
             if (didDocJson?.id !== did) continue
 
             setDidDoc(didDocJson)
-            setResolvedUri(ipfsUri)
+            setResolvedUri(normalizedIpfsUri)
             setStatus('✅ DID Document resolved!')
 
             const qr = await generateQRCode(JSON.stringify(didDocJson))
             if (qr) setQrCode(qr)
 
-            const fhirEndpoint = didDocJson?.service?.find((s: any) =>
+            const fhirEndpoint = didDocJson?.service?.find((s: DIDService) =>
               s.type === 'FHIRResource' || s.id?.includes('#fhir')
             )?.serviceEndpoint
 
@@ -76,11 +135,13 @@ export default function ResolveDIDBitcoin() {
 
             const cleanUrl = fhirEndpoint.replace('ipfs://', 'https://w3s.link/ipfs/')
             setStatus(`📦 Fetching FHIR resource from ${fhirEndpoint}...`)
-            const fhirRes = await fetch(cleanUrl)
-
-            if (fhirRes.ok) {
-              const fhirJson = await fhirRes.json()
-
+            try {
+              const fhirRes = await fetch(cleanUrl)
+              if (!fhirRes.ok) {
+                const errorText = await fhirRes.text()
+                throw new Error(`Failed to fetch FHIR resource: ${errorText}`)
+              }
+              const fhirJson = await fhirRes.json() as FHIRResource
               if (fhirJson?.accessControlConditions && litClient) {
                 setStatus('🔐 Decrypting FHIR resource with Lit...')
                 try {
@@ -95,10 +156,10 @@ export default function ResolveDIDBitcoin() {
                 setFhir(fhirJson)
                 setStatus('✅ Plaintext FHIR resource loaded!')
               }
-            } else {
+            } catch (err) {
+              console.error('❌ Error fetching FHIR resource:', err)
               setStatus('⚠️ Failed to fetch FHIR resource from IPFS')
             }
-
             return
           } catch (err) {
             console.warn('⚠️ Skipping invalid inscription', err)
@@ -148,13 +209,34 @@ export default function ResolveDIDBitcoin() {
             <h2 className="text-lg font-semibold mb-2">DID Document</h2>
             <pre>{JSON.stringify(didDoc, null, 2)}</pre>
           </div>
+
+          {fhir && (
+            <>
+              <div className="bg-green-50 border border-green-200 p-4 rounded mt-6 text-sm">
+                <h2 className="text-lg font-semibold mb-2">FHIR Resource</h2>
+                <FHIRResource resource={fhir} />
+              </div>
+
+              <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[600px]">
+                <h2 className="text-lg font-semibold mb-2">Raw FHIR Data</h2>
+                <pre className="mt-4 bg-white p-2 rounded text-xs overflow-x-auto">
+                  <code>{JSON.stringify(fhir, null, 2)}</code>
+                </pre>
+              </div>
+            </>
+          )}
         </>
       )}
 
-      {fhir && (
-        <div className="bg-green-50 border border-green-200 p-4 rounded mt-6 text-sm overflow-auto max-h-[400px]">
-          <h2 className="text-lg font-semibold mb-2">FHIR Resource</h2>
-          <pre>{JSON.stringify(fhir, null, 2)}</pre>
+      {!didDoc?.id && walletAddress && (
+        <div className="mt-6 text-center">
+          <p className="text-gray-600 mb-4">No DID found for your Bitcoin address. Ready to create one?</p>
+          <a
+            href="/register-bitcoin"
+            className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            📝 Register DID:health
+          </a>
         </div>
       )}
     </main>
