@@ -18,11 +18,21 @@ export default defineConfig({
 
   plugins: [
     react(),
-    wasm(),              // ✅ for .wasm files
-    topLevelAwait(),     // ✅ for top-level await in modules
+    wasm({
+      // Configure WebAssembly for IPFS
+      importObject: {
+        env: {
+          TYPED_ARRAY_SUPPORT: true,
+        },
+      },
+      // Explicitly handle .wasm files
+      include: ['**/*.wasm'],
+      exclude: ['node_modules/**/*.wasm'],
+    }),
+    topLevelAwait(),
   ],
 
-  base: './',
+  base: '',  // Use empty base for IPFS deployment
 
   resolve: {
     alias: {
@@ -33,8 +43,8 @@ export default defineConfig({
   },
 
   optimizeDeps: {
-    include: ['buffer', 'process', '@xmtp/proto'],
-    exclude: ['@xmtp/wasm-bindings', '@xmtp/browser-sdk'],
+    include: ['buffer', 'process', '@xmtp/proto', '@lit-protocol/encryption'],
+    exclude: ['@xmtp/wasm-bindings', '@xmtp/browser-sdk', '@lit-protocol/lit-node-client'],
   },
 
   build: {
@@ -55,6 +65,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
     strictPort: true,
+
 
   },
 });
