@@ -19,6 +19,7 @@ COPY package.json yarn.lock ./
 RUN yarn install
 # Copy source and build
 COPY . .
+ENV GENERATE_SOURCEMAP=false
 RUN NODE_OPTIONS="--max-old-space-size=8192" yarn build
 
 # Stage 2: Serve with nginx

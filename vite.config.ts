@@ -14,6 +14,7 @@ export default defineConfig({
   define: {
     global: 'globalThis',
     'process.env': {}, // legacy support
+    'process.env.TYPED_ARRAY_SUPPORT': JSON.stringify(true),
   },
 
   plugins: [
@@ -44,7 +45,7 @@ export default defineConfig({
 
   optimizeDeps: {
     include: ['buffer', 'process', '@xmtp/proto', '@lit-protocol/encryption'],
-    exclude: ['@xmtp/wasm-bindings', '@xmtp/browser-sdk', '@lit-protocol/lit-node-client'],
+    exclude: ['@xmtp/wasm-bindings', '@xmtp/browser-sdk'],
   },
 
   build: {
