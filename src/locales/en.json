@@ -1,0 +1,70 @@
+{
+  "didHealthOnboarding": "did:health Onboarding",
+  "didHealthCosmosOnboarding": "did:health Cosmos Onboarding",
+  "didHealthBTCOnboarding": "did:health Bitcoin Onboarding",
+  "didHealthETHOnboarding": "did:health Ethereum Onboarding",
+  "didHealthSolanaOnboarding": "did:health Solana Onboarding",
+  "onboardingInstructions": "Follow the steps below to create your decentralized health identity.",
+  "connectWallet": "Connect Wallet",
+  "connectLit": "Connect to Lit Protocol",
+"setupStorage": {
+   "title": "Set up your health data storage on Web3.Storage",
+    "input": {
+      "placeholder": "Enter your email address",
+      "ariaLabel": "Email address"
+    },
+    "button": {
+      "verifyAndSetup": "Verify and Setup"
+    },
+    "status": {
+      "invalidEmail": "Please enter a valid email address",
+      "emailSent": "Verification email sent! Please check your inbox and confirm to continue.",
+      "spaceReady": "Your Web3.Storage space is ready (DID: {{did}})",
+      "alreadySetup": "Web3.Storage already set up (DID: {{did}})",
+      "error": "Error setting up Web3.Storage space. Please try again."
+    }
+  },
+  "createFHIR": "Create FHIR Resource",
+  "fhirCreated": "FHIR Record Created",
+  "created": "Successfully created:",
+  "chooseDID": "Choose DID Name",
+  "registerDID": "Register DID to Blockchain",
+  "setAccessControl": "Set Access Control",
+  "onboarding": {
+    "connectWalletDescription": "To begin, please connect a crypto wallet to your identity.",
+    "openInMetaMask": "Open in MetaMask"
+  },
+   "selectBlockchain": {
+    "title": "Create Your did:health",
+    "subtitle": "Step 1: Choose a Blockchain",
+    "lookupDid": "Look up did:health",
+    "lookupDidDescription": "Find your existing did:health identifier",
+    "checkDid": "Already registered? Click here to view your DID.",
+    "moreAnswers": "Need more answers? Click here"
+  },
+  "blockchain": {
+    "ethereum": {
+      "name": "Ethereum",
+      "description": "Use Ethereum or L2s like Base, Arbitrum, and Optimism"
+    },
+    "bitcoin": {
+      "name": "Bitcoin",
+      "description": "Coming Soon: Register your DID using Bitcoin and Ordinals"
+    },
+    "solana": {
+      "name": "Solana",
+      "description": "Coming Soon: Create a DID on the fast and scalable Solana blockchain"
+    },
+    "cosmos": {
+      "name": "Cosmos",
+      "description": "Coming Soon: Use Cosmos chains like Osmosis, Juno, or Stargaze"
+    }
+  },
+
+  "didHealth": {
+    "title": "What is a did:health?",
+    "subtitle": "A did:health is a self-owned digital ID that links to your health data. It powers secure, decentralized health applications—like direct messaging and provider discovery—by identifying patients, practitioners, organizations, and devices in a trusted ecosystem."
+  }
+
+
+}

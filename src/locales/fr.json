@@ -1,0 +1,62 @@
+{
+  "didHealthOnboarding": "Intégration did:health",
+  "onboardingInstructions": "Suivez les étapes ci-dessous pour créer votre identité de santé décentralisée.",
+  "connectWallet": "Connecter le Portefeuille",
+  "connectLit": "Se Connecter au Protocole Lit",
+"setupStorage": {
+   "title": "Configurez le stockage de vos données de santé sur Web3.Storage",
+    "input": {
+      "placeholder": "Entrez votre adresse e-mail",
+      "ariaLabel": "Adresse e-mail"
+    },
+    "button": {
+      "verifyAndSetup": "Vérifier et configurer"
+    },
+    "status": {
+      "invalidEmail": "❌ Veuillez entrer une adresse e-mail valide",
+      "emailSent": "📧 E-mail de vérification envoyé. Veuillez vérifier votre boîte de réception et confirmer pour continuer.",
+      "spaceReady": "✅ Votre espace Web3.Storage est prêt (DID : {{did}})",
+      "alreadySetup": "✅ Web3.Storage est déjà configuré (DID : {{did}})",
+      "error": "❌ Erreur lors de la configuration de Web3.Storage. Veuillez réessayer."
+    }
+  },
+  "createFHIR": "Créer une Ressource FHIR",
+  "fhirCreated": "Enregistrement FHIR Créé",
+  "created": "Créé avec succès :",
+  "chooseDID": "Choisir un Nom DID",
+  "registerDID": "Enregistrer le DID sur la Blockchain",
+  "onboarding": {
+    "connectWalletDescription": "Pour commencer, connectez un portefeuille crypto à votre identité."
+  },
+  
+  "selectBlockchain": {
+    "title": "Choisissez Votre Blockchain",
+    "subtitle": "pour Créer votre did:health",
+    "lookupDid": "Rechercher did:health",
+"lookupDidDescription": "Trouvez votre identifiant did:health existant",
+    "checkDid": "Vérifier le DID",
+     "moreAnswers": "Besoin de plus de réponses ? Cliquez ici"
+  },
+      "didHealth": {
+    "title": "Qu'est-ce qu'un did:health ?",
+    "subtitle": "Un did:health est une identité numérique auto-détenue liée à vos données de santé. Il permet des applications de santé sécurisées et décentralisées, comme la messagerie directe et la découverte de prestataires, en identifiant de manière fiable les patients, professionnels, organisations et dispositifs."
+  },
+  "blockchain": {
+    "ethereum": {
+      "name": "Ethereum",
+      "description": "Utilisez Ethereum ou des L2 comme Base, Arbitrum et Optimism"
+    },
+    "bitcoin": {
+      "name": "Bitcoin",
+      "description": "Bientôt disponible : Enregistrez votre DID avec Bitcoin et Ordinals"
+    },
+    "solana": {
+      "name": "Solana",
+      "description": "Bientôt disponible : Créez un DID sur la blockchain rapide et évolutive Solana"
+    },
+    "cosmos": {
+      "name": "Cosmos",
+      "description": "Bientôt disponible : Utilisez les chaînes Cosmos comme Osmosis, Juno ou Stargaze"
+    }
+  }
+}

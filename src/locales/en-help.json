@@ -1,0 +1,46 @@
+{
+    "helpCenterTitle": "More Answers",
+  "topics": [
+    {
+      "id": "what-is-did-health",
+      "title": "What is did:health?",
+      "content": "did:health is a decentralized identifier (DID) method designed for healthcare data. It enables secure, interoperable, and user-controlled identity across Web3 ecosystems."
+    },
+    {
+  "id": "did-health-uses",
+  "title": "What can I do with my did:health?",
+  "content": "Your did:health is a decentralized health identifier that links to your encrypted medical records stored on Web3. You can use it to: (1) securely share health data with doctors or organizations, (2) prove your identity as a patient, practitioner, or organization, (3) access your health records from any supported dApp, and (4) participate in health data DAOs where access is controlled by your DID. You are in control of who can view your data."
+},
+
+    {
+      "id": "how-to-register",
+      "title": "How do I register for did:health?",
+      "content": "You can register a did:health by completing the onboarding flow. Go to the [onboarding page](/onboarding) and follow the instructions to connect your wallet, create a DID document, and register it on-chain."
+    },
+    {
+      "id": "supported-blockchains",
+      "title": "Which blockchains support did:health?",
+    "content": "Currently, did:health is supported on [Ethereum (Base Sepolia)](https://sepolia.etherscan.io/), [Solana](https://solana.com/), [Cosmos (dhealth chain)](https://www.mintscan.io/), and [Bitcoin via Ordinals (read-only)](https://ordinals.com/)."
+},
+{
+  "id": "wallet-support",
+  "title": "What wallets are supported?",
+  "content": "The app supports [MetaMask](https://metamask.io/) and [RainbowKit](https://www.rainbowkit.com/) for Ethereum, [Phantom](https://phantom.app/) for Solana, and [Keplr](https://www.keplr.app/) for Cosmos. Each wallet must be connected via the appropriate page to interact with the blockchain."
+},
+{
+  "id": "what-is-fhir",
+  "title": "What is FHIR?",
+  "content": "FHIR (Fast Healthcare Interoperability Resources) is a healthcare data standard developed by HL7. It defines how healthcare information can be exchanged between systems regardless of how it is stored. FHIR is used by hospitals, clinics, and apps around the world to represent things like patient records, medications, allergies, lab results, and more. Learn more at [hl7.org/fhir](https://hl7.org/fhir/)."
+},
+    {
+      "id": "lit-protocol",
+      "title": "What is Lit Protocol?",
+      "content": "Lit Protocol provides decentralized encryption and access control for files. We use it to encrypt FHIR health data. Learn more on the [Lit Protocol page](https://developer.litprotocol.com/resources/how-it-works)."
+    },
+    {
+      "id": "web3-storage",
+      "title": "What is Web3.Storage?",
+      "content": "Web3.Storage allows you to store encrypted files on IPFS. In did:health, we use it to store FHIR records linked to your DID. You can manage them via the [Web 3 Storage App](https://web3.storage/)"
+    }
+  ]
+}
