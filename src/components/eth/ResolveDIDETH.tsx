@@ -183,7 +183,7 @@ export default function ResolveDIDETH() {
             onClick={() => (window.location.href = '/')}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
           >
-            {t('didHealth.createDID')}
+            {t('createDID')}
           </button>
         </div>
       )}
@@ -192,9 +192,9 @@ export default function ResolveDIDETH() {
         <>
           <div className="flex items-center gap-4 mt-4">
             <div className="flex-1">
-              <p className="font-semibold">{t('didHealth.resolvedDID')}</p>
+              <p className="font-semibold">{t('resolvedDID')}</p>
               <code className="block p-2 bg-gray-100 rounded whitespace-pre-wrap break-all max-w-full">{didDoc.id}</code>
-              <p className="text-sm text-gray-500 mt-1">🧠 {t('didHealth.foundOn')}: {resolvedChainName}</p>
+              <p className="text-sm text-gray-500 mt-1">🧠 {t('foundOn')}: {resolvedChainName}</p>
             </div>
             <button 
               onClick={() => copyToClipboard(didDoc.id)}
@@ -217,12 +217,12 @@ export default function ResolveDIDETH() {
           <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[400px]">
             <h2 className="text-lg font-semibold mb-4">📄 {t('resolvedDID')}</h2>
             <div className="grid gap-y-2 text-gray-800">
-              <div><span className="font-medium text-gray-600">{t('didHealth.resolvedDID')}:</span> <code className="bg-white px-2 py-1 rounded">{didDoc.id}</code></div>
-              <div><span className="font-medium text-gray-600">{t('didHealth.walletAddress')}:</span> <code className="bg-white px-2 py-1 rounded">{didDoc.controller}</code></div>
+              <div><span className="font-medium text-gray-600">{t('resolvedDID')}:</span> <code className="bg-white px-2 py-1 rounded">{didDoc.id}</code></div>
+              <div><span className="font-medium text-gray-600">{t('walletAddress')}:</span> <code className="bg-white px-2 py-1 rounded">{didDoc.controller}</code></div>
 
               {didDoc?.service?.length > 0 && (
                 <div>
-                  <span className="font-medium text-gray-600">{t('didHealth.serviceEndpoints')}:</span>
+                  <span className="font-medium text-gray-600">{t('serviceEndpoints')}:</span>
                   <ul className="list-disc list-inside mt-1 ml-2">
                     {didDoc.service.map((svc: any, idx: number) => (
                       <li key={idx}>
@@ -238,7 +238,7 @@ export default function ResolveDIDETH() {
 
               {didDoc.credentials && (
                 <div>
-                  <span className="font-medium text-gray-600">{t('didHealth.credentials')}:</span>
+                  <span className="font-medium text-gray-600">{t('credentials')}:</span>
                   <ul className="list-disc list-inside ml-2 mt-1">
                     {Object.entries(didDoc.credentials).map(([key, val]) => (
                       <li key={key}>
