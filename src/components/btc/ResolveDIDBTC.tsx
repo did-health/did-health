@@ -7,7 +7,7 @@ import { useOnboardingState } from '../../store/OnboardingState'
 import FHIRResource from '../fhir/FHIRResourceView'
 import logo from '../../assets/did-health.png'
 import btcLogo from '../../assets/bitcoin-btc-logo.svg'
-
+import { useTranslation } from 'react-i18next'
 interface FHIRResource {
   accessControlConditions?: any
   [key: string]: any
@@ -33,6 +33,7 @@ export default function ResolveDIDBitcoin() {
   const [fhir, setFhir] = useState<any | null>(null)
   const [resolvedUri, setResolvedUri] = useState<string | null>(null)
  
+  const { t } = useTranslation();
 
   const btcDid = walletAddress ? `did:health:btc:${walletAddress}` : null
 
@@ -145,30 +146,30 @@ export default function ResolveDIDBitcoin() {
               }
               const fhirJson = await fhirRes.json() as FHIRResource
               if (fhirJson?.accessControlConditions && litClient) {
-                setStatus('🔐 Decrypting FHIR resource with Lit...')
+                setStatus('🔐 ' + t('decryptingFHIRResource'))
                 try {
                   const decrypted = await getLitDecryptedFHIR(fhirJson, litClient, { chain: 'bitcoin' })
                   setFhir(decrypted)
-                  setStatus('✅ Decrypted FHIR resource loaded!')
+                  setStatus('✅ ' + t('fhirResourceLoaded'))
                 } catch (err) {
                   console.warn('❌ Failed to decrypt FHIR:', err)
-                  setStatus('❌ Failed to decrypt encrypted FHIR file. Check Lit connection and wallet access.')
+                  setStatus('❌ ' + t('failedToDecryptFHIR'))
                 }
               } else {
                 setFhir(fhirJson)
-                setStatus('✅ Plaintext FHIR resource loaded!')
+                setStatus('✅ ' + t('fhirResourceLoaded'))
               }
             } catch (err) {
               console.error('❌ Error fetching FHIR resource:', err)
-              setStatus('⚠️ Failed to fetch FHIR resource from IPFS')
+              setStatus('⚠️ ' + t('failedToFetchFHIRResource'))
             }
             return
           } catch (err) {
-            console.warn('⚠️ Skipping invalid inscription', err)
+            console.warn('⚠️ ' + t('skippingInvalidInscription'), err)
           }
         }
 
-        setStatus(`❌ DID not found in inscriptions for ${suffix}`)
+        setStatus(`❌ ' + t('didNotFoundInInscriptionsFor') + ${suffix}`)
       } catch (err: any) {
         console.error('❌ Resolution error', err)
         setStatus(err.message ?? '❌ Unknown error during resolution')
@@ -187,12 +188,12 @@ export default function ResolveDIDBitcoin() {
         {didDoc?.id && (
           <div className="mt-4">
             <a href={`/btc/did/update?did=${didDoc.id}`} className="btn-primary w-full">
-              🔄 Update Your did:health
+              🔄 {t('common.update')} {t('Your')}  did:health
             </a>
           </div>
         )}
         <h1 className="text-2xl font-bold mt-4 text-center">
-          🔎 View Your <span className="text-green-600 dark:text-green-400">did:health</span> Identifier
+          🔎 {t('viewYourDID')}<span className="text-green-600 dark:text-green-400">did:health</span> Identifier
         </h1>
       </div>
       <ConnectWalletBTC />
@@ -203,13 +204,13 @@ export default function ResolveDIDBitcoin() {
       {didDoc?.id && (
         <>
           <div className="mt-4">
-            <p className="font-semibold">Resolved DID:</p>
+            <p className="font-semibold">{t('resolvedDID')}:</p>
             <div className="flex items-center gap-2">
               <code className="block p-2 bg-gray-100 rounded whitespace-pre-wrap break-all max-w-full">{didDoc.id}</code>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(didDoc.id)
-                  setStatus('✓ DID copied to clipboard!')
+                  setStatus('✓ ' + t('didCopiedToClipboard'))
                   setTimeout(() => setStatus(''), 2000)
                 }}
                 className="p-1 hover:bg-gray-200 rounded"
@@ -228,25 +229,25 @@ export default function ResolveDIDBitcoin() {
 
           {qrCode && (
             <div className="mt-4">
-              <h2 className="text-lg font-semibold">DID Document QR Code</h2>
+              <h2 className="text-lg font-semibold">did:health QR Code</h2>
               <img src={qrCode} alt="QR Code" width={300} height={300} />
             </div>
           )}
 
           <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[400px]">
-            <h2 className="text-lg font-semibold mb-2">DID Document</h2>
+            <h2 className="text-lg font-semibold mb-2">did:health Document</h2>
             <pre>{JSON.stringify(didDoc, null, 2)}</pre>
           </div>
 
           {fhir && (
             <>
               <div className="bg-green-50 border border-green-200 p-4 rounded mt-6 text-sm">
-                <h2 className="text-lg font-semibold mb-2">FHIR Resource</h2>
+                <h2 className="text-lg font-semibold mb-2">{t('fhirResource')}</h2>
                 <FHIRResource resource={fhir} />
               </div>
 
               <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[600px]">
-                <h2 className="text-lg font-semibold mb-2">Raw FHIR Data</h2>
+                <h2 className="text-lg font-semibold mb-2">{t('rawFhirData')}</h2>
                 <pre className="mt-4 bg-white p-2 rounded text-xs overflow-x-auto">
                   <code>{JSON.stringify(fhir, null, 2)}</code>
                 </pre>
@@ -258,12 +259,12 @@ export default function ResolveDIDBitcoin() {
 
       {!didDoc?.id && walletAddress && (
         <div className="mt-6 text-center">
-          <p className="text-gray-600 mb-4">No DID found for your Bitcoin address. Ready to create one?</p>
+          <p className="text-gray-600 mb-4">{t('noDIDFoundForYourBitcoinAddressReadyToCreateOne')}</p>
           <a
             href="/register-bitcoin"
             className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
           >
-            📝 Register DID:health
+            📝 {t('createDID')}
           </a>
         </div>
       )}

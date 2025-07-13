@@ -7,6 +7,7 @@ import { getLitDecryptedFHIR } from '../lib/litSessionSigs'
 import FHIRResource from '../components/fhir/FHIRResourceView'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import didLogo from '../assets/did-health.png'
+import { useTranslation } from 'react-i18next'
 
 interface DIDDocument {
   id: string
@@ -38,6 +39,7 @@ export default function DIDResolver() {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const { t } = useTranslation();
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -116,7 +118,8 @@ export default function DIDResolver() {
     }
   }
 
-  async function fetchServiceFHIR(services: DIDDocument['service'], chain: string) {
+  async function fetchServiceFHIR(services: DIDDocument['service'] | [], chain: string) {
+    if (!services) return [];
     const results: any[] = []
     for (const s of services) {
       try {
@@ -156,7 +159,7 @@ export default function DIDResolver() {
       <div className="flex justify-center">
         <img src={didLogo} alt="DID:Health Logo" className="w-14 h-14" />
       </div>
-      <h1 className="text-center text-3xl font-bold text-gray-800">did:health Resolver</h1>
+      <h1 className="text-center text-3xl font-bold text-gray-800">{t('resolverTitle')}</h1>
 
       <div className="relative">
         <input
@@ -169,26 +172,26 @@ export default function DIDResolver() {
       </div>
 
       {error && <div className="text-red-600 text-sm">{error}</div>}
-      {loading && <div className="text-gray-500">Resolving...</div>}
+      {loading && <div className="text-gray-500">{t('resolving')}</div>}
 
       {didDoc && (
         <div className="bg-white shadow rounded p-4 space-y-2">
           <div><strong>DID:</strong> {didDoc.id}</div>
-          <div><strong>Owner:</strong> {owner || '(BTC or unassigned)'}</div>
-          <div><strong>Controller:</strong> {didDoc.controller}</div>
-          <div><strong>Service Count:</strong> {didDoc.service?.length || 0}</div>
+          <div><strong>{t('owner')}:</strong> {owner || '(BTC or unassigned)'}</div>
+          <div><strong>{t('controller')}:</strong> {didDoc.controller}</div>
+          <div><strong>{t('serviceCount')}:</strong> {didDoc.service?.length || 0}</div>
           <div className="flex gap-2 mt-2">
             <button
               onClick={() => copyToClipboard(didDoc)}
               className="text-xs bg-blue-600 text-white px-2 py-1 rounded"
             >
-              Copy DID Document
+              {t('copy')} did:health
             </button>
             <button
               onClick={() => downloadJSON('did-document.json', didDoc)}
               className="text-xs bg-gray-700 text-white px-2 py-1 rounded"
             >
-              Download DID Document
+              {t('download')} did:health
             </button>
           </div>
         </div>
@@ -197,7 +200,7 @@ export default function DIDResolver() {
       {fhirResources.length > 0 && (
         <div className="space-y-6">
           <div className="space-y-2">
-            <h3 className="text-md font-semibold">Available Resources</h3>
+            <h3 className="text-md font-semibold">{t('yourHealthRecords')}</h3>
             <div className="space-y-1">
             {fhirResources.map(({ meta, resource }, i) => (
   <button
@@ -226,18 +229,18 @@ export default function DIDResolver() {
                   onClick={() => copyToClipboard(fhirResources[selectedIndex].resource)}
                   className="text-xs bg-blue-600 text-white px-2 py-1 rounded"
                 >
-                  Copy JSON
+                  {t('copy')} fhir/json
                 </button>
                 <button
                   onClick={() =>
                     downloadJSON(
-                      `fhir-resource-${selectedIndex + 1}.json`,
+                      `fhir-resource-${selectedIndex + 1}-${fhirResources[selectedIndex].resource?.resourceType}.json`,
                       fhirResources[selectedIndex].resource
                     )
                   }
                   className="text-xs bg-gray-700 text-white px-2 py-1 rounded"
                 >
-                  Download
+                  {t('download')} fhir/json
                 </button>
               </div>
             </div>
