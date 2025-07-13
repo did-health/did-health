@@ -14,12 +14,19 @@ import enFHIR from '../locales/fhir/en.fhir.json';
 import esFHIR from '../locales/fhir/es.fhir.json';
 import frFHIR from '../locales/fhir/fr.fhir.json';
 
+// Debug: Log the FHIR translation contents
+console.log('FHIR Translation Files:', {
+  en: Object.keys(enFHIR).length,
+  es: Object.keys(esFHIR).length,
+  fr: Object.keys(frFHIR).length
+});
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     fallbackLng: 'en',
-    debug: false,
+    debug: true,
     interpolation: {
       escapeValue: false
     },
