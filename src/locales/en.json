@@ -92,7 +92,15 @@
     },
     "solana": {
       "name": "Solana",
-      "description": "Coming Soon: Create a DID on the fast and scalable Solana blockchain"
+      "description": "Create a DID on the fast and scalable Solana blockchain",
+      "inscriptionDescription": "Your DID will be registered with a Solana inscription that references your encrypted FHIR resource stored on Web3.Storage.",
+      "fhirResourcePreview": "FHIR Resource Preview",
+      "createInscription": "Create Inscription",
+      "inscriptionCreated": "Inscription Created",
+      "didCreatedSuccess": "Your DID has been successfully registered with a Solana inscription. The inscription references your encrypted document stored on Web3.Storage.",
+      "encryptionWithWeb3": "Your document will be encrypted and stored on Web3.Storage. The inscription will reference this encrypted document.",
+      "web3StorageUri": "Web3.Storage URI",
+      "registerWithInscription": "Register DID with Inscription"
     },
     "cosmos": {
       "name": "Cosmos",

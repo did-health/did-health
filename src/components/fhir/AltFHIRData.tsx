@@ -7,11 +7,10 @@ import { v4 as uuidv4 } from 'uuid'
 import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
 import { updateDIDUriOnChain } from '../../lib/updateDidUriOnChain'
-import PatientDirectivesStudio from './pcaio/PatientDirectivesStudio'
-import CreateEndpointForm from './CreateEndpointForm'
 import deployedContracts from '../../generated/deployedContracts'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { ethers } from 'ethers'
+import { useTranslation } from 'react-i18next'
 
 export default function AltFHIRData() {
   const { address } = useAccount()
@@ -28,6 +27,8 @@ export default function AltFHIRData() {
 
   const [didDoc, setDidDoc] = useState<DIDDocType | null>(null)
   const [chainName, setChainName] = useState<string | null>(null)
+
+  const { t } = useTranslation()
 
   const [allResources, setAllResources] = useState<any[]>([])
   const [status, setStatus] = useState('')
@@ -183,7 +184,7 @@ export default function AltFHIRData() {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold">➕ Manage Alternate FHIR Resources</h1>
+      <h1 className="text-2xl font-bold">➕ Manage FHIR Resources</h1>
 
       {status && <p className="text-sm text-gray-600">{status}</p>}
 
@@ -193,8 +194,6 @@ export default function AltFHIRData() {
           <div><strong>Type:</strong> {didType}</div>
         </div>
       )}
-
-      {renderFormByType()}
 
       {allResources.length > 0 && (
         <div className="mt-6">

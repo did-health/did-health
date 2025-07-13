@@ -26,21 +26,7 @@ export default function SelectBlockchain() {
       image: BitcoinLogo,
       route: '/onboarding/bitcoin',
       checkDidRoute: '/btc/did',
-    },
-    {
-      name: t('blockchain.solana.name'),
-      description: t('blockchain.solana.description'),
-      image: SolanaLogo,
-      route: '/onboarding/solana',
-      checkDidRoute: '/solana/did',
-    },
-    {
-      name: t('blockchain.cosmos.name'),
-      description: t('blockchain.cosmos.description'),
-      image: CosmosLogo,
-      route: '/onboarding/cosmos',
-      checkDidRoute: '/cosmos/did',
-    },
+    }
   ]
 
   return (
