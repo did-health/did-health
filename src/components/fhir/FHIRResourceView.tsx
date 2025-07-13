@@ -7,13 +7,14 @@ import {
   renderElement,
   resolveDefinitionUrl
 } from '../../lib/utils';
+import type { FHIRRendererProps } from '../../types';
 import type { ElementDefinition } from 'fhir/r4';
 import type { FHIRResourceProps } from '../../types';
 import type { StructureDefinitionMap } from '../../types/fhir/StructureDefintion';
 import type { StructureDefinition } from 'fhir/r4';
 
 const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences }) => {
-  const { t } = useTranslation(['translation', 'fhir']);
+  const { t } = useTranslation(['fhir']);
   const [structureDefs, setStructureDefs] = useState<StructureDefinitionMap>({});
   const [mainStructureDef, setMainStructureDef] = useState<StructureDefinition | null>(null);
   const resourceType = resource?.resourceType || 'Unknown';
@@ -52,7 +53,7 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
   if (!mainStructureDef) {
     return (
       <div className="flex justify-center items-center py-8 text-gray-500 text-lg font-medium">
-        Loading structure definitions...
+        {t('fhir:loading.structureDefinitions', 'Loading structure definitions...')}
       </div>
     );
   }
@@ -115,17 +116,9 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
 
   return (
     <div className="overflow-x-auto border border-gray-300 rounded-lg shadow-md mt-6">
+      <h2 className="text-lg font-semibold mb-2">🔥 {t(resourceType + '.label')}</h2>
       <table className="min-w-full divide-y divide-gray-200 text-sm font-sans">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="px-6 py-3 text-left font-semibold text-gray-700 tracking-wide uppercase">
-              {t('Field')}
-            </th>
-            <th className="px-6 py-3 text-left font-semibold text-gray-700 tracking-wide uppercase">
-              {t('Value')}
-            </th>
-          </tr>
-        </thead>
+
         <tbody className="divide-y divide-gray-100 bg-white">
           {topLevelElements.map((el: ElementDefinition, idx: number) => {
             const path = el.path.split('.').slice(1).join('.');
@@ -138,9 +131,32 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
             if (path === 'subject' || path === 'encounter') return null;
 
             const translationPath = `${resourceType}.${el.path}`;
-            const label = t(`fhir:${translationPath}.label`, formatLabel(path));
-            const short = t(`fhir:${translationPath}.short`, '');
-            const definition = t(`fhir:${translationPath}.definition`, '');
+            // Try different translation paths with fallbacks
+            const label = t(
+              [
+                `fhir:${translationPath}.label`,
+                `fhir:${path}.label`,
+                `fhir:${resourceType}.${el.path.split('.').pop()}.label`,
+                formatLabel(path)
+              ],
+              { defaultValue: formatLabel(path) }
+            );
+            const short = t(
+              [
+                `fhir:${translationPath}.short`,
+                `fhir:${path}.short`,
+                `fhir:${resourceType}.${el.path.split('.').pop()}.short`
+              ],
+              { defaultValue: '' }
+            );
+            const definition = t(
+              [
+                `fhir:${translationPath}.definition`,
+                `fhir:${path}.definition`,
+                `fhir:${resourceType}.${el.path.split('.').pop()}.definition`
+              ],
+              { defaultValue: '' }
+            );
 
             const isPhotoAttachment =
               (Array.isArray(value) &&
@@ -169,7 +185,8 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
                           loadExtensionStructureDefinition(url, structureDefs, setStructureDefs),
                         resolveDefinitionUrl: (type: string) =>
                           resolveDefinitionUrl(type, structureDefs),
-                        followReferences
+                        followReferences,
+                        t
                       })}
                 </td>
               </tr>

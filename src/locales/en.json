@@ -25,6 +25,7 @@
       "error": "Error setting up Web3.Storage space. Please try again."
     }
   },
+  "yourHealthRecord": "Your Health Record",
   "createFHIR": "Create FHIR Resource",
   "fhirCreated": "FHIR Record Created",
   "created": "Successfully created:",
@@ -56,15 +57,12 @@
   "your": "Your", 
   "didCopiedToClipboard": "DID copied to clipboard!",
   "failedToCopyDID": "Failed to copy DID",
-  "walletNotConnected": "Wallet not connected",
   "resolving": "Resolving...",
   "download": "Download",
-  "copy": "Copy",
   "owner": "Owner",
   "controller": "Controller",
   "serviceCount": "Service Count",
   "resolverTitle": "did:health Resolver",
-    
     "onboarding": {
     "connectWalletDescription": "To begin, please connect a crypto wallet to your identity.",
     "openInMetaMask": "Open in MetaMask"

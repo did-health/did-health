@@ -8,8 +8,9 @@ import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
 import { resolveDidHealth, resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
 import FHIRResource from '../fhir/FHIRResourceView'
 import logo from '../../assets/did-health.png'
-import { DAOStatus } from '../dao/DAOStatus'
+import { ethers } from 'ethers'
 import { useTranslation } from 'react-i18next'
+import { DAOStatus } from '../dao/DAOStatus'
 
 export default function ResolveDIDETH() {
   const { t } = useTranslation();
@@ -167,7 +168,7 @@ export default function ResolveDIDETH() {
           </div>
         )}
         <h1 className="text-2xl font-bold mt-4 text-center">
-          🔎 {t('didHealth.viewYourDID')}<span className="text-green-600 dark:text-green-400">did:health</span>
+          🔎 <span className="text-green-600 dark:text-green-400">{t('viewYourDID')}</span>
         </h1>
       </div>
 
@@ -227,7 +228,7 @@ export default function ResolveDIDETH() {
                       <li key={idx}>
                         <span className="font-semibold">{svc.type}:</span>{' '}
                         <a href={svc.serviceEndpoint} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-words">
-                          🔥 View FHIR Resource
+                          🔥 {t('yourHealthRecord') }
                         </a>
                       </li>
                     ))}
@@ -298,7 +299,10 @@ export default function ResolveDIDETH() {
 
           {fhir && (
             <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[600px]">
-              <h2 className="text-lg font-semibold mb-2">🧾 FHIR Resource</h2>
+              <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                
+                {t('yourHealthRecord')}
+              </h2>
               <FHIRResource resource={fhir} />
               <pre className="mt-4 bg-white p-2 rounded text-xs overflow-x-auto">
                 <code>{JSON.stringify(fhir, null, 2)}</code>
@@ -308,7 +312,6 @@ export default function ResolveDIDETH() {
 
           {didFHIRResources.length > 1 && (
             <div className="bg-gray-100 p-4 rounded mt-6 text-sm">
-              <h2 className="text-lg font-semibold mb-2">🌐 {t('fhirResources')}</h2>
               {didFHIRResources.map(({ uri, resource, error }, idx) => (
                 <div key={idx} className="bg-white rounded border border-gray-200 mb-4 p-4 shadow-sm">
                   <p className="text-sm mb-2 break-all">
