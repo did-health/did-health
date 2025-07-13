@@ -64,71 +64,56 @@ async function loadStructureDefinitions(): Promise<any[]> {
   return definitions;
 }
 
-async function processDefinition(def: any, lang: string): Promise<[string, Record<string, any>] | null> {
-  const typeName = def.type || def.name;
-  if (!Array.isArray(def.snapshot?.element)) {
-    console.warn(`⚠️  Skipping ${typeName} — no snapshot elements`);
-    return null;
-  }
-
-  console.log(`🔄 [${lang}] Translating: ${typeName}`);
-  const translatedResourceName = await translate(typeName, lang);
-
-  const result: Record<string, any> = {
-    resourceName: translatedResourceName
-  };
+async function processDefinition(def: any, lang: string): Promise<Record<string, string>> {
+  const flatEntries: Record<string, string> = {};
+  if (!Array.isArray(def.snapshot?.element)) return flatEntries;
 
   for (const el of def.snapshot.element) {
     const pathStr = el.path;
-    if (typeof pathStr !== 'string') continue;
+    if (!pathStr || typeof pathStr !== 'string') continue;
 
     const label = pathStr.split('.').pop() || '';
-    result[pathStr] = {
-      label: lang === 'en' ? label : await translate(label, lang),
-      short: lang === 'en' ? el.short || '' : await translate(el.short || '', lang),
-      definition: lang === 'en' ? el.definition || '' : await translate(el.definition || '', lang)
-    };
+
+    if (label) {
+      flatEntries[`${pathStr}.label`] = lang === 'en' ? label : await translate(label, lang);
+    }
+    if (el.short) {
+      flatEntries[`${pathStr}.short`] = lang === 'en' ? el.short : await translate(el.short, lang);
+    }
+    if (el.definition) {
+      flatEntries[`${pathStr}.definition`] = lang === 'en' ? el.definition : await translate(el.definition, lang);
+    }
   }
 
-  return [typeName, result];
+  return flatEntries;
 }
 
 async function runForLanguage(lang: string) {
   console.log(`🌐 Starting language: ${lang}`);
   const defs = await loadStructureDefinitions();
 
-  const outFile = path.join(LOCALES_DIR, `${lang}.fhir.json`);
+  const outFile = path.join(LOCALES_DIR, `${lang}.fhir.flat.json`);
   fs.mkdirSync(LOCALES_DIR, { recursive: true });
 
-  let output: Record<string, any> = {};
+  let output: Record<string, string> = {};
   if (fs.existsSync(outFile)) {
     output = JSON.parse(fs.readFileSync(outFile, 'utf8'));
-    console.log(`🔁 [${lang}] Loaded existing file with ${Object.keys(output).length} resources`);
+    console.log(`🔁 [${lang}] Loaded existing file with ${Object.keys(output).length} entries`);
   }
 
   for (const def of defs) {
-    const typeName = def.type || def.name;
-    if (output[typeName]) {
-      console.log(`⏭️  [${lang}] Skipping already translated: ${typeName}`);
-      continue;
-    }
+    const flat = await processDefinition(def, lang);
+    output = { ...output, ...flat };
 
-    const result = await processDefinition(def, lang);
-    if (result) {
-      const [key, value] = result;
-      output[key] = value;
-
-      // 🔄 Write after every resource
-      fs.writeFileSync(outFile, JSON.stringify(output, null, 2), 'utf8');
-      console.log(`✅ [${lang}] Wrote: ${key} → ${outFile}`);
-    }
+    fs.writeFileSync(outFile, JSON.stringify(output, null, 2), 'utf8');
+    console.log(`✅ [${lang}] Wrote ${Object.keys(flat).length} fields from ${def.name}`);
   }
 
-  console.log(`📘 [${lang}] Done: ${Object.keys(output).length} resources written\n`);
+  console.log(`📘 [${lang}] Done: ${Object.keys(output).length} fields total → ${outFile}\n`);
 }
 
 async function main() {
-  console.log(`🚀 Generating FHIR i18n locales for: ${LANGUAGES.join(', ')}`);
+  console.log(`🚀 Generating flat FHIR i18n locales for: ${LANGUAGES.join(', ')}`);
   for (const lang of LANGUAGES) {
     await runForLanguage(lang);
   }
