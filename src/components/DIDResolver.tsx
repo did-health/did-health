@@ -34,7 +34,8 @@ export default function DIDResolver() {
   const [input, setInput] = useState('')
   const [didDoc, setDidDoc] = useState<DIDDocument | null>(null)
   const [owner, setOwner] = useState('')
-  const [fhirResources, setFhirResources] = useState<any[]>([])
+  const [fhirResources, setFhirResources] = useState<{ resource: any; meta: any }[]>([])
+  const [selectedIndex, setSelectedIndex] = useState(0)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -62,6 +63,7 @@ export default function DIDResolver() {
     setDidDoc(null)
     setOwner('')
     setFhirResources([])
+    setSelectedIndex(0)
 
     try {
       const { chainId, lookupKey } = parseDidHealth(did)
@@ -118,19 +120,35 @@ export default function DIDResolver() {
     const results: any[] = []
     for (const s of services) {
       try {
-        const url = s.serviceEndpoint.replace('ipfs://', 'https://w3s.link/ipfs/')
+        const url = s.serviceEndpoint.startsWith('ipfs://')
+          ? s.serviceEndpoint.replace('ipfs://', 'https://w3s.link/ipfs/')
+          : s.serviceEndpoint
         const res = await fetch(url)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const json = await res.json()
         const final = json?.accessControlConditions
           ? await getLitDecryptedFHIR(json, null, { chain })
           : json
-        results.push(final)
+        results.push({ resource: final, meta: { id: s.id, endpoint: s.serviceEndpoint } })
       } catch (e) {
         console.warn(`Error fetching service endpoint:`, e)
       }
     }
     setFhirResources(results.filter(r => !!r))
+  }
+
+  function copyToClipboard(data: any) {
+    navigator.clipboard.writeText(JSON.stringify(data, null, 2))
+  }
+
+  function downloadJSON(filename: string, data: any) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -159,19 +177,75 @@ export default function DIDResolver() {
           <div><strong>Owner:</strong> {owner || '(BTC or unassigned)'}</div>
           <div><strong>Controller:</strong> {didDoc.controller}</div>
           <div><strong>Service Count:</strong> {didDoc.service?.length || 0}</div>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => copyToClipboard(didDoc)}
+              className="text-xs bg-blue-600 text-white px-2 py-1 rounded"
+            >
+              Copy DID Document
+            </button>
+            <button
+              onClick={() => downloadJSON('did-document.json', didDoc)}
+              className="text-xs bg-gray-700 text-white px-2 py-1 rounded"
+            >
+              Download DID Document
+            </button>
+          </div>
         </div>
       )}
 
       {fhirResources.length > 0 && (
         <div className="space-y-6">
-          {fhirResources.map((res, i) => (
-            <div key={i} className="bg-gray-50 p-4 rounded shadow">
-              <FHIRResource resource={res} />
-              <pre className="text-xs mt-2 overflow-x-auto">
-                {JSON.stringify(res, null, 2)}
-              </pre>
+          <div className="space-y-2">
+            <h3 className="text-md font-semibold">Available Resources</h3>
+            <div className="space-y-1">
+            {fhirResources.map(({ meta, resource }, i) => (
+  <button
+    key={i}
+    className={`block w-full text-left px-4 py-2 rounded ${
+      i === selectedIndex ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-gray-100'
+    }`}
+    onClick={() => setSelectedIndex(i)}
+  >
+    <div className="flex justify-between items-center">
+      <span className="text-xs text-gray-600 ml-2">{resource?.resourceType || 'Unknown'}</span>
+    </div>
+  </button>
+))}
+
             </div>
-          ))}
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded shadow">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="font-semibold">
+              {fhirResources[selectedIndex].resource?.resourceType || 'Unknown'}
+              </h4>
+              <div className="space-x-2">
+                <button
+                  onClick={() => copyToClipboard(fhirResources[selectedIndex].resource)}
+                  className="text-xs bg-blue-600 text-white px-2 py-1 rounded"
+                >
+                  Copy JSON
+                </button>
+                <button
+                  onClick={() =>
+                    downloadJSON(
+                      `fhir-resource-${selectedIndex + 1}.json`,
+                      fhirResources[selectedIndex].resource
+                    )
+                  }
+                  className="text-xs bg-gray-700 text-white px-2 py-1 rounded"
+                >
+                  Download
+                </button>
+              </div>
+            </div>
+            <FHIRResource resource={fhirResources[selectedIndex].resource} />
+            <pre className="text-xs mt-2 overflow-x-auto">
+              {JSON.stringify(fhirResources[selectedIndex].resource, null, 2)}
+            </pre>
+          </div>
         </div>
       )}
     </div>
