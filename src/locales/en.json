@@ -7,6 +7,7 @@
   "onboardingInstructions": "Follow the steps below to create your decentralized health identity.",
   "connectWallet": "Connect Wallet",
   "connectLit": "Connect to Lit Protocol",
+  "changeEncryptionDecision": "Change Encryption Decision",
 "setupStorage": {
    "title": "Set up your health data storage on Web3.Storage",
     "input": {
@@ -30,6 +31,11 @@
   "chooseDID": "Choose DID Name",
   "registerDID": "Register DID to Blockchain",
   "setAccessControl": "Set Access Control",
+  "AccessControlConditionsSet": "Access Control Conditions have been set.",
+  "encryptionSkipped": "Encryption was skipped for this resource type.",
+  "editAccessControl": "Edit Access Control",
+  "whoCanViewIt": "Who Can View it",
+  "unsupportedFHIRResourceType": "Unsupported FHIR resource type",
   "onboarding": {
     "connectWalletDescription": "To begin, please connect a crypto wallet to your identity.",
     "openInMetaMask": "Open in MetaMask"
@@ -41,6 +47,12 @@
     "lookupDidDescription": "Find your existing did:health identifier",
     "checkDid": "Already registered? Click here to view your DID.",
     "moreAnswers": "Need more answers? Click here"
+  },
+  "common": {
+    "update": "Update",
+    "create": "Create",
+    "search": "Search",
+    "copy": "Copy"
   },
   "blockchain": {
     "ethereum": {
@@ -60,6 +72,12 @@
       "description": "Coming Soon: Use Cosmos chains like Osmosis, Juno, or Stargaze"
     }
   },
+  "chain": "Chain",
+  "parameters": "Parameters",
+  "onlyViewableBy": "Only viewable by",
+  "condition": "Condition",
+  "yourDIDBTC": "Your DID is automatically generated from your Bitcoin wallet address:",
+  "copy": "Copy",
 
   "didHealth": {
     "title": "What is a did:health?",

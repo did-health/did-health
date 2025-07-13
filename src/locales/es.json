@@ -41,6 +41,12 @@
     "title": "¿Qué es un did:health?",
     "subtitle": "Un did:health es una identidad digital autogestionada que se vincula a tus datos de salud. Permite aplicaciones de salud seguras y descentralizadas, como mensajería directa y descubrimiento de proveedores, identificando de forma confiable a pacientes, profesionales, organizaciones y dispositivos."
   },
+  "common": {
+    "update": "Actualizar",
+    "create": "Crear",
+    "search": "Buscar",
+    "changeEncryptionDecision": "Cambiar Decisión de Cifrado"
+  },
   "blockchain": {
     "ethereum": {
       "name": "Ethereum",
