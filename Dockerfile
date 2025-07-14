@@ -17,8 +17,8 @@ COPY .env .env
 COPY package.json yarn.lock ./
 #RUN yarn install --frozen-lockfile
 RUN yarn install
-# Copy source and build
-COPY . .
+# Copy source and build, excluding node_modules
+COPY --chown=node:node . .
 ENV GENERATE_SOURCEMAP=false
 RUN NODE_OPTIONS="--max-old-space-size=8192" yarn build
 
