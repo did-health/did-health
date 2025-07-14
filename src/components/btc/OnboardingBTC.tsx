@@ -161,7 +161,7 @@ export default function OnboardingEth() {
                 if (!isFHIRResource(fhirResource)) {
                   return (
                     <p className="text-sm text-red-500">
-                      ❌ Unsupported FHIR resource type
+                      ❌ {t('unsupportedFHIRResourceType')}
                     </p>
                   )
                 }
@@ -193,7 +193,7 @@ export default function OnboardingEth() {
           <StepCard step="5" title="Access Control Configured">
             {encryptionSkipped ? (
               <>
-                <p className="text-yellow-600 font-medium mb-4">⚠️ Encryption was skipped for this resource type.</p>
+                <p className="text-yellow-600 font-medium mb-4">⚠️ {t('encryptionSkipped')}</p>
                 <button
                   onClick={() => {
                     useOnboardingState.getState().setEncryptionSkipped(false)
@@ -201,12 +201,12 @@ export default function OnboardingEth() {
                   }}
                   className="btn btn-outline btn-warning"
                 >
-                  🔄 Change Encryption Decision
+                  🔄 {t('changeEncryptionDecision')}
                 </button>
               </>
             ) : (
               <>
-                <p className="text-green-600 font-medium mb-2">✅ Access Control Conditions have been set.</p>
+                <p className="text-green-600 font-medium mb-2">✅ {t('AccessControlConditionsSet')}</p>
                 {accessControlConditions.map((cond: any, idx: number) => {
                   const isSelfOnly =
                     cond.returnValueTest?.comparator === '=' &&
@@ -214,25 +214,24 @@ export default function OnboardingEth() {
 
                   return (
                     <div key={idx} className="bg-gray-100 rounded p-4 shadow">
-                      <p className="font-semibold text-gray-700 mb-1">Condition #{idx + 1}</p>
+                      <p className="font-semibold text-gray-700 mb-1">{t('condition')} #{idx + 1}</p>
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                         <div>
-                          <span className="font-medium text-gray-600">Chain:</span> {String(cond.chain ?? 'N/A')}
+                          <span className="font-medium text-gray-600">{t('chain')}:</span> {String(cond.chain ?? 'N/A')}
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Parameters:</span> {
+                          <span className="font-medium text-gray-600">{t('parameters')}:</span> {
                             Array.isArray(cond.parameters)
                               ? cond.parameters.map((p: unknown) => String(p)).join(', ')
                               : 'N/A'}
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Return Value Test:</span>
                           <div className="ml-2">
-                            Who Can View it:
+                            {t('whoCanViewIt')}
                             <br />
                             {isSelfOnly && (
                               <p className="mt-2 text-green-600 font-medium">
-                                ✅ Only viewable by <span className="underline">you</span>.
+                                ✅ {t('onlyViewableBy')} <span className="underline">you</span>.
                               </p>
                             )}
                           </div>
@@ -247,7 +246,7 @@ export default function OnboardingEth() {
                   }}
                   className="btn btn-outline btn-accent"
                 >
-                  🔄 Edit Access Control
+                  🔄 {t('editAccessControl')}
                 </button>
               </>
             )}
@@ -258,7 +257,7 @@ export default function OnboardingEth() {
           <StepCard step="6" title={t('chooseDID')}>
             <div className="space-y-4">
               <p className="text-gray-600">
-                Your DID is automatically generated from your Bitcoin wallet address:
+                {t('yourDIDBTC')}:
               </p>
               <div className="bg-blue-50 p-4 rounded-lg">
                 <div className="flex items-center gap-2">
@@ -268,7 +267,7 @@ export default function OnboardingEth() {
                     className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 transition-colors"
                     title="Copy DID"
                   >
-                    📋 Copy
+                    📋 {t('common.copy')}
                   </button>
                 </div>
               </div>

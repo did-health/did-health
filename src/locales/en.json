@@ -7,6 +7,7 @@
   "onboardingInstructions": "Follow the steps below to create your decentralized health identity.",
   "connectWallet": "Connect Wallet",
   "connectLit": "Connect to Lit Protocol",
+  "changeEncryptionDecision": "Change Encryption Decision",
 "setupStorage": {
    "title": "Set up your health data storage on Web3.Storage",
     "input": {
@@ -24,13 +25,45 @@
       "error": "Error setting up Web3.Storage space. Please try again."
     }
   },
+  "yourHealthRecord": "Your Health Record",
   "createFHIR": "Create FHIR Resource",
   "fhirCreated": "FHIR Record Created",
   "created": "Successfully created:",
   "chooseDID": "Choose DID Name",
   "registerDID": "Register DID to Blockchain",
   "setAccessControl": "Set Access Control",
-  "onboarding": {
+  "AccessControlConditionsSet": "Access Control Conditions have been set.",
+  "encryptionSkipped": "Encryption was skipped for this resource type.",
+  "editAccessControl": "Edit Access Control",
+  "whoCanViewIt": "Who Can View it",
+  "walletNotConnected": "Wallet not connected",
+  "noDIDFound": "No DID found on supported chains", 
+  "noFHIRResourcesFound": "No FHIR resources found",
+  "didResolved": "DID resolved!",
+  "fhirResourceLoaded": "FHIR resource loaded!",
+  "updateDID": "Update did:health",
+  "viewYourDID": "View Your did:health",
+  "resolvedDID": "Resolved DID",
+  "foundOn": "Found On",
+  "unsupportedFHIRResourceType": "Unsupported FHIR resource type",
+  "credentials": "Credentials",
+  "serviceEndpoints": "Service Endpoints",
+  "walletAddress": "Wallet Address",
+  "decryptingFHIRResource": "Decrypting FHIR resource with Lit...",
+  "failedToDecryptFHIR": "Failed to decrypt encrypted FHIR file. Check Lit connection and wallet access.",
+  "failedToFetchFHIRResource": "Failed to fetch FHIR resource from IPFS",
+  "skippingInvalidInscription": "Skipping invalid inscription",
+  "didNotFoundInInscriptionsFor": "DID not found in inscriptions for",
+  "your": "Your", 
+  "didCopiedToClipboard": "DID copied to clipboard!",
+  "failedToCopyDID": "Failed to copy DID",
+  "resolving": "Resolving...",
+  "download": "Download",
+  "owner": "Owner",
+  "controller": "Controller",
+  "serviceCount": "Service Count",
+  "resolverTitle": "did:health Resolver",
+    "onboarding": {
     "connectWalletDescription": "To begin, please connect a crypto wallet to your identity.",
     "openInMetaMask": "Open in MetaMask"
   },
@@ -41,6 +74,12 @@
     "lookupDidDescription": "Find your existing did:health identifier",
     "checkDid": "Already registered? Click here to view your DID.",
     "moreAnswers": "Need more answers? Click here"
+  },
+  "common": {
+    "update": "Update",
+    "create": "Create",
+    "search": "Search",
+    "copy": "Copy"
   },
   "blockchain": {
     "ethereum": {
@@ -53,13 +92,27 @@
     },
     "solana": {
       "name": "Solana",
-      "description": "Coming Soon: Create a DID on the fast and scalable Solana blockchain"
+      "description": "Create a DID on the fast and scalable Solana blockchain",
+      "inscriptionDescription": "Your DID will be registered with a Solana inscription that references your encrypted FHIR resource stored on Web3.Storage.",
+      "fhirResourcePreview": "FHIR Resource Preview",
+      "createInscription": "Create Inscription",
+      "inscriptionCreated": "Inscription Created",
+      "didCreatedSuccess": "Your DID has been successfully registered with a Solana inscription. The inscription references your encrypted document stored on Web3.Storage.",
+      "encryptionWithWeb3": "Your document will be encrypted and stored on Web3.Storage. The inscription will reference this encrypted document.",
+      "web3StorageUri": "Web3.Storage URI",
+      "registerWithInscription": "Register DID with Inscription"
     },
     "cosmos": {
       "name": "Cosmos",
       "description": "Coming Soon: Use Cosmos chains like Osmosis, Juno, or Stargaze"
     }
   },
+  "chain": "Chain",
+  "parameters": "Parameters",
+  "onlyViewableBy": "Only viewable by",
+  "condition": "Condition",
+  "yourDIDBTC": "Your DID is automatically generated from your Bitcoin wallet address:",
+  "copy": "Copy",
 
   "didHealth": {
     "title": "What is a did:health?",

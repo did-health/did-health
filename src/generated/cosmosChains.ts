@@ -5,44 +5,64 @@ export const dhealthChain: Chain = {
   chainName: 'dhealth',
   status: 'live',
   networkType: 'testnet',
-  chainType: 'cosmos', // Added required property
+  chainType: 'cosmos',
   prettyName: 'dHealth Testnet',
   chainId: 'dhealth-testnet-1',
   bech32Prefix: 'tdh02',
   daemonName: 'dhealthd',
   nodeHome: '$HOME/.dhealth',
   slip44: 118,
-  fees: {
-    feeTokens: [
-      {
-        denom: 'utdhp',
-        fixedMinGasPrice: 0.0025,
-        lowGasPrice: 0.0025,
-        averageGasPrice: 0.0025,
-        highGasPrice: 0.005,
-      },
-    ],
+  chainTypePretty: 'dHealth',
+  chainTypePrettyShort: 'dH',
+  chainTypePrettyShortest: 'dH',
+  chainTypePrettyShortestColor: '#1F2937',
+  chainTypePrettyShortestColorDark: '#111827',
+  chainTypePrettyShortestColorLight: '#374151',
+  chainTypePrettyShortestColorLighter: '#4B5563',
+  chainTypePrettyShortestColorLightest: '#6B7280',
+  chainTypePrettyShortestColorDarker: '#1F2937',
+  chainTypePrettyShortestColorDarkest: '#111827',
+  chainTypePrettyShortestColorContrast: '#F3F4F6',
+  chainTypePrettyShortestColorContrastDark: '#FFFFFF',
+  chainTypePrettyShortestColorContrastLight: '#FFFFFF',
+  chainTypePrettyShortestColorContrastLighter: '#FFFFFF',
+  chainTypePrettyShortestColorContrastLightest: '#FFFFFF',
+  chainTypePrettyShortestColorContrastDarkest: '#FFFFFF',
+  chainTypePrettyShortestColorContrastDarker: '#FFFFFF',
+  stakeCurrency: {
+    coinDenom: 'utdhp',
+    coinMinimalDenom: 'utdhp',
+    coinDecimals: 6,
+    coinGeckoId: 'dhealth',
   },
-  staking: {
-    stakingTokens: [
-      {
-        denom: 'utdhp',
-      },
-    ],
-  },
-  apis: {
-    rpc: [
-      {
-        address: 'https://rpc-testnet.dhealth.dev',
-        provider: 'dHealth Foundation',
-      },
-    ],
-    rest: [
-      {
-        address: 'https://api-testnet.dhealth.dev',
-        provider: 'dHealth Foundation',
-      },
-    ],
+  currencies: [
+    {
+      coinDenom: 'utdhp',
+      coinMinimalDenom: 'utdhp',
+      coinDecimals: 6,
+      coinGeckoId: 'dhealth',
+      coinImageUrl: '',
+    },
+  ],
+  feeCurrencies: [
+    {
+      coinDenom: 'utdhp',
+      coinMinimalDenom: 'utdhp',
+      coinDecimals: 6,
+      coinGeckoId: 'dhealth',
+      coinImageUrl: '',
+    },
+  ],
+  features: ['staking', 'ibc'],
+  rpc: 'https://rpc-testnet.dhealth.dev',
+  rest: 'https://api-testnet.dhealth.dev',
+  bech32Config: {
+    bech32PrefixAccAddr: 'tdh02',
+    bech32PrefixAccPub: 'tdh02pub',
+    bech32PrefixValAddr: 'tdh02valoper',
+    bech32PrefixValPub: 'tdh02valoperpub',
+    bech32PrefixConsAddr: 'tdh02valcons',
+    bech32PrefixConsPub: 'tdh02valconspub',
   },
   explorers: [
     {

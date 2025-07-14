@@ -121,7 +121,7 @@ export default function OnboardingEth() {
                   default:
                     return (
                       <p className="text-sm text-red-500">
-                        ❌ Unsupported FHIR resource type: 
+                        ❌  {t('unsupportedFHIRResourceType')}
                       </p>
                     )
                 }
@@ -164,7 +164,7 @@ export default function OnboardingEth() {
                   }}
                   className="btn btn-outline btn-warning"
                 >
-                  🔄 Change Encryption Decision
+                  🔄 {t('changeEncryptionDecision')}
                 </button>
               </>
             ) : (
@@ -190,13 +190,12 @@ export default function OnboardingEth() {
                             : 'N/A'}
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Return Value Test:</span>
                           <div className="ml-2">
-                            Who Can View it:
+                            {t('whoCanViewIt')}
                             <br />
                             {isSelfOnly && (
                               <p className="mt-2 text-green-600 font-medium">
-                                ✅ Only viewable by <span className="underline">you</span>.
+                                ✅  {t('onlyViewableBy')} <span className="underline">{t('you')}</span>.
                               </p>
                             )}
                           </div>
@@ -212,7 +211,7 @@ export default function OnboardingEth() {
                   }}
                   className="btn btn-outline btn-accent"
                 >
-                  🔄 Edit Access Control
+                  🔄 {t('editAccessControl')}
                 </button>
               </>
             )}
@@ -232,7 +231,7 @@ export default function OnboardingEth() {
               <button className="btn btn-ghost btn-xs" onClick={() => {
                 useOnboardingState.getState().setDID("")
             }}>
-              Reset
+              {t('reset')}
             </button>
               <button
                 type="button"
@@ -263,11 +262,12 @@ export default function OnboardingEth() {
 }
 
 export function StepCard({ step, title, children }: StepCardProps) {
+  const { t } = useTranslation()
   return (
     <section className="relative bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-8 transition-transform hover:scale-[1.01] hover:shadow-2xl group">
       <div className="absolute -top-5 left-6">
         <div className="bg-blue-600 dark:bg-blue-400 text-white dark:text-gray-900 text-xs font-bold px-3 py-1 rounded-full shadow-md tracking-wider uppercase">
-          Step {step}
+          {t('step')} {step}
         </div>
       </div>
 

@@ -244,13 +244,13 @@ export default function UpdateDIDETH() {
       setStatus('📄 Updating DID Document...')
       const updatedService = {
         id: `${didDoc.id}#fhir`,
-        type: 'FHIRResource',
+        type: resourceType,
         serviceEndpoint: fhirUrl
       }
   
       const existingServices = Array.isArray(didDoc.service) ? didDoc.service : []
       const updatedServices = [
-        ...existingServices.filter((s: { type: string; id?: string }) => !(s.type === 'FHIRResource' || s.id?.includes('#fhir'))),
+        ...existingServices.filter((s: { type: string; id?: string }) => s.id?.includes('#fhir')),
         updatedService
       ]
   

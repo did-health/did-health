@@ -7,5 +7,6 @@ export interface FHIRRendererProps {
     structureDefs: StructureDefinitionMap;
     onLoadExtensionDef?: (url: string) => Promise<StructureDefinition | null>;
     resolveDefinitionUrl?: (url: string, structureDefs: StructureDefinitionMap) => string | null;
-	followReferences?: boolean;
+    followReferences?: boolean;
+    t: (key: string, options?: any) => string;
 }

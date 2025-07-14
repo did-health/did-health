@@ -46,4 +46,21 @@ export interface Chain {
     coinImageUrl: string;
   }[];
   features: string[];
+  chainTypePretty?: string;
+  chainTypePrettyShort?: string;
+  chainTypePrettyShortest?: string;
+  chainTypePrettyShortestColor?: string;
+  chainTypePrettyShortestColorDark?: string;
+  chainTypePrettyShortestColorLight?: string;
+  chainTypePrettyShortestColorLighter?: string;
+  chainTypePrettyShortestColorLightest?: string;
+  chainTypePrettyShortestColorDarker?: string;
+  chainTypePrettyShortestColorDarkest?: string;
+  chainTypePrettyShortestColorContrast?: string;
+  chainTypePrettyShortestColorContrastDark?: string;
+  chainTypePrettyShortestColorContrastLight?: string;
+  chainTypePrettyShortestColorContrastLighter?: string;
+  chainTypePrettyShortestColorContrastLightest?: string;
+  chainTypePrettyShortestColorContrastDarkest?: string;
+  chainTypePrettyShortestColorContrastDarker?: string;
 }
