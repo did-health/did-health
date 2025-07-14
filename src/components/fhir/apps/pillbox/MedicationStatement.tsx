@@ -1,32 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import assistantImage from './../../images/metacare-avatar.png';
-import MainMenu from '../../menu/MainMenu'; // Adjust the path as necessary
-import ReactMarkdown from 'react-markdown';
-import { FaTrash } from 'react-icons/fa';
-import { FaBars } from 'react-icons/fa';
-import { MdHistory } from 'react-icons/md'; // Represents a history/log icon
-import { FaPills } from 'react-icons/fa';
-import { FaClock } from 'react-icons/fa';
-import { FaPlusCircle } from 'react-icons/fa';
-import { FaMinusCircle } from 'react-icons/fa';
-import { FaCamera } from 'react-icons/fa';  // Import the camera icon
+import { FaTrash, FaBars, MdHistory, FaPills, FaClock, FaPlusCircle, FaMinusCircle, FaCamera, FaInfoCircle, FaFilter, FaTimesCircle, FaDownload } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
-import ShoppingButton from '../../buttons/ShoppingButton';
-import MedicationAI from '../../includes/MedicationAI';
-import DrugWarnings from '../../buttons/DrugWarnings';
-import DrugLabel from '../../buttons/DrugLabel';
-import MedicineScanner from '../../buttons/MedicineScanner'
-import HomeScreenPrompt from "../../buttons/HomeScreenPrompt";
-import PillScanner from '../../buttons/PillScanner';
-import { FaInfoCircle } from 'react-icons/fa'; // Importing the icon
-import { FaFilter } from 'react-icons/fa'; // Import the filter icon
-import { FaTimesCircle } from 'react-icons/fa';
-import { FaDownload } from 'react-icons/fa'; // Import the download icon
-import DownloadFHIRBundleButton from '../../buttons/DownloadFHIRBundleButton';
+import DrugWarnings from './buttons/DrugWarnings';
+import DrugLabel from './buttons/DrugLabel';
+import PillScanner from './buttons/MedicineScanner';
 
-const MedicationStatement = () => {
-  const [medicationStatements, setMedicationStatements] = useState([]);
+interface Props {
+  // Add any props that this component accepts
+}
+
+interface MedicationStatement {
+  resourceType: string;
+  medicationCodeableConcept: {
+    text: string;
+  };
+  status: string;
+  dosage: Array<{
+    text: string;
+    route: {
+      text: string;
+    };
+    timing: {
+      repeat: {
+        when: string[];
+        timeOfDay: string[];
+      };
+    };
+  }>;
+}
+
+const MedicationStatement: React.FC<Props> = () => {
+  const [medicationStatements, setMedicationStatements] = useState<Array<MedicationStatement>>([]);
   const [medication, setMedication] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [status, setStatus] = useState('active');
@@ -42,7 +48,18 @@ const MedicationStatement = () => {
   const [modalSearchContent, setModalSearchContent] = useState("");
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const { t } = useTranslation();
-  const [drugDetails, setDrugDetails] = useState(null);
+  interface DrugDetails {
+  brand_name: string;
+  generic_name: string;
+  labeler_name: string;
+  active_ingredients: Array<{ name: string; strength: string }>;
+  product_ndc: string;
+  dosage_form: string;
+  drug_interactions: string[];
+  route: string;
+}
+
+const [drugDetails, setDrugDetails] = useState<DrugDetails | null>(null);
   const [selectedDay, setSelectedDay] = useState('');
   const [todayInfo, setTodayInfo] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -50,16 +67,16 @@ const MedicationStatement = () => {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [medicationLog, setMedicationLog] = useState([]);
   const [scannerModalOpen, setScannerModalOpen] = useState(false);
-  const [selectedMedication, setSelectedMedication] = useState(null);
+  const [selectedMedication, setSelectedMedication] = useState<string | null>(null);
   const [medicationImage, setMedicationImage] = useState(null);
-  const [deleteIndex, setDeleteIndex] = useState(null);
+  const [deleteIndex, setDeleteIndex] = useState<string | null>(null);
   const [confirmDeleteModalOpen, setConfirmDeleteModalOpen] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [pillImage, setPillImage] = useState(null); // State to hold the pill image
   const navigate = useNavigate();
   // Callback function to receive the image from the PillScanner
-  const handlePillImage = (image) => {
+  const handlePillImage = (image: React.SetStateAction<null>) => {
     setPillImage(image);
     setModalOpen(false); // Close modal after image is selected
   };
@@ -71,14 +88,14 @@ const MedicationStatement = () => {
     return matchesText && matchesDate;
   });
   // Open the confirmation modal
-  const handleDelete = (index) => {
+  const handleDelete = (index: string) => {
     console.log('deleting index' + index)
     setDeleteIndex(index);
     setConfirmDeleteModalOpen(true);
   };
 
   // Close the modal if the user cancels
-  const handleCancelDelete = () => {
+  const handleCancelDelete = (e?: React.MouseEvent) => {
     setConfirmDeleteModalOpen(false);
     setDeleteIndex(null);
   };
@@ -97,13 +114,13 @@ const MedicationStatement = () => {
 
 
   // Define the onConfirm function that will be passed to MedicineScanner
-  const handleFDAResultConfirm = (result) => {
+  const handleFDAResultConfirm = (result: string) => {
     setMedication(result); // Store the confirmed medication result
     console.log('Confirmed FDA result:', result);
 
   };
 
-  const handleShowKnowledge = (medication) => {
+  const handleShowKnowledge = (medication: string) => {
     let knowledge = getMedicationKnowledgeFromLocalStorage(medication);
 
     if (knowledge) {
@@ -117,9 +134,7 @@ const MedicationStatement = () => {
     setSelectedMedication(medication);  // Set the selected medication
   };
 
-
-
-  const getMedicationKnowledgeFromLocalStorage = (medicationName) => {
+  const getMedicationKnowledgeFromLocalStorage = (medicationName: string) => {
     // Get medication knowledge from localStorage
     const storedData = localStorage.getItem('MedicationKnowledge');
 
@@ -129,7 +144,7 @@ const MedicationStatement = () => {
 
       // Find the medication by matching the name
       const medicationItem = medicationKnowledge.find(
-        (item) => item.name?.toLowerCase() === medicationName?.toLowerCase()
+        (item: { name: string; }) => item.name?.toLowerCase() === medicationName?.toLowerCase()
       );
 
       // If the medication item is found, proceed to find the binary image
@@ -138,9 +153,9 @@ const MedicationStatement = () => {
 
         // Find the characteristic that has the type code "image"
         const imageCharacteristic = drugCharacteristic.find(
-          (char) =>
+          (char: { type: { coding: any[]; }; }) =>
             char.type?.coding?.some(
-              (coding) =>
+              (coding: { code: string; system: string; }) =>
                 coding.code === "image" &&
                 coding.system === "http://terminology.hl7.org/CodeSystem/drug-char-type"
             )
@@ -209,10 +224,7 @@ const MedicationStatement = () => {
     const savedAdministrations = localStorage.getItem('MedicationAdministration');
     return savedAdministrations ? JSON.parse(savedAdministrations) : [];
   })
-
-
-
-  const logDosage = (medication, dosage) => {
+  const logDosage = (medication: any, dosage: string) => {
     const now = new Date().toISOString();
     const medicationAdministration = {
       resourceType: "MedicationAdministration",
@@ -234,7 +246,7 @@ const MedicationStatement = () => {
   };
 
   // Handle multiple times for medication intake
-  const handleTimeChange = (value, index) => {
+  const handleTimeChange = (value: string, index: number) => {
     const updatedTiming = [...timing];
     updatedTiming[index] = value;
     setTiming(updatedTiming);
@@ -244,10 +256,10 @@ const MedicationStatement = () => {
     setTiming([...timing, '']);
   };
   // Remove a time input field
-  const removeTime = (index) => {
+  const removeTime = (index: number) => {
     setTiming(timing.filter((_, idx) => idx !== index));
   };
-  const handleDaySelection = (day) => {
+  const handleDaySelection = (day: string) => {
     if (day === 'AS') {
       setSelectedDays(['AS']); // If 'As Needed' is selected, clear all other days
     } else {
@@ -266,20 +278,20 @@ const MedicationStatement = () => {
     setMedicationStatements(storedStatements);
   }, []);
   // Fetch suggestions from FDA API
-  const fetchSuggestions = async (query) => {
+  const fetchSuggestions = async (query: any) => {
     try {
       const response = await fetch(`https://api.fda.gov/drug/ndc.json?limit=5&search=brand_name_base:"${query}"`);
       if (!response.ok) {
         throw new Error('Error fetching drug information');
       }
       const data = await response.json();
-      setSuggestions(data.results.map(item => item.brand_name));
+      setSuggestions(data.results.map((item: { brand_name: any; }) => item.brand_name));
     } catch (error) {
       setSuggestions([]);
       console.error(error);
     }
   };
-  const handleInputChange = (event) => {
+  const handleInputChange = (event: { preventDefault: () => void; target: { value: any; }; }) => {
     event.preventDefault();
     const query = event.target.value;
     setMedication(query);
@@ -289,7 +301,7 @@ const MedicationStatement = () => {
       setSuggestions([]);
     }
   };
-  const handleSuggestionClick = (suggestion) => {
+  const handleSuggestionClick = (suggestion: React.SetStateAction<string>) => {
     setMedication(suggestion);
 
     // Fetch the full drug details
@@ -301,7 +313,7 @@ const MedicationStatement = () => {
 
     setSuggestions([]);  // Clear the suggestions dropdown
   };
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     // Check if medication is present
     if (!medication) {
@@ -356,7 +368,7 @@ const MedicationStatement = () => {
     setSuccessModalOpen(true);
     setPillImage(null)
   };
-  const handleMedLookup = async (medication) => {
+  const handleMedLookup = async (medication: any) => {
     try {
       const response = await fetch(
         `https://api.fda.gov/drug/ndc.json?limit=1&search=brand_name_base:"${medication}"`
@@ -373,16 +385,16 @@ const MedicationStatement = () => {
       console.error('Error fetching drug details:', error);
     }
   };
-  const storeNotificationTime = (medicationId, time) => {
+  const storeNotificationTime = (medicationId: string | number, time: string) => {
     const notificationSchedule = JSON.parse(localStorage.getItem('notificationSchedule')) || {};
     notificationSchedule[medicationId] = time;
     localStorage.setItem('notificationSchedule', JSON.stringify(notificationSchedule));
   };
-  const scheduleNotification = (statement) => {
+  const scheduleNotification = (statement: { resourceType?: string; medicationCodeableConcept: any; status?: string; dosage: any; id?: any; }) => {
 
     const dosageTimes = statement.dosage[0].timing?.repeat?.timeOfDay || [];
 
-    dosageTimes.forEach((time) => {
+    dosageTimes.forEach((time: { split: (arg0: string) => { (): any; new(): any; map: { (arg0: NumberConstructor): [any, any]; new(): any; }; }; }) => {
       const notificationTime = new Date();
       const [hours, minutes] = time.split(':').map(Number);
       notificationTime.setHours(hours, minutes, 0, 0);
@@ -428,7 +440,7 @@ const MedicationStatement = () => {
   };
 
   // Handle Select All/Unselect All functionality excluding 'AS'
-  const handleSelectAllChange = (e) => {
+  const handleSelectAllChange = (e: { target: { checked: any; }; }) => {
     if (e.target.checked) {
       // Select all days except 'AS'
       const daysWithoutAS = daysOfWeek.filter(day => day !== 'AS');
@@ -442,22 +454,6 @@ const MedicationStatement = () => {
   return (
     <div>
       <img src={assistantImage} alt="Meta Care" style={{ width: '100px', height: 'auto' }} /><br />
-      <label className="menu">
-        <button className="menu-button" onClick={handleDropdownToggle}>
-          <FaBars />
-        </button>
-        {isDropdownOpen && (
-          <MainMenu
-            fhirUrl={fhirUrl}
-            t={t}
-            setModalSearchContent={setModalSearchContent}
-            setShowSearchModal={setShowSearchModal}
-            setModalContent={setModalContent}
-            setShowModal={setShowModal}
-            setMessage={(msg) => console.log(msg)}
-          />
-        )}
-      </label>
       <div>
         <h2>{t('virtualPillbox')}</h2>
         <p>{t('appDescription')}</p>
@@ -493,7 +489,6 @@ const MedicationStatement = () => {
                   {statement.medicationCodeableConcept.text}
                 </button>
 
-                <MedicationAI medicationReference={statement.medicationCodeableConcept.text} entry={statement.medicationCodeableConcept.text} fhirUrl={fhirUrl} />
                 {/* Dosage */}
                 {statement.dosage[0].text && (
                   <div className="field">
@@ -513,7 +508,7 @@ const MedicationStatement = () => {
                   <div className="field">
                     <strong>{t('time')}:</strong>
                     {statement.dosage[0].timing.repeat.timeOfDay.length > 0 ? (
-                      statement.dosage[0].timing.repeat.timeOfDay.map((time, idx) => (
+                      statement.dosage[0].timing.repeat.timeOfDay.map((time: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Iterable<React.ReactNode> | null | undefined, idx: React.Key | null | undefined) => (
                         <div key={idx}>{time}</div>
                       ))
                     ) : (
@@ -525,8 +520,7 @@ const MedicationStatement = () => {
                   <FaInfoCircle />
                 </button>
                 <DrugLabel brandName={statement.medicationCodeableConcept.text} setShowSearchModal={setShowSearchModal} onClose={setModalOpen} setModalSearchContent={setModalSearchContent} />
-                <ShoppingButton buttonText={statement.medicationCodeableConcept.text} />
-                <DrugWarnings brandName={statement.medicationCodeableConcept.text} />
+               <DrugWarnings brandName={statement.medicationCodeableConcept.text} />
                 <button className="pillbutton" title={t('logMedicationAdministration')} onClick={() => logDosage(statement.medicationCodeableConcept.text, "500")}>
                   <MdHistory />
                 </button>
@@ -540,13 +534,10 @@ const MedicationStatement = () => {
       </div>
       <div>
         <div>
-          <HomeScreenPrompt></HomeScreenPrompt>
           <label>{t('medicationAdministrationLog')}</label><button className="pillbutton" title={t('getMedAdminHistory')} onClick={() => setLogModalOpen(true)}>
             <FaPills /> <MdHistory />
           </button>
-          <DownloadFHIRBundleButton resource={'MedicationAdministration'} />
-          <DownloadFHIRBundleButton resource={'MedicationStatement'} />
-          <label>{t('addMedication')}</label><button className="pillbutton" title={t('addMedication')} onClick={() => setAddModalOpen(true)}>
+         <label>{t('addMedication')}</label><button className="pillbutton" title={t('addMedication')} onClick={() => setAddModalOpen(true)}>
             <FaPlusCircle /> <FaPills />
           </button>
         </div>
@@ -558,13 +549,13 @@ const MedicationStatement = () => {
               </span>
               <h2>{drugDetails.brand_name} ({drugDetails.generic_name})</h2>
               <p><strong>{t('labeler')}:</strong> {drugDetails.labeler_name}</p>
-              <p><strong>{t('activeIngredients')}:</strong> {drugDetails.active_ingredients.map(ai => `${ai.name} (${ai.strength})`).join(', ')}</p>
+              <p><strong>{t('activeIngredients')}:</strong> {drugDetails.active_ingredients.map((ai: { name: any; strength: any; }) => `${ai.name} (${ai.strength})`).join(', ')}</p>
               <p><strong>{t('productNDC')}:</strong> {drugDetails.product_ndc}</p>
               <p><strong>{t('dosageForm')}:</strong> {drugDetails.dosage_form}</p>
               <p><strong>{t('drugInteractions')}:</strong></p>
               <ul>
                 {Array.isArray(drugDetails.drug_interactions) && drugDetails.drug_interactions.length > 0 ? (
-                  drugDetails.drug_interactions.map((interaction, index) => (
+                  drugDetails.drug_interactions.map((interaction: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Iterable<React.ReactNode> | null | undefined, index: React.Key | null | undefined) => (
                     <li key={index}>{interaction}</li>
                   ))
                 ) : (
@@ -720,7 +711,6 @@ const MedicationStatement = () => {
         {showModal && (
           <div className="modal">
             <div className="modal-content">
-              <ReactMarkdown>{modalContent}</ReactMarkdown>
               <button onClick={() => setShowModal(false)}>OK</button>
             </div>
           </div>
@@ -781,7 +771,7 @@ const MedicationStatement = () => {
         {confirmDeleteModalOpen && (
           <div className="modal">
             <div className="modal-content">
-              <span className="close-btn" onClick={() => handleCancelDelete(false)}>
+              <span className="close-btn" onClick={handleCancelDelete}>
                 &times;
               </span>
               <h2>{t('confirmDeleteTitle')}</h2>
@@ -796,7 +786,7 @@ const MedicationStatement = () => {
 
                 <button
                   className="pillbutton"
-                  onClick={() => handleCancelDelete(false)}
+                  onClick={handleCancelDelete}
                 >
                   <FaTimesCircle />
                 </button>
