@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import assistantImage from './../../images/metacare-avatar.png';
-import { FaTrash, FaBars, MdHistory, FaPills, FaClock, FaPlusCircle, FaMinusCircle, FaCamera, FaInfoCircle, FaFilter, FaTimesCircle, FaDownload } from 'react-icons/fa';
+import { useDidHealthStorage } from '../useDidHealthAppStorage';
+import { resolveDidHealthAcrossChains } from '../../../src/lib/DIDDocument';
 import { useTranslation } from 'react-i18next';
-import DrugWarnings from './buttons/DrugWarnings';
-import DrugLabel from './buttons/DrugLabel';
-import PillScanner from './buttons/MedicineScanner';
+import { FaTrash, FaBars, MdHistory, FaPills, FaClock, FaPlusCircle, FaMinusCircle, FaCamera, FaInfoCircle, FaFilter, FaTimesCircle, FaDownload } from 'react-icons/fa';
 
 interface Props {
   // Add any props that this component accepts
@@ -31,8 +29,39 @@ interface MedicationStatement {
   }>;
 }
 
+interface MedicationBundle {
+  resourceType: 'Bundle';
+  type: 'collection';
+  entry: Array<{
+    resource: MedicationStatement;
+  }>;
+}
+
+interface MedicationStatement {
+  resourceType: string;
+  medicationCodeableConcept: {
+    text: string;
+  };
+  status: string;
+  dosage: Array<{
+    text: string;
+    route: {
+      text: string;
+    };
+    timing: {
+      repeat: {
+        when: string[];
+        timeOfDay: string[];
+      };
+    };
+  }>;
+}
+
 const MedicationStatement: React.FC<Props> = () => {
+  const { saveToLocal, saveToIPFSAndUpdateDID, loadAllFromDID } = useDidHealthStorage();
   const [medicationStatements, setMedicationStatements] = useState<Array<MedicationStatement>>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [medication, setMedication] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [status, setStatus] = useState('active');
@@ -81,17 +110,62 @@ const [drugDetails, setDrugDetails] = useState<DrugDetails | null>(null);
     setModalOpen(false); // Close modal after image is selected
   };
 
-  // Function to filter the medication log
-  const filteredLog = medicationLog.filter(logEntry => {
+  useEffect(() => {
+    const loadStatements = async () => {
+      try {
+        const didDoc = await resolveDidHealthAcrossChains();
+        if (didDoc) {
+          const statements = await loadAllFromDID(didDoc.doc);
+          setMedicationStatements(statements.filter(statement => 
+            statement.resourceType === 'MedicationStatement'
+          ));
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load medication statements');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStatements();
+  }, []);
     const matchesText = logEntry.medicationCodeableConcept.text.toLowerCase().includes(filterText.toLowerCase());
     const matchesDate = filterDate ? new Date(logEntry.effectiveDateTime).toLocaleDateString() === filterDate : true;
     return matchesText && matchesDate;
   });
   // Open the confirmation modal
-  const handleDelete = (index: string) => {
-    console.log('deleting index' + index)
-    setDeleteIndex(index);
-    setConfirmDeleteModalOpen(true);
+  const handleDelete = async (index: string) => {
+    try {
+      const statements = [...medicationStatements];
+      if (Number(index) >= 0 && Number(index) < statements.length) {
+        statements.splice(Number(index), 1);
+        setMedicationStatements(statements);
+
+        // Save updated list locally
+        const bundle: MedicationBundle = {
+          resourceType: 'Bundle',
+          type: 'collection',
+          entry: statements.map(statement => ({
+            resource: statement
+          }))
+        };
+        
+        await saveToLocal(bundle);
+
+        // Save to IPFS and update DID
+        const didDoc = await resolveDidHealthAcrossChains();
+        if (didDoc) {
+          await saveToIPFSAndUpdateDID(bundle, didDoc.chainName, didDoc.doc, true);
+        }
+
+        setConfirmDeleteModalOpen(true);
+        setError('');
+      } else {
+        setError('Invalid index for deletion');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete medication statement');
+    }
   };
 
   // Close the modal if the user cancels
@@ -330,12 +404,6 @@ const [drugDetails, setDrugDetails] = useState<DrugDetails | null>(null);
     }
 
     // If days of the week are selected, check if timing is provided
-    if (selectedDays[0] !== 'AS' && !timing.length) {
-      alert(t('timingErrorMessage'));
-      return;
-    }
-    const newStatement = {
-      resourceType: "MedicationStatement",
       medicationCodeableConcept: {
         text: medication
       },
@@ -351,11 +419,6 @@ const [drugDetails, setDrugDetails] = useState<DrugDetails | null>(null);
         }
       }],
     };
-
-    const updatedStatements = [...medicationStatements, newStatement];
-    setMedicationStatements(updatedStatements);
-    localStorage.setItem('MedicationStatement', JSON.stringify(updatedStatements));
-    // Schedule the notification for the added medication
     scheduleNotification(newStatement);
 
     // Clear the form fields after submission

@@ -3,8 +3,10 @@
 import { AppDepsProvider } from './apps/AppContext'
 import { didHealthApps } from './apps/index'
 import { lazy, Suspense } from 'react'
+import { useParams } from 'react-router-dom'
 
-export function AppLauncher({ appId }: { appId: string }) {
+export function AppLauncher() {
+  const { appId } = useParams()
   const config = didHealthApps.find(app => app.id === appId)
   if (!config) return <div>App not found</div>
 

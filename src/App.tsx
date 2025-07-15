@@ -18,6 +18,7 @@ import {DidHealthQRScanner} from './components/dao/DAODIDScanner'
 import  DIDResolver  from './components/DIDResolver';
 import { XmtpInstallationsPage } from './components/chat/XmtpInstalls'
 import AppGallery from './components/fhir/AppGallery'
+import { AppLauncher } from './components/fhir/AppLauncher'
 function App() {
   return (
 
@@ -44,6 +45,7 @@ function App() {
         <Route path="/scan" element={ <DidHealthQRScanner/>}/>
         <Route path="/resolve" element={ <DIDResolver/>}/>
         <Route path="/apps" element={<AppGallery />} />
+        <Route path="/apps/:appId" element={<AppLauncher />} />
         <Route path="/onboarding/ethereum" element={<OnboardingEth />} />
         <Route path="/onboarding/bitcoin" element={<OnboardingBTC />} />
         <Route path="*" element={<Navigate to="/" replace />} />

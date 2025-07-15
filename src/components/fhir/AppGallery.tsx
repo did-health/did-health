@@ -3,8 +3,7 @@ import React from 'react'
 import { didHealthApps } from './apps/index'
 import type { App } from './apps/index'
 import { useNavigate } from 'react-router-dom'
-import Image from 'next/image' // If using Next.js
-import logo from '../assets/did-health-logo.svg' // Adjust the path as needed
+import logo from '../../assets/did-health.png' // Adjust the path as needed
 
 export default function AppGallery() {
   const navigate = useNavigate()
@@ -12,7 +11,7 @@ export default function AppGallery() {
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
       <div className="flex flex-col items-center space-y-4 mb-8">
-        <Image
+        <img
           src={logo}
           alt="did:health Logo"
           width={120}

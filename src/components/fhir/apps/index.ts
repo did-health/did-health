@@ -19,6 +19,12 @@ export const didHealthApps: App[] = [
     title: 'Advance Directives',
     description: 'Create and manage your advance directives',
     component: () => import('./pcaio/PatientDirectivesStudio')
+  },
+  {
+    id: 'epic-connector',
+    title: 'Connect to Epic EHR',
+    description: 'Sign in to Epic MyChart and view/download your health records using SMART on FHIR.',
+    component: () => import('./epic/index')
   }
   // Add more apps here
 ]
