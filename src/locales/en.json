@@ -8,6 +8,11 @@
   "connectWallet": "Connect Wallet",
   "connectLit": "Connect to Lit Protocol",
   "changeEncryptionDecision": "Change Encryption Decision",
+  "connecttoEpicEHR": "Connect to Epic EHR",
+  "authorizewithEpicviaSMARTonFHIRtoviewanddownloadyourrecords": "Authorize with Epic via SMART on FHIR to view and download your records.",
+  "launchEpicLogin": "Launch Epic Login",
+  "recordsdownloaded": "Records Downloaded",  
+  
 "setupStorage": {
    "title": "Set up your health data storage on Web3.Storage",
     "input": {

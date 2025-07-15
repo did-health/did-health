@@ -108,10 +108,10 @@ export default function EpicConnector() {
           className="w-full h-full object-contain scale-110 transition-transform duration-300 hover:scale-125"
         />
       </div>
-      <h1 className="text-2xl font-bold text-indigo-600">Connect to Epic EHR</h1>
+      <h1 className="text-2xl font-bold text-indigo-600">{t('connecttoEpicEHR')}</h1>
       <div><EpicBrands /></div>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Authorize with Epic via SMART on FHIR to view and download your records.
+        {t('authorizewithEpicviaSMARTonFHIRtoviewanddownloadyourrecords.')}
       </p>
 
       {status && <p className="text-sm font-mono text-gray-800 dark:text-gray-300">{status}</p>}
@@ -127,7 +127,7 @@ export default function EpicConnector() {
             type="submit"
             className="mt-2 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
           >
-            🚀 Launch Epic Login
+            {t('launchEpicLogin')}
           </button>
         </form>
       )}
@@ -140,7 +140,7 @@ export default function EpicConnector() {
 
       {resources.length > 0 && (
         <div className="space-y-1 text-sm">
-          <h2 className="text-lg font-semibold mt-6">📄 Records Downloaded</h2>
+          <h2 className="text-lg font-semibold mt-6">📄 {t('recordsdownloaded')}</h2>
           {resources.map((r, i) => (
             <div key={i} className="border p-2 rounded">
               {r.resourceType} — <code>{r.id}</code>
