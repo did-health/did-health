@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from 'react';
-import { useAccount, useChainId } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useTranslation } from 'react-i18next';
-import { useOnboardingState } from '../../store/OnboardingState';
+import { useEffect, useMemo } from 'react'
+import { useAccount, useChainId, useDisconnect, useWalletClient } from 'wagmi'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { useTranslation } from 'react-i18next'
+import { useOnboardingState } from '../../store/OnboardingState'
+import { ethers } from 'ethers'
 
 /**
  * Deep-link helper for MetaMask Mobile.
@@ -11,57 +12,56 @@ import { useOnboardingState } from '../../store/OnboardingState';
  * directly inside MetaMask Mobile.
  */
 function useMetaMaskDeepLink() {
-  // naïve check is fine here – we only care about iOS browsers
-  const isIOS = useMemo(
-    () => /iPhone|iPad|iPod/i.test(navigator.userAgent),
-    []
-  );
-
+  const isIOS = useMemo(() => /iPhone|iPad|iPod/i.test(navigator.userAgent), [])
   const openInMetaMask = () => {
-    // Strip the protocol so MetaMask’s router accepts the URL
-    //const dappUrl = 'https://test.didhealth.com/onbaording/ethereum';
-    const dappUrl = window.location.href.replace(/^https?:\/\//, '');
-    console.log('Opening in MetaMask:', dappUrl);  
-    window.location.href = `https://metamask.app.link/dapp/${encodeURIComponent(
-      dappUrl
-    )}`;
-  };
-
-  return { isIOS, openInMetaMask };
+    const dappUrl = window.location.href.replace(/^https?:\/\//, '')
+    console.log('Opening in MetaMask:', dappUrl)
+    window.location.href = `https://metamask.app.link/dapp/${encodeURIComponent(dappUrl)}`
+  }
+  return { isIOS, openInMetaMask }
 }
 
 export function ConnectWallet() {
-  const { isConnected, address } = useAccount();
-  const chainId = useChainId();
-  const { t } = useTranslation();
+  const { isConnected, address } = useAccount()
+  const { disconnect } = useDisconnect()
+  const chainId = useChainId()
+  const { data: signer } = useWalletClient()
+  const { t } = useTranslation()
 
   const {
-    setWalletConnected,
-    setWalletAddress,
-    setChainId,
-  } = useOnboardingState();
+    setWallet,
+    setAESKeyFromWallet,
+    reset,
+  } = useOnboardingState()
 
-  const { isIOS, openInMetaMask } = useMetaMaskDeepLink();
+  const { isIOS, openInMetaMask } = useMetaMaskDeepLink()
 
-  /* ------------------------------------------------------------------ */
-  /* Synchronise wagmi + Zustand state                                  */
-  /* ------------------------------------------------------------------ */
-
+  // 🔐 Setup AES key + onboarding state
   useEffect(() => {
-    if (isConnected && address) {
-      setWalletConnected(true);
-      setWalletAddress(address);
+    const setupEncryption = async () => {
+      if (isConnected && address && signer) {
+        setWallet(address, chainId)
+        try {
+          await setAESKeyFromWallet(signer)
+        } catch (err) {
+          console.error('Failed to derive AES key from wallet signature:', err)
+        }
+      }
     }
-  }, [isConnected, address, setWalletConnected, setWalletAddress]);
+    setupEncryption()
+  }, [isConnected, address, signer, chainId, setWallet, setAESKeyFromWallet])
 
+  // 🧼 Wipe AES key and onboarding state on disconnect
   useEffect(() => {
-    setChainId(chainId);
-  }, [chainId, setChainId]);
+    if (!isConnected) {
+      reset()
+    }
+  }, [isConnected, reset])
 
-  /* ------------------------------------------------------------------ */
-  /* UI                                                                 */
-  /* ------------------------------------------------------------------ */
-  //console.log('isIOS:', isIOS);
+  const disconnectWallet = () => {
+    disconnect()
+    reset() // clears AES key and other wallet state
+  }
   return (
     <div className="rounded-2xl border border-gray-200 p-6 shadow-lg bg-white dark:bg-gray-800">
       <p className="text-gray-600 dark:text-gray-300 mb-6">
@@ -80,8 +80,19 @@ export function ConnectWallet() {
           {t('onboarding.openInMetaMask')}
         </button>
       )}
+            {address && (
+        <div className="mt-4 space-y-2">
+          <p className="text-green-600 text-sm">✅ Connected: {address}</p>
+          <button
+            onClick={disconnectWallet}
+            className="btn btn-sm bg-red-600 text-white hover:bg-red-700"
+          >
+            Disconnect
+          </button>
+        </div>
+      )}
     </div>
-  );
+  )
 }
 
-export default ConnectWallet;
+export default ConnectWallet

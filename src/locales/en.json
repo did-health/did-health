@@ -11,7 +11,8 @@
   "connecttoEpicEHR": "Connect to Epic EHR",
   "authorizewithEpicviaSMARTonFHIRtoviewanddownloadyourrecords": "Authorize with Epic via SMART on FHIR to view and download your records.",
   "launchEpicLogin": "Launch Epic Login",
-  "recordsdownloaded": "Records Downloaded",  
+  "recordsdownloaded": "Records Downloaded",
+  "connectToEpic": "Connect to Epic",
   
 "setupStorage": {
    "title": "Set up your health data storage on Web3.Storage",
