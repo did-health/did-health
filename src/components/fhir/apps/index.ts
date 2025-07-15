@@ -19,6 +19,12 @@ export const didHealthApps: App[] = [
     title: 'Advance Directives',
     description: 'Create and manage your advance directives',
     component: () => import('./pcaio/PatientDirectivesStudio')
+  },
+  {
+    id: 'viewer',
+    title: 'Viewer',
+    description: 'View and manage your health records',
+    component: () => import('./viewer/Index')
   }
 
   // Add more apps here
