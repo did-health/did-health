@@ -1,85 +1,87 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import type { Patient, Practitioner, Organization, Device } from 'fhir/r4'
-import type { LitNodeClient } from '@lit-protocol/lit-node-client'
+import { ethers } from 'ethers'
 
-type Resource = Patient | Practitioner | Organization | Device
-
-type State = {
-  walletConnected: boolean
-  walletAddress: string | null
-  litConnected: boolean
-  storageReady: boolean
-  fhirResource: Resource | null
-  did: string | null
-  litClient: LitNodeClient | null
-  email: string | null
-  web3SpaceDid: string | null
-  sessionSigs?: any | null
-  accessControlConditions: any | null
-  encryptionSkipped: boolean
-  ipfsUri: string | null
-  chainId: number | string | null
-  w3upClient: any | null
-
-  setWalletConnected: (value: boolean) => void
-  setWalletAddress: (address: string) => void
-  setLitConnected: (value: boolean) => void
-  setStorageReady: (value: boolean) => void
-  setFHIRResource: (resource: Resource) => void
-  setDID: (did: string) => void
-  setLitClient: (client: LitNodeClient) => void
-  setEmail: (email: string) => void
-  setWeb3SpaceDid: (did: string) => void
-  setAccessControlConditions: (value: any) => void
-  setEncryptionSkipped: (value: boolean) => void
-  setIpfsUri: (uri: string | null) => void
-  setChainId: (chainId: number | string | null) => void
-  setW3upClient: (client: any) => void
+export interface DIDDocument {
+  id: string
+  controller: string
+  service: Array<{
+    id: string
+    type: string
+    serviceEndpoint: string
+  }>
+  verificationMethod: any[]
+  reputationScore: number
+  credentials: {
+    hasWorldId: boolean
+    hasPolygonId: boolean
+    hasSocialId: boolean
+  }
+  ipfsUri?: string
 }
 
-export const useOnboardingState = create<State>()(
-  persist(
-    (set) => ({
-      walletConnected: false,
+interface OnboardingState {
+  walletAddress: string | null
+  chainId: number | null
+  fhirResource: any | null
+  litClient: any | null
+  litConnected: boolean
+  accessControlConditions: any[] | null
+  encryptionSkipped: boolean
+  didDocument: DIDDocument | null
+
+  // 🧠 NEW: AES encryption state
+  aesKey: string | null
+  setAESKeyFromWallet: (signer: any) => Promise<void>
+  setLitConnected: (connected: boolean) => void
+
+  setWallet: (address: string, chainId: number) => void
+  setFhirResource: (resource: any) => void
+  setLitClient: (client: any) => void
+  setAccessControlConditions: (acc: any[]) => void
+  setEncryptionSkipped: (skip: boolean) => void
+  setDidDocument: (doc: DIDDocument) => void
+  reset: () => void
+}
+
+// 🔐 Utility to derive AES key from wallet signature
+const generateEncryptionKeyFromWallet = async (signer: any): Promise<string> => {
+  const message = 'Generate encryption key'
+  const signature = await signer.signMessage(message)
+  return ethers.keccak256(ethers.toUtf8Bytes(signature))
+}
+
+// 🧠 Zustand store
+export const useOnboardingState = create<OnboardingState>((set) => ({
+  walletAddress: null,
+  chainId: null,
+  fhirResource: null,
+  litClient: null,
+  litConnected: false,
+  accessControlConditions: null,
+  encryptionSkipped: false,
+  didDocument: null,
+  aesKey: null,
+  setAESKeyFromWallet: async (signer) => {
+    const key = await generateEncryptionKeyFromWallet(signer)
+    set({ aesKey: key })
+  },
+  setWallet: (address, chainId) => set({ walletAddress: address, chainId }),
+  setFhirResource: (resource) => set({ fhirResource: resource }),
+  setLitClient: (client) => set({ litClient: client }),
+  setLitConnected: (connected) => set({ litConnected: connected }),
+  setAccessControlConditions: (acc) => set({ accessControlConditions: acc }),
+  setEncryptionSkipped: (skip) => set({ encryptionSkipped: skip }),
+  setDidDocument: (doc) => set({ didDocument: doc }),
+  reset: () =>
+    set({
       walletAddress: null,
-      litConnected: false,
-      storageReady: false,
+      chainId: null,
       fhirResource: null,
-      did: null,
       litClient: null,
-      email: null,
-      web3SpaceDid: null,
+      litConnected: false,
       accessControlConditions: null,
       encryptionSkipped: false,
-      ipfsUri: null,
-      chainId: null,
-      w3upClient: null,
-      setW3upClient: (client) => set({ w3upClient: client }),
-      setWalletConnected: (walletConnected) => set({ walletConnected }),
-      setWalletAddress: (walletAddress) => set({ walletAddress }),
-      setLitConnected: (litConnected) => set({ litConnected }),
-      setStorageReady: (storageReady) => set({ storageReady }),
-      setFHIRResource: (fhirResource) => set({ fhirResource }),
-      setDID: (did) => set({ did }),
-      setLitClient: (litClient) => set({ litClient }),
-      setEmail: (email) => set({ email }),
-      setWeb3SpaceDid: (web3SpaceDid) => set({ web3SpaceDid }),
-      setAccessControlConditions: (accessControlConditions) => set({ accessControlConditions }),
-      setEncryptionSkipped: (encryptionSkipped) => set({ encryptionSkipped }),
-      setIpfsUri: (ipfsUri) => set({ ipfsUri }),
-      setChainId: (chainId) => set({ chainId }),
+      didDocument: null,
+      aesKey: null,
     }),
-    {
-      name: 'didhealth-onboarding',
-      partialize: (state) => {
-        const {
-          litClient,
-          w3upClient,
-          ...persistedState
-        } = state
-        return persistedState // exclude non-serializable Lit client and w3upClient
-      }
-    }
-  )
-)
+}))
