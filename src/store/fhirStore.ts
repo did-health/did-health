@@ -2,12 +2,12 @@
 
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
-import type {  Bundle, BundleEntry, FhirResource } from 'fhir/r4'
+import type { Bundle, BundleEntry, FhirResource, Resource } from 'fhir/r4'
 import { useOnboardingState } from './OnboardingState'
 
 import { arrayify } from '@ethersproject/bytes'
 
-type ResourceType = string
+type ResourceType = Resource['resourceType']
 type ResourceId = string
 
 interface StoredEncryptedResource {
@@ -74,11 +74,11 @@ export const fhir = {
     return { ...resource, id }
   },
 
-  read: async <T extends FhirResource>(resourceType: T['resourceType'], id: string): Promise<T | undefined> => {
+  read: async <T extends FhirResource>(resourceType: Extract<T['resourceType'], ResourceType>, id: string): Promise<T | null> => {
     const aesKey = useOnboardingState.getState().aesKey
     if (!aesKey) throw new Error('No AES key set')
     const stored = useFhirInternal.getState().db[resourceType]?.[id]
-    if (!stored) return undefined
+    if (!stored) return null
     return await decryptFHIR<T>(stored, aesKey)
   },
 
