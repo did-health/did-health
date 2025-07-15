@@ -16,6 +16,14 @@ export default function EpicConnector() {
   const handleEndpointSelect = (endpoint: string) => {
     setSelectedEndpoint(endpoint);
     setStatus('');
+    
+    // Trigger SMART launch immediately
+    SMART.authorize({
+      clientId,
+      scope,
+      iss: endpoint,
+      redirectUri,
+    });
   };
 
   const clientId = import.meta.env.VITE_EPIC_CLIENT_ID
