@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { fhir } from '../../../../store/fhirStore'
 import { oauth2 as SMART } from 'fhirclient'
-import type { Resource } from 'fhir/r4'
+import type { Resource} from 'fhir/r4'
 import EpicBrands from './Brands'
 import FHIRResource from '../../FHIRResourceView'
+import logo from '../../../../assets/did-health.png'
+import { useTranslation } from 'react-i18next'
+
 export default function EpicConnector() {
   const [status, setStatus] = useState('')
   const [patient, setPatient] = useState<Resource | null>(null)
@@ -13,6 +16,7 @@ export default function EpicConnector() {
   const redirectUri = import.meta.env.VITE_EPIC_REDIRECT_URI
   const defaultIss = import.meta.env.VITE_EPIC_ISS_URL
   const scope = 'openid fhirUser Patient/*.read'
+  const { t } = useTranslation()
 
   useEffect(() => {
     const run = async () => {
@@ -97,6 +101,13 @@ export default function EpicConnector() {
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-4">
+      <div className="w-28 h-28 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-red-400/40 mb-4">
+        <img
+          src={logo}
+          alt="did:health Logo"
+          className="w-full h-full object-contain scale-110 transition-transform duration-300 hover:scale-125"
+        />
+      </div>
       <h1 className="text-2xl font-bold text-indigo-600">Connect to Epic EHR</h1>
       <div><EpicBrands /></div>
       <p className="text-sm text-gray-600 dark:text-gray-400">
