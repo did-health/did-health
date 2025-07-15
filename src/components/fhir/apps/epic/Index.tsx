@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { fhir } from '../../../../store/fhirStore'
 import { oauth2 as SMART } from 'fhirclient'
 import type { Resource } from 'fhir/r4'
-import EpicBrands from './brands'
+import EpicBrands from './Brands'
 import FHIRResource from '../../FHIRResourceView'
 export default function EpicConnector() {
   const [status, setStatus] = useState('')

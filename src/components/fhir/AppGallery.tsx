@@ -11,13 +11,9 @@ export default function AppGallery() {
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
       <div className="flex flex-col items-center space-y-4 mb-8">
-        <img
-          src={logo}
-          alt="did:health Logo"
-          width={120}
-          height={120}
-          className="rounded-lg"
-        />
+        <div className="w-32 h-32 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
+          <img src={logo} alt="DID Health Logo" className="w-full h-full object-contain" />
+        </div>
         <h1 className="text-4xl font-bold text-center text-indigo-600">🧩 Available did:health Apps</h1>
       </div>
 
