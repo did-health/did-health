@@ -3,7 +3,6 @@ import { useAccount, useChainId, useDisconnect, useWalletClient } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useTranslation } from 'react-i18next'
 import { useOnboardingState } from '../../store/OnboardingState'
-import { ethers } from 'ethers'
 
 /**
  * Deep-link helper for MetaMask Mobile.
@@ -25,7 +24,19 @@ export function ConnectWallet() {
   const { isConnected, address } = useAccount()
   const { disconnect } = useDisconnect()
   const chainId = useChainId()
-  const { data: signer } = useWalletClient()
+  const { data: walletClient } = useWalletClient()
+  
+  // Create a signer object that works with our encryption key generation
+  const signer = useMemo(() => {
+    if (!walletClient) return null
+    return {
+      signMessage: async (message: string) => {
+        return await walletClient.signMessage({
+          message
+        })
+      }
+    }
+  }, [walletClient])
   const { t } = useTranslation()
 
   const {
@@ -39,17 +50,30 @@ export function ConnectWallet() {
   // 🔐 Setup AES key + onboarding state
   useEffect(() => {
     const setupEncryption = async () => {
-      if (isConnected && address && signer) {
+      if (!isConnected || !address || !signer) return
+
+      try {
+        // First set the wallet info
         setWallet(address, chainId)
-        try {
-          await setAESKeyFromWallet(signer)
-        } catch (err) {
-          console.error('Failed to derive AES key from wallet signature:', err)
-        }
+        
+        // Then generate the AES key
+        await setAESKeyFromWallet(signer)
+        
+        // Log success
+        console.log('Successfully generated AES key from wallet')
+      } catch (err) {
+        console.error('Failed to derive AES key from wallet signature:', err)
+        // Reset the wallet state if key generation fails
+        reset()
+        throw err
       }
     }
-    setupEncryption()
-  }, [isConnected, address, signer, chainId, setWallet, setAESKeyFromWallet])
+
+    // Only run setup if we have all required pieces
+    if (isConnected && address && signer) {
+      setupEncryption().catch(console.error)
+    }
+  }, [isConnected, address, signer, chainId, setWallet, setAESKeyFromWallet, reset])
 
   // 🧼 Wipe AES key and onboarding state on disconnect
   useEffect(() => {
