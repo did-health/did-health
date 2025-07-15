@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import type { Bundle, Organization, Endpoint, Reference } from 'fhir/r4b';
 import Fuse from 'fuse.js';
+import { useTranslation } from 'react-i18next';
 
 type OrganizationSearchResult = {
   item: { resource: Organization };
 };
 
-export default function EpicBrands() {
+interface EpicBrandsProps {
+  onEndpointSelect: (endpoint: string) => void;
+}
+
+export default function EpicBrands({ onEndpointSelect }: EpicBrandsProps) {
+  const { t } = useTranslation();
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredResults, setFilteredResults] = useState<{ org: Organization; endpoints: Endpoint[] }[]>([]);
+  const [selectedEndpoint, setSelectedEndpoint] = useState<Endpoint | null>(null);
 
   useEffect(() => {
     fetch('/brands/user-access-brands-endpoint-bundle.json')
@@ -19,8 +26,69 @@ export default function EpicBrands() {
   }, []);
 
   useEffect(() => {
-    if (!bundle || !searchTerm) {
+    if (!bundle) {
       setFilteredResults([]);
+      return;
+    }
+
+    // Check if sandbox is being searched for
+    const isSandboxSearch = searchTerm.toLowerCase().includes('sandbox');
+    if (isSandboxSearch) {
+      const sandboxEndpoint: Endpoint = {
+        resourceType: 'Endpoint',
+        id: 'sandbox-endpoint',
+        status: 'active',
+        connectionType: {
+          system: 'http://terminology.hl7.org/CodeSystem/endpoint-connection-type',
+          code: 'rest-fhir',
+          display: 'FHIR-RESTful'
+        },
+        payloadType: [{
+          coding: [{
+            system: 'http://terminology.hl7.org/CodeSystem/endpoint-payload-type',
+            code: 'application/fhir+json',
+            display: 'FHIR JSON'
+          }]
+        }],
+        address: import.meta.env.VITE_EPIC_SANDBOX_URL,
+        managingOrganization: {
+          reference: 'Organization/sandbox-org',
+          display: 'Epic Sandbox Environment'
+        },
+        contact: [{
+          system: 'url',
+          value: 'https://sandbox.epic.com'
+        }],
+        extension: [{
+          url: 'http://hl7.org/fhir/StructureDefinition/endpoint-fhir-version',
+          valueCode: 'R4'
+        }],
+      };
+
+      const sandboxOrg: Organization = {
+        resourceType: 'Organization',
+        id: 'sandbox-org',
+        meta: {
+          profile: ['http://hl7.org/fhir/us/core/StructureDefinition/us-core-organization']
+        },
+        name: 'Epic Sandbox Environment',
+        type: [{
+          coding: [{
+            system: 'http://terminology.hl7.org/CodeSystem/organization-type',
+            code: 'prov',
+            display: 'Healthcare Provider'
+          }]
+        }],
+        address: [{
+          use: 'work',
+          state: 'Sandbox',
+          postalCode: '00000'
+        }]
+      };
+
+      setFilteredResults([{ org: sandboxOrg, endpoints: [sandboxEndpoint] }]);
+      // Automatically connect to sandbox endpoint when found
+      handleConnect({ ...sandboxEndpoint, address: import.meta.env.VITE_EPIC_ISS_URL });
       return;
     }
 
@@ -51,9 +119,13 @@ export default function EpicBrands() {
     setFilteredResults(results);
   }, [searchTerm, bundle]);
 
+  const handleConnect = (endpoint: Endpoint) => {
+    onEndpointSelect(endpoint.address);
+  };
+
   return (
     <div className="p-4 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Search Epic FHIR Brands</h2>
+      <h2 className="text-2xl font-bold mb-4">{t('searchEpicFHIRBrands')}</h2>
       <input
         type="text"
         placeholder="Search by name, state, or zip..."
@@ -125,6 +197,14 @@ export default function EpicBrands() {
                   }
                 </p>
               )}
+              <div className="mt-4">
+                <button
+                  onClick={() => handleConnect(endpoint)}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+                >
+                  {t('connectToEpic')}
+                </button>
+              </div>
             </div>
           ))}
         </div>

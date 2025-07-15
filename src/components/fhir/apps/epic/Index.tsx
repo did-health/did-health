@@ -8,9 +8,15 @@ import logo from '../../../../assets/did-health.png'
 import { useTranslation } from 'react-i18next'
 
 export default function EpicConnector() {
-  const [status, setStatus] = useState('')
+  const [status, setStatus] = useState<string>('');
+  const [selectedEndpoint, setSelectedEndpoint] = useState<string>('');
   const [patient, setPatient] = useState<Resource | null>(null)
   const [resources, setResources] = useState<Resource[]>([])
+
+  const handleEndpointSelect = (endpoint: string) => {
+    setSelectedEndpoint(endpoint);
+    setStatus('');
+  };
 
   const clientId = import.meta.env.VITE_EPIC_CLIENT_ID
   const redirectUri = import.meta.env.VITE_EPIC_REDIRECT_URI
@@ -109,7 +115,7 @@ export default function EpicConnector() {
         />
       </div>
       <h1 className="text-2xl font-bold text-indigo-600">{t('connecttoEpicEHR')}</h1>
-      <div><EpicBrands /></div>
+      <div><EpicBrands onEndpointSelect={(endpoint) => handleEndpointSelect(endpoint)} /></div>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         {t('authorizewithEpicviaSMARTonFHIRtoviewanddownloadyourrecords.')}
       </p>
