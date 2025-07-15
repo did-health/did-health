@@ -12,6 +12,7 @@
   "authorizewithEpicviaSMARTonFHIRtoviewanddownloadyourrecords": "Authorize with Epic via SMART on FHIR to view and download your records.",
   "launchEpicLogin": "Launch Epic Login",
   "recordsdownloaded": "Records Downloaded",
+  "searchEpicFHIRBrands": "Search for Your Epic HealthCare Provider to connect",
   "connectToEpic": "Connect to Epic",
   
 "setupStorage": {
