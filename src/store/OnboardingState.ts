@@ -22,24 +22,25 @@ export interface DIDDocument {
 }
 
 interface OnboardingState {
+  walletConnected: boolean
   walletAddress: string | null
   chainId: number | null
   fhirResource: any | null
   litClient: any | null
   litConnected: boolean
-  walletConnected: boolean
   accessControlConditions: any[] | null
   encryptionSkipped: boolean
   didDocument: DIDDocument | null
   email: string | null
   storageReady: boolean
   web3SpaceDid: string | null
+  did: string | null
+  ipfsUri: string | null
+  
 
-  // 🧠 NEW: AES encryption state
+  // NEW: AES encryption state
   aesKey: string | null
   setAESKeyFromWallet: (signer: any) => Promise<void>
-
-
   setWallet: (address: string, chainId: number) => void
   setWalletAddress: (address: string, chainId: number) => void
   setFhirResource: (resource: any) => void
@@ -48,7 +49,9 @@ interface OnboardingState {
   setLitConnected: (connected: boolean) => void
   setAccessControlConditions: (acc: any[]) => void
   setEncryptionSkipped: (skip: boolean) => void
+  setIpfsUri: (uri: string) => void
   setDidDocument: (doc: DIDDocument) => void
+  setDid: (did: string) => void
   setEmail: (email: string | null) => void
   setStorageReady: (ready: boolean) => void
   setWeb3SpaceDid: (did: string | null) => void
@@ -93,34 +96,32 @@ export const useOnboardingState = create<OnboardingState>((set) => ({
   email: null,
   storageReady: false,
   web3SpaceDid: null,
+  did: null,
   aesKey: null,
+  ipfsUri: null,
   setAESKeyFromWallet: async (signer) => {
-    console.log('Generating AES key from wallet...')
-    const key = await generateEncryptionKeyFromWallet(signer)
-    console.log('Generated AES key:', key.substring(0, 10) + '...') // Log first 10 chars for debugging
-    
-    // Update state with the new key
-    set(state => ({
-      ...state,
-      aesKey: key
-    }))
-    
-    console.log('AES key set in state')
+    if (!signer?.signMessage) {
+      throw new Error('Signer object must have signMessage method')
+    }
+    const message = 'Sign this message to generate your AES key for did:health encryption'
+    const signature = await signer.signMessage(message)
+    const hash = keccak256(arrayify(signature))
+    set({ aesKey: hash })
   },
-  setEmail: (email: string | null) => set(state => ({ ...state, email })),
-  setStorageReady: (ready: boolean) => set(state => ({ ...state, storageReady: ready })),
-  setWeb3SpaceDid: (did: string | null) => set(state => ({ ...state, web3SpaceDid: did })),
   setWallet: (address, chainId) => set({ walletAddress: address, chainId }),
   setWalletAddress: (address, chainId) => set({ walletAddress: address, chainId }),
   setFhirResource: (resource) => set({ fhirResource: resource }),
   setLitClient: (client) => set({ litClient: client }),
   setWalletConnected: (connected) => set({ walletConnected: connected }),
   setLitConnected: (connected) => set({ litConnected: connected }),
-
   setAccessControlConditions: (acc) => set({ accessControlConditions: acc }),
   setEncryptionSkipped: (skip) => set({ encryptionSkipped: skip }),
   setDidDocument: (doc) => set({ didDocument: doc }),
-  // Reset everything except AES key
+  setEmail: (email) => set({ email: email }),
+  setStorageReady: (ready) => set({ storageReady: ready }),
+  setWeb3SpaceDid: (did) => set({ web3SpaceDid: did }),
+  setDid: (did) => set({ did: did }),
+  setIpfsUri: (uri) => set({ ipfsUri: uri }),
   reset: () =>
     set({
       walletAddress: null,
@@ -132,18 +133,5 @@ export const useOnboardingState = create<OnboardingState>((set) => ({
       encryptionSkipped: false,
       didDocument: null,
     }),
-
-  // Reset wallet-specific state
-  resetWallet: () =>
-    set({
-      walletAddress: null,
-      chainId: null,
-      fhirResource: null,
-      litClient: null,
-      litConnected: false,
-      accessControlConditions: null,
-      encryptionSkipped: false,
-      didDocument: null,
-      aesKey: null,
-    }),
+  resetWallet: () => set({ walletAddress: null, chainId: null, walletConnected: false })
 }))
