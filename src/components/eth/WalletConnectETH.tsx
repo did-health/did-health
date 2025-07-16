@@ -42,7 +42,7 @@ export function ConnectWallet() {
   const {
     setWallet,
     setAESKeyFromWallet,
-    reset,
+    resetWallet,
   } = useOnboardingState()
 
   const { isIOS, openInMetaMask } = useMetaMaskDeepLink()
@@ -64,7 +64,7 @@ export function ConnectWallet() {
       } catch (err) {
         console.error('Failed to derive AES key from wallet signature:', err)
         // Reset the wallet state if key generation fails
-        reset()
+        resetWallet()
         throw err
       }
     }
@@ -73,18 +73,18 @@ export function ConnectWallet() {
     if (isConnected && address && signer) {
       setupEncryption().catch(console.error)
     }
-  }, [isConnected, address, signer, chainId, setWallet, setAESKeyFromWallet, reset])
+  }, [isConnected, address, signer, chainId, setWallet, setAESKeyFromWallet, resetWallet])
 
-  // 🧼 Wipe AES key and onboarding state on disconnect
+  // 🧼 Reset wallet-specific state on disconnect
   useEffect(() => {
     if (!isConnected) {
-      reset()
+      resetWallet()
     }
-  }, [isConnected, reset])
+  }, [isConnected, resetWallet])
 
   const disconnectWallet = () => {
     disconnect()
-    reset() // clears AES key and other wallet state
+    resetWallet() // clears wallet state but preserves AES key
   }
   return (
     <div className="rounded-2xl border border-gray-200 p-6 shadow-lg bg-white dark:bg-gray-800">

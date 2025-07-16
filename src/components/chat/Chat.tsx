@@ -9,6 +9,8 @@ import { Inbox } from './Inbox';
 import { ChatPanel } from './ChatPanel';
 import logo from '../../assets/did-health.png';
 import { Client, type Signer } from '@xmtp/browser-sdk';
+import { ConnectLit } from '../lit/ConnectLit'; 
+import { SetupStorage } from '../SetupStorage';
 
 const Chat = () => {
   const { address, isConnected } = useAccount();
@@ -23,6 +25,7 @@ const Chat = () => {
     litConnected,
     email,
     storageReady,
+    setStorageReady,
     web3SpaceDid,
   } = useOnboardingState();
 
@@ -42,16 +45,16 @@ const Chat = () => {
           const accounts = await window.ethereum.request({ method: 'eth_accounts' });
           if (accounts && accounts.length > 0) {
             setWalletConnected(true);
-            setWalletAddress(accounts[0]);
+            setWalletAddress(accounts[0], chainId);
           } else {
             setWalletConnected(false);
-            setWalletAddress('');
+            setWalletAddress('', 0);
           }
         }
       } catch (e) {
         console.error('Error checking wallet connection:', e);
         setWalletConnected(false);
-        setWalletAddress('');
+        setWalletAddress('', 0);
       }
     };
 
@@ -61,7 +64,7 @@ const Chat = () => {
   // Set onboarding state from wallet info
   useEffect(() => {
     if (address && isConnected) {
-      setWalletAddress(address);
+      setWalletAddress(address, chainId);
       setWalletConnected(true);
     } else {
       setWalletConnected(false);
@@ -88,8 +91,8 @@ const Chat = () => {
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
 
-        if (!signer) {
-          console.error('No signer available');
+        if (!signer || !walletAddress) {
+          console.error('No signer or wallet address available');
           return;
         }
 
@@ -97,7 +100,7 @@ const Chat = () => {
           type: 'EOA' as const,
           async getIdentifier() {
             return {
-              identifier: (walletAddress ?? '').toLowerCase(),
+              identifier: walletAddress,
               identifierKind: 'Ethereum' as const,
             };
           },
@@ -111,7 +114,7 @@ const Chat = () => {
           },
         };
 
-        await initXmtp(xmtpSigner);
+        await initXmtp(xmtpSigner, {});
       } catch (e: unknown) {
         if (e instanceof Error) {
           console.error('Error setting up XMTP:', e.message);
@@ -144,7 +147,7 @@ const Chat = () => {
         }
       }
     };
-  }, [walletConnected, litConnected, storageReady, walletAddress, xmtpClient, isInitializing]);
+  }, [walletConnected, litConnected, storageReady, walletAddress, xmtpClient, isInitializing, email, storageReady, web3SpaceDid]);
 
 // Check readiness flags
 const isXmtpReady = !!xmtpClient;
@@ -179,6 +182,8 @@ if (!isReady) {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4">
       <div className="text-xl font-semibold">Initializing chat...</div>
+      <ConnectLit />
+      <SetupStorage onReady={(client) => setStorageReady(true)}></SetupStorage>
       <div className="text-gray-600">
         {error || 'Waiting for wallet, Lit, storage, and XMTP to be ready'}
       </div>
