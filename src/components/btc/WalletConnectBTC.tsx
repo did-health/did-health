@@ -12,6 +12,7 @@ export function ConnectWalletBTC() {
     setWallet,
     setAESKeyFromWallet,
     reset,
+    aesKey,
   } = useOnboardingState()
 
   // Detect wallet
@@ -42,7 +43,7 @@ export function ConnectWalletBTC() {
 
       setWalletAddress(address)
       setWallet(address, 0) // Bitcoin chain ID = 0
-      await setAESKeyFromWallet(signer)
+      if (!aesKey) await setAESKeyFromWallet(signer)
     } catch (err) {
       console.error('UniSat connection error:', err)
       setError('Failed to connect to UniSat.')
@@ -68,7 +69,7 @@ export function ConnectWalletBTC() {
 
       setWalletAddress(address)
       setWallet(address, 0)
-      await setAESKeyFromWallet(signer)
+      if (!aesKey) await setAESKeyFromWallet(signer)
     } catch (err) {
       console.error('Xverse connection error:', err)
       setError('Failed to connect to Xverse.')

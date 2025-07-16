@@ -44,6 +44,7 @@ export function ConnectWallet() {
     setWalletConnected,
     setAESKeyFromWallet,
     resetWallet,
+    aesKey,
   } = useOnboardingState()
 
   const { isIOS, openInMetaMask } = useMetaMaskDeepLink()
@@ -58,7 +59,9 @@ export function ConnectWallet() {
         setWallet(address, chainId)
         setWalletConnected(true)
         // Then generate the AES key
-        //await setAESKeyFromWallet(signer)
+        if (!aesKey) {
+          await setAESKeyFromWallet(signer)
+        }
         
         // Log success
         console.log('Successfully generated AES key from wallet')
