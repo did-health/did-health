@@ -291,11 +291,7 @@ export default function ResolveDIDETH() {
             </div>
           )}
 
-          {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && connectedWalletAddress && (
-            <div className="mt-6 text-center">
-              <DAOStatus walletAddress={connectedWalletAddress} did={didDoc?.id ?? ''} />
-            </div>
-          )}
+
 
           {fhir && (
             <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[600px]">
@@ -329,6 +325,11 @@ export default function ResolveDIDETH() {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+                    {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && connectedWalletAddress && (
+            <div className="mt-6 text-center">
+              <DAOStatus walletAddress={connectedWalletAddress} did={didDoc?.id ?? ''} />
             </div>
           )}
         </>
