@@ -41,6 +41,7 @@ export function ConnectWallet() {
 
   const {
     setWallet,
+    setWalletConnected,
     setAESKeyFromWallet,
     resetWallet,
   } = useOnboardingState()
@@ -55,9 +56,9 @@ export function ConnectWallet() {
       try {
         // First set the wallet info
         setWallet(address, chainId)
-        
+        setWalletConnected(true)
         // Then generate the AES key
-        await setAESKeyFromWallet(signer)
+        //await setAESKeyFromWallet(signer)
         
         // Log success
         console.log('Successfully generated AES key from wallet')
