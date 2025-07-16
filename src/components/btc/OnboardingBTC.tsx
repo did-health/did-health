@@ -36,6 +36,7 @@ export default function OnboardingBTC() {
     encryptionSkipped,
     walletAddress,
     setFhirResource,
+    setStorageReady,
   } = useOnboardingState()
 
   const handleSubmit = async (updatedFHIR: any) => {
@@ -91,11 +92,14 @@ export default function OnboardingBTC() {
           </StepCard>
         )}
 
-        {walletConnected && litConnected && (
-          <StepCard step="3" title={t('setupStorage')}>
-            <SetupStorage onReady={(client) => setW3upClient(client)} />
-          </StepCard>
-        )}
+            {walletConnected && litConnected && (
+               <StepCard step="3" title={t('setupStorage.title')}>
+                 <SetupStorage onReady={(client) => {
+                   setStorageReady(true)
+                   console.log('Storage setup complete:', client)
+                 }} />
+               </StepCard>
+             )}
 
         {walletConnected && litConnected && storageReady && !fhirResource && (
           <StepCard step="4" title={t('createFHIR')}>
@@ -105,9 +109,6 @@ export default function OnboardingBTC() {
 
         {fhirResource && (
           <StepCard step="4" title={t('fhirCreated')}>
-            <p className="text-green-600 dark:text-green-400 font-medium">
-              ✅ {t('created')} <strong>{fhirResource.resourceType}</strong>
-            </p>
             <div className="mt-2">
               {(() => {
                 if (!fhirResource) {
@@ -225,7 +226,7 @@ export default function OnboardingBTC() {
               </p>
               <div className="bg-blue-50 p-4 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <code className="text-sm font-mono">did:health:btc:{walletAddress}</code>
+                  <code className="text-sm font-mono break-all max-w-full">did:health:btc:{walletAddress}</code>
                   <button
                     onClick={() => navigator.clipboard.writeText(`did:health:btc:${walletAddress}`)}
                     className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 transition-colors"
