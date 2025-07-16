@@ -191,11 +191,11 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
   {/* Contact Info */}
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Phone</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.phone.label')}</label>
       <input name="telecom.1.value" value={patient?.telecom?.[1]?.value || ''} onChange={handleInputChange} className="input input-bordered w-full" />
     </div>
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Email</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.email.label')}</label>
       <input name="telecom.2.value" value={patient?.telecom?.[2]?.value || ''} onChange={handleInputChange} className="input input-bordered w-full" />
     </div>
   </div>

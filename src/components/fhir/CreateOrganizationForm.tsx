@@ -113,10 +113,23 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
               onChange={handleInputChange}
               className="input input-bordered w-full"
             >
-              <option value="">Select Type...</option>
-              <option value="prov">Provider Organization</option>
-              <option value="dept">Department</option>
-              <option value="team">Team</option>
+              <option value="">{t('Organization.type.label')}</option>
+              <option value="prov">Healthcare Provider</option>
+              <option value="dept">Hospital Department</option>
+              <option value="team">Care Team</option>
+              <option value="govt">Government Agency</option>
+              <option value="ins">Insurance Company</option>
+              <option value="pay">Payer</option>
+              <option value="edu">Educational Institution</option>
+              <option value="reli">Religious Organization</option>
+              <option value="crs">Clinical Research Sponsor</option>
+              <option value="pharm">Pharmacy</option>
+              <option value="lab">Laboratory</option>
+              <option value="ambul">Ambulance Service</option>
+              <option value="emg">Emergency Services</option>
+              <option value="ngo">Non-Governmental Organization</option>
+              <option value="bus">Business Entity</option>
+              <option value="other">Other</option>
             </select>
           </div>
 
@@ -137,7 +150,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
           {/* Organization Contact */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">({t('ContactPoint.system.label')})</label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.phone.label')}</label>
               <input
                 type="tel"
                 name="telecom.0.value"
@@ -147,7 +160,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
               />
             </div>
             <div>
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">({t('ContactPoint.system.label')})</label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.email.label')}</label>
               <input
                 type="email"
                 name="telecom.1.value"

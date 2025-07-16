@@ -108,11 +108,11 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
               <input id="birthDate" type="date" name="birthDate" value={practitioner.birthDate || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactDetail.short')}</label>
+              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.phone.label')}</label>
               <input id="phone" type="tel" name="telecom.0.value" value={practitioner.telecom?.[0]?.value || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactDetail.short')}</label>
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.email.label')}</label>
               <input id="email" type="email" name="telecom.1.value" value={practitioner.telecom?.[1]?.value || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
