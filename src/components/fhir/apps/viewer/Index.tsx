@@ -1,34 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { fhir } from '../../../../store/fhirStore'
 import type { FhirResource, BundleEntry } from 'fhir/r4'
+import { useOnboardingState } from '../../../../store/OnboardingState'
 
 const usCoreTypes = [
-  'AllergyIntolerance',
-  'CarePlan',
-  'CareTeam',
-  'Condition',
-  'Coverage',
-  'Device',
-  'DiagnosticReport',
-  'DocumentReference',
-  'Encounter',
-  'Goal',
-  'Immunization',
-  'Location',
-  'Medication',
-  'MedicationRequest',
-  'MedicationStatement',
-  'Observation',
-  'Organization',
-  'Patient',
-  'Practitioner',
-  'PractitionerRole',
-  'Procedure',
-  'Provenance',
-  'QuestionnaireResponse',
-  'RelatedPerson',
-  'ServiceRequest',
-  'Specimen',
+  'AllergyIntolerance', 'CarePlan', 'CareTeam', 'Condition', 'Coverage', 'Device',
+  'DiagnosticReport', 'DocumentReference', 'Encounter', 'Goal', 'Immunization',
+  'Location', 'Medication', 'MedicationRequest', 'MedicationStatement', 'Observation',
+  'Organization', 'Patient', 'Practitioner', 'PractitionerRole', 'Procedure',
+  'Provenance', 'QuestionnaireResponse', 'RelatedPerson', 'ServiceRequest', 'Specimen',
 ] as const
 
 type ResourceType = typeof usCoreTypes[number]
@@ -36,24 +16,31 @@ type ResourceType = typeof usCoreTypes[number]
 export default function AllResourcesList() {
   const [results, setResults] = useState<Record<string, FhirResource[]>>({})
   const [loading, setLoading] = useState(true)
+  const { aesKey } = useOnboardingState();
 
   useEffect(() => {
     const fetchAll = async () => {
+      if (!aesKey) {
+        console.warn('❌ AES key is missing — wallet might not be connected.')
+        return
+      }
+
       const out: Record<string, FhirResource[]> = {}
       for (const type of usCoreTypes) {
         try {
-          const bundle = await fhir.search(type)
+          const bundle = await fhir.search(type)  // Ensure this internally uses aesKey
           const entries = bundle.entry || []
           out[type] = entries.map((e: BundleEntry<FhirResource>) => e.resource!).filter(Boolean)
         } catch (err) {
-          console.warn(`Failed to fetch ${type}`, err)
+          console.warn(`❌ Failed to fetch ${type}`, err)
         }
       }
       setResults(out)
       setLoading(false)
     }
+
     fetchAll()
-  }, [])
+  }, [aesKey])
 
   if (loading) return <p className="text-gray-500">Loading FHIR data...</p>
 
