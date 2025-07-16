@@ -1,7 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 import { ConnectWallet } from './WalletConnectETH'
 import { ConnectLit } from '../lit/ConnectLit'
 import { SetupStorage } from '../SetupStorage'
@@ -16,6 +15,7 @@ import CreateDeviceForm from '../fhir/CreateDeviceForm'
 import CreatePatientForm from '../fhir/CreatePatientForm'
 import CreatePractitionerForm from '../fhir/CreatePractitionerForm'
 import CreateOrganizationForm from '../fhir/CreateOrganizationForm'
+
 type StepCardProps = {
   step: string
   title: string
@@ -32,16 +32,23 @@ export default function OnboardingEth() {
     fhirResource,
     did,
     accessControlConditions, // 
-    setDID,
+    setDid,
     encryptionSkipped, // <-- Add this line
     walletAddress, // <-- Add this line to get walletAddress from state
     setStorageReady,
   } = useOnboardingState()
 
-  console.log(did)
+  console.log('did', did)
+  console.log('walletConnected', walletConnected)
+  console.log('litConnected', litConnected)
+  console.log('storageReady', storageReady)
+  console.log('fhirResource', fhirResource)
+  console.log('accessControlConditions', accessControlConditions)
+  console.log('encryptionSkipped', encryptionSkipped)
+  console.log('walletAddress', walletAddress)
   const handleSubmit = async (updatedFHIR: any) => {
     console.log('💾 Submitting updated FHIR:', updatedFHIR)
-    useOnboardingState.getState().setFHIRResource(updatedFHIR)
+    useOnboardingState.getState().setFhirResource(updatedFHIR)
   }
   return (
     <main className="p-6 sm:p-10 max-w-3xl mx-auto text-gray-800 dark:text-white">
@@ -102,10 +109,6 @@ export default function OnboardingEth() {
         )}
         {fhirResource && (
           <StepCard step="4" title={t('fhirCreated')}>
-            <p className="text-green-600 dark:text-green-400 font-medium">
-              ✅ {t('created')} <strong>{fhirResource.resourceType}</strong>
-            </p>
-
             <div className="mt-2">
               {(() => {
                 switch (fhirResource.resourceType) {
@@ -160,7 +163,7 @@ export default function OnboardingEth() {
                 <button
                   onClick={() => {
                     useOnboardingState.getState().setEncryptionSkipped(false)
-                    useOnboardingState.getState().setAccessControlConditions(null)
+                    useOnboardingState.getState().setAccessControlConditions([])
                   }}
                   className="btn btn-outline btn-warning"
                 >
@@ -170,7 +173,7 @@ export default function OnboardingEth() {
             ) : (
               <>
                 <p className="text-green-600 font-medium mb-2">✅ Access Control Conditions have been set.</p>
-                {accessControlConditions.map((cond: any, idx: number) => {
+                {accessControlConditions && accessControlConditions.map((cond: any, idx: number) => {
                   const isSelfOnly =
                     cond.returnValueTest?.comparator === '=' &&
                     String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase();
@@ -207,7 +210,7 @@ export default function OnboardingEth() {
 
                 <button
                   onClick={() => {
-                    useOnboardingState.getState().setAccessControlConditions(null)
+                    useOnboardingState.getState().setAccessControlConditions([])
                   }}
                   className="btn btn-outline btn-accent"
                 >
@@ -220,7 +223,7 @@ export default function OnboardingEth() {
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && !did && (
           <StepCard step="6" title={t('chooseDID')}>
-            <SelectDIDFormETH onDIDAvailable={(did) => setDID(did)} />
+            <SelectDIDFormETH onDIDAvailable={(did) => setDid(did)} />
           </StepCard>
         )}
 
@@ -229,7 +232,7 @@ export default function OnboardingEth() {
             <div>
               <span>{did}</span>
               <button className="btn btn-ghost btn-xs" onClick={() => {
-                useOnboardingState.getState().setDID("")
+                useOnboardingState.getState().setDid("")
             }}>
               {t('reset')}
             </button>

@@ -69,7 +69,6 @@ console.log('Rendering status:', status);
 
       const space = await newClient.createSpace('did-health-user-space', { account })
       const spaceDid = space.did()
-      setStorageReady(true)
       console.log('spaceDid', spaceDid)
       await newClient.setCurrentSpace(spaceDid)
       setEmail(email)
