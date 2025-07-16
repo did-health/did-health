@@ -14,7 +14,7 @@ interface CreatePractitionerFormProps {
 
 const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
-  const { fhirResource, setFHIRResource } = useOnboardingState()
+  const { fhirResource, setFhirResource } = useOnboardingState()
   const [practitioner, setPractitioner] = useState<Practitioner>(defaultValues)
   const [showCamera, setShowCamera] = useState(false)
   const webcamRef = useRef<Webcam>(null)
@@ -70,7 +70,7 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
     if (!updatedPractitioner.id) {
       updatedPractitioner.id = uuidv4()
     }
-    setFHIRResource(updatedPractitioner)
+    setFhirResource(updatedPractitioner)
   }
 
   if (!practitioner) return null
@@ -80,7 +80,7 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
       <div className="w-full max-w-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
 
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
-          did:health {t('Practitioner.label')}Record
+          did:health {t('Practitioner.label')}
         </h2>
         <div className="space-y-4">
           {/* Demographics */}

@@ -13,9 +13,10 @@ interface CreateOrganizationFormProps {
 
 const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
-  const { fhirResource, setFHIRResource } = useOnboardingState()
+  const { fhirResource, setFhirResource } = useOnboardingState()
   const [organization, setOrganization] = useState<Organization>(defaultValues)
   const { t } = useTranslation(['fhir'])
+  const { t: t2 } = useTranslation()
 
   useEffect(() => {
     if (fhirResource?.resourceType === 'Organization') {
@@ -71,7 +72,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
       updatedOrg.id = uuidv4()
     }
 
-    setFHIRResource(updatedOrg)
+    setFhirResource(updatedOrg)
     //navigate('/onboarding/ethereum')
   }
 
@@ -230,7 +231,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
               onClick={handleSubmit}
               className="btn btn-primary w-full sm:w-auto"
             >
-              {organization?.id ? t('common.update') : t('common.create')} {t('Organization.label')}
+              {organization?.id ? t2('common.update') : t2('common.create')} {t('Organization.label')}
             </button>
           </div>
         </div>

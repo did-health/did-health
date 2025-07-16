@@ -16,12 +16,13 @@ interface CreatePatientFormProps {
 
 const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
-  const { fhirResource, setFHIRResource } = useOnboardingState()
+  const { fhirResource, setFhirResource } = useOnboardingState()
   const webcamRef = useRef<Webcam | null>(null)
   const [patient, setPatient] = useState<Patient>(defaultValues)
   const [showCamera, setShowCamera] = useState(false)
   const [status, setStatus] = useState<string>('')
   const { t } = useTranslation(['fhir'])
+  const { t: t2 } = useTranslation()
 
   useEffect(() => {
     if (fhirResource?.resourceType === 'Patient') {
@@ -60,7 +61,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
       updatedPatient.id = uuidv4()
     }
     // Update the FHIR resource in Zustand
-    setFHIRResource(updatedPatient)
+    setFhirResource(updatedPatient)
     // Call the parent's onSubmit handler with the updated data
     onSubmit(updatedPatient)
     setStatus('✅ FHIR updated successfully')
@@ -93,7 +94,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
         <div className="space-y-4">
           {status && <p className="text-sm text-gray-600 mb-4">{status}</p>}
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
-            🧬 did:health {t('Patient.label')} Record
+            🧬 did:health {t('Patient.label')} 
           </h2>
 
   {/* Demographics */}
@@ -295,7 +296,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
               onClick={updatePatient}
               className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              {patient.id ? t('common.update') : t('common.create')} {t('Patient.label')}
+              {patient.id ? t2('common.update') : t2('common.create')} {t('Patient.label')}
             </button>
   </div>
 </div>

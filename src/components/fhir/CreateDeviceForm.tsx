@@ -13,9 +13,10 @@ interface CreateDeviceFormProps {
 
 const CreateDeviceForm: React.FC<CreateDeviceFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
-  const { fhirResource, setFHIRResource } = useOnboardingState()
+  const { fhirResource, setFhirResource } = useOnboardingState()
   const [device, setDevice] = useState<Device>(defaultValues)
   const { t } = useTranslation(['fhir'])
+  const { t: t2 } = useTranslation()
 
   useEffect(() => {
     if (fhirResource?.resourceType === 'Device') {
@@ -55,7 +56,7 @@ const CreateDeviceForm: React.FC<CreateDeviceFormProps> = ({ defaultValues, onSu
     if (!updatedDevice.id) {
       updatedDevice.id = uuidv4()
     }
-    setFHIRResource(updatedDevice)
+    setFhirResource(updatedDevice)
     //navigate('/onboarding/ethereum')
   }
 
@@ -75,7 +76,7 @@ const CreateDeviceForm: React.FC<CreateDeviceFormProps> = ({ defaultValues, onSu
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white text-center">
-            🛠️ did:health {t('Device.label')} Record
+            🛠️ did:health {t('Device.label')} 
           </h2>
 
           {/* Device Name */}
@@ -159,7 +160,7 @@ const CreateDeviceForm: React.FC<CreateDeviceFormProps> = ({ defaultValues, onSu
               onClick={handleSubmit}
               className="btn btn-primary w-full sm:w-auto"
             >
-              {device?.id ? t('common.update') : t('common.create')} {t('Device.label')}
+              {device?.id ? t2('common.update') : t2('common.create')} {t('Device.label')}
             </button>
           </div>
         </form>

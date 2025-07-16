@@ -11,7 +11,8 @@ const CreateEndpointForm: React.FC<CreateEndpointFormProps> = ({ onSubmit }) => 
   const [address, setAddress] = useState('')
   const [directEmail, setDirectEmail] = useState('')
   const [orgReference, setOrgReference] = useState('')
-  const { t } = useTranslation(['translation', 'fhir'])
+  const { t } = useTranslation(['fhir'])
+  const { t: t2 } = useTranslation()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -92,7 +93,7 @@ const CreateEndpointForm: React.FC<CreateEndpointFormProps> = ({ onSubmit }) => 
         />
       </div>
 
-      <button type="submit" className="btn-primary w-full">{t('common.create')} {t('Endpoint.label')}</button>
+      <button type="submit" className="btn-primary w-full">{t2('common.create')} {t('Endpoint.label')}</button>
     </form>
   )
 }
