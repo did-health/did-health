@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { ethers } from 'ethers'
 import { arrayify } from '@ethersproject/bytes'
 import { keccak256 } from '@ethersproject/keccak256'
-
+import { persist } from 'zustand/middleware'
 export interface DIDDocument {
   id: string
   controller: string
@@ -27,6 +27,7 @@ interface OnboardingState {
   chainId: number | null
   fhirResource: any | null
   litClient: any | null
+  w3upClient: any | null
   litConnected: boolean
   accessControlConditions: any[] | null
   encryptionSkipped: boolean
@@ -82,12 +83,15 @@ const generateEncryptionKeyFromWallet = async (signer: any): Promise<string> => 
   throw new Error('Invalid signer object provided')
 }
 
-// 🧠 Zustand store
-export const useOnboardingState = create<OnboardingState>((set) => ({
+// 🧠 Zustand store with persistence
+export const useOnboardingState = create<OnboardingState>()(
+  persist(
+    (set) => ({
   walletAddress: null,
   chainId: null,
   fhirResource: null,
   litClient: null,
+  w3upClient: null,
   litConnected: false,
   walletConnected: false,
   accessControlConditions: null,
@@ -120,6 +124,7 @@ export const useOnboardingState = create<OnboardingState>((set) => ({
   setEmail: (email) => set({ email: email }),
   setStorageReady: (ready) => set({ storageReady: ready }),
   setWeb3SpaceDid: (did) => set({ web3SpaceDid: did }),
+  setW3upClient: (client: any) => set({ w3upClient: client }),
   setDid: (did) => set({ did: did }),
   setIpfsUri: (uri) => set({ ipfsUri: uri }),
   reset: () =>
@@ -128,10 +133,25 @@ export const useOnboardingState = create<OnboardingState>((set) => ({
       chainId: null,
       fhirResource: null,
       litClient: null,
+      w3upClient: null,
       litConnected: false,
       accessControlConditions: null,
       encryptionSkipped: false,
       didDocument: null,
     }),
-  resetWallet: () => set({ walletAddress: null, chainId: null, walletConnected: false })
-}))
+    
+  resetWallet: () => set({ walletAddress: null, chainId: null, walletConnected: false }),
+    }),
+    {
+      name: 'didhealth-onboarding',
+      partialize: (state) => {
+        const {
+          litClient,
+          w3upClient,
+          ...persistedState
+        } = state
+        return persistedState // exclude non-serializable Lit client and w3upClient
+      }
+    }
+  )
+)
