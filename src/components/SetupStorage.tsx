@@ -7,24 +7,25 @@ import { ResetWeb3SpaceButton } from './buttons/ResetWeb3SpaceButton'
 export function SetupStorage({ onReady }: { onReady: (client: any) => void }) {
   const { t } = useTranslation()
   const {
-    email: emailState,
+    email,
     web3SpaceDid,
+    storageReady,
     setEmail,
     setWeb3SpaceDid,
     setStorageReady,
   } = useOnboardingState()
 
-  const email = emailState || ''
+
 
   const [status, setStatus] = useState('')
   const [client, setClient] = useState<any>()
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    // Initialize client if we have email and web3SpaceDid
     if (email && web3SpaceDid && !client) {
       const initializeClient = async () => {
         try {
+          console.log('initializing client')
           const newClient = await create()
           setClient(newClient)
           setStatus(t('setupStorage.status.alreadySetup', { did: web3SpaceDid }))
@@ -40,16 +41,18 @@ export function SetupStorage({ onReady }: { onReady: (client: any) => void }) {
   }, [email, web3SpaceDid, setStorageReady, t])
 
   async function setupStorage() {
+console.log('setting up storage')
     try {
       if (!email || !email.includes('@')) {
         setStatus(t('setupStorage.status.invalidEmail'))
         return
       }
+      console.log("loading......................")
       setLoading(true)
 
       const newClient = await create()
       setClient(newClient)
-
+      console.log("client created")
       const account = await newClient.login(email as `${string}@${string}`)
 
       setStatus(t('setupStorage.status.emailSent'))
@@ -65,12 +68,18 @@ console.log('Rendering status:', status);
       await account?.plan.wait()
 
       const space = await newClient.createSpace('did-health-user-space', { account })
-      await newClient.setCurrentSpace(space.did())
-
-      setWeb3SpaceDid(space.did())
+      const spaceDid = space.did()
       setStorageReady(true)
+      console.log('spaceDid', spaceDid)
+      await newClient.setCurrentSpace(spaceDid)
+      setEmail(email)
+      setWeb3SpaceDid(spaceDid)
+   
+      console.log('email', email)
+      console.log('web3SpaceDid', web3SpaceDid)
+      console.log('space', space)
+      console.log('storageReady', storageReady)
       setStatus(t('setupStorage.status.spaceReady', { did: space.did() }))
-
       onReady(newClient)
     } catch (err) {
       console.error(err)
