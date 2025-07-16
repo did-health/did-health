@@ -16,7 +16,7 @@ export function RegisterDID() {
     accessControlConditions,
     encryptionSkipped,
     ipfsUri,
-    setDID,
+    setDid,
     setIpfsUri,
     walletAddress,
   } = useOnboardingState()
@@ -131,7 +131,7 @@ export function RegisterDID() {
       setActiveStep(4)
       setTxHash(tx)
       setFinalDid(did)
-      setDID(did)
+      setDid(did)
   
       setTimeout(() => setActiveStep(5), 1000)
     } catch (err: any) {
