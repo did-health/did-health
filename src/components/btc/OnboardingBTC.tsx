@@ -5,7 +5,6 @@ import { ConnectLit } from '../lit/ConnectLit'
 import { useOnboardingState } from '../../store/OnboardingState'
 import { SetupStorage } from '../SetupStorage'
 import { CreateDIDForm } from '../fhir/CreateDIDType'
-
 import RegisterDIDBTC from './RegisterDIDBTC'
 import { SetEncryption } from '../lit/SetEncryption'
 import CreatePatientForm from '../fhir/CreatePatientForm'
@@ -17,39 +16,6 @@ import btclogo from '../../assets/bitcoin-btc-logo.svg'
 import type { Patient, Practitioner, Organization, Device } from 'fhir/r4'
 
 type FHIRResource = Patient | Practitioner | Organization | Device
-
-type OnboardingState = {
-  walletConnected: boolean
-  walletAddress: string | null
-  litConnected: boolean
-  storageReady: boolean
-  fhirResource: FHIRResource | null
-  did: string | null
-  litClient: any | null
-  email: string | null
-  web3SpaceDid: string | null
-  sessionSigs?: any | null
-  accessControlConditions: any | null
-  encryptionSkipped: boolean
-  ipfsUri: string | null
-  chainId: number | string | null
-  w3upClient: any | null
-
-  setWalletConnected: (value: boolean) => void
-  setWalletAddress: (address: string) => void
-  setLitConnected: (value: boolean) => void
-  setStorageReady: (value: boolean) => void
-  setFHIRResource: (resource: FHIRResource) => void
-  setDid: (did: string) => void
-  setLitClient: (client: any) => void
-  setEmail: (email: string) => void
-  setWeb3SpaceDid: (did: string) => void
-  setAccessControlConditions: (value: any) => void
-  setEncryptionSkipped: (value: boolean) => void
-  setIpfsUri: (uri: string | null) => void
-  setChainId: (chainId: number | string | null) => void
-  setW3upClient: (client: any) => void
-}
 type StepCardProps = {
   step: string
   title: string
@@ -64,17 +30,17 @@ export default function OnboardingBTC() {
     litConnected,
     storageReady,
     fhirResource,
-    did,
     accessControlConditions,
+    setW3upClient,
+    did,
     encryptionSkipped,
     walletAddress,
-    setFHIRResource,
-    setW3upClient
-  } = useOnboardingState() as OnboardingState
+    setFhirResource,
+  } = useOnboardingState()
 
   const handleSubmit = async (updatedFHIR: any) => {
     console.log('💾 Submitting updated FHIR:', updatedFHIR)
-    setFHIRResource(updatedFHIR)
+    setFhirResource(updatedFHIR)
   }
 
   return (
@@ -133,9 +99,7 @@ export default function OnboardingBTC() {
 
         {walletConnected && litConnected && storageReady && !fhirResource && (
           <StepCard step="4" title={t('createFHIR')}>
-            <CreateDIDForm onSubmit={function (_resource: Patient | Practitioner | Organization | Device): void {
-              throw new Error('Function not implemented.')
-            } } />
+            <CreateDIDForm />
           </StepCard>
         )}
 
@@ -197,7 +161,7 @@ export default function OnboardingBTC() {
                 <button
                   onClick={() => {
                     useOnboardingState.getState().setEncryptionSkipped(false)
-                    useOnboardingState.getState().setAccessControlConditions(null)
+                    useOnboardingState.getState().setAccessControlConditions([])
                   }}
                   className="btn btn-outline btn-warning"
                 >
@@ -207,7 +171,7 @@ export default function OnboardingBTC() {
             ) : (
               <>
                 <p className="text-green-600 font-medium mb-2">✅ {t('AccessControlConditionsSet')}</p>
-                {accessControlConditions.map((cond: any, idx: number) => {
+                {(accessControlConditions ?? []).map((cond: any, idx: number) => {
                   const isSelfOnly =
                     cond.returnValueTest?.comparator === '=' &&
                     String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase()
@@ -242,7 +206,7 @@ export default function OnboardingBTC() {
                 })}
                 <button
                   onClick={() => {
-                    useOnboardingState.getState().setAccessControlConditions(null)
+                    useOnboardingState.getState().setAccessControlConditions([])
                   }}
                   className="btn btn-outline btn-accent"
                 >
