@@ -14,7 +14,6 @@ type Application = {
   ipfsUri: string[]
   fhirResource?: any
   chain: string
-  approved: boolean
 }
 
 type DaoRegisteredResponse = {
@@ -23,8 +22,6 @@ type DaoRegisteredResponse = {
     owner: string
     did: string
     ipfsUri: string
-    approved: boolean
-    approvedAt: string
     blockTimestamp: string
   }>
 }
@@ -36,8 +33,6 @@ const GET_ALL_APPLICATIONS = gql`
       owner
       did
       ipfsUri
-      approved
-      approvedAt
       blockTimestamp
     }
   }
