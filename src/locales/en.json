@@ -1,5 +1,7 @@
 {
   "didHealthOnboarding": "did:health Onboarding",
+  "didHealthOnboardingDescription": "Select the kind of entity you are:",
+  "didHealthOnboardingBulletDescription": "Patient: (a Person Who consumes Healthcare services) - Practitioner: (Doctors, Nurses, and other healthcare professionals) - Organization: (Hospital, Medical Practice, Insurance Company, etc.) - Device: (Monitor, Machine, etc.)",
   "didHealthCosmosOnboarding": "did:health Cosmos Onboarding",
   "didHealthBTCOnboarding": "did:health Bitcoin Onboarding",
   "didHealthETHOnboarding": "did:health Ethereum Onboarding",
@@ -32,9 +34,9 @@
       "error": "Error setting up Web3.Storage space. Please try again."
     }
   },
-  "yourHealthRecord": "Your Health Record",
-  "createFHIR": "Create FHIR Resource",
-  "fhirCreated": "FHIR Record Created",
+  "yourHealthRecord": "Your did:health Record",
+  "createFHIR": "Create your did:health Record",
+  "fhirCreated": "Create your did:health",
   "created": "Successfully created:",
   "chooseDID": "Choose DID Name",
   "registerDID": "Register DID to Blockchain",
