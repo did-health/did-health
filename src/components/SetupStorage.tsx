@@ -53,9 +53,10 @@ console.log('setting up storage')
       const newClient = await create()
       setClient(newClient)
       console.log("client created")
+      setStatus(t('setupStorage.status.emailSent'))
       const account = await newClient.login(email as `${string}@${string}`)
 
-      setStatus(t('setupStorage.status.emailSent'))
+
       // After each setStatus call in setupStorage and useEffect
 setStatus(t('setupStorage.status.emailSent'));
 console.log('Status set:', t('setupStorage.status.emailSent'));
@@ -106,7 +107,7 @@ console.log('Rendering status:', status);
   }
 
   return (
-    <div className="max-w-md mx-auto p-4 space-y-4">
+    <div>
       <input
         type="email"
         className="input input-bordered w-full bg-white text-black rounded-md border border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-300 transition outline-none disabled:bg-gray-100 disabled:text-gray-400"
