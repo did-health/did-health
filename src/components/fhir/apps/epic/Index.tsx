@@ -60,7 +60,7 @@ export default function EpicConnector() {
         const types = [
           'AllergyIntolerance',
           'CarePlan',
-          'CareTeam',
+          'CareTeam?category=longitudinal',
           'Condition',
           'Coverage',
           'Device',
@@ -73,7 +73,7 @@ export default function EpicConnector() {
           'Medication',
           'MedicationRequest',
           'MedicationStatement',
-          'Observation',
+          'Observation?category=laboratory',
           'Organization',
           'Patient',
           'Practitioner',
@@ -89,7 +89,17 @@ export default function EpicConnector() {
 
         for (const type of types) {
           try {
-            const bundle = await client.request(`${type}?_count=100`)
+            
+            let url=""
+            if(!type.includes('?') ) {
+            url=type+"?"
+            } 
+            else{
+            url=type
+            }
+
+            const bundle = await client.request(`${url}`)
+            
             const entries = bundle.entry?.map((e: any) => e.resource) || []
             if (entries.length > 0) {
               entries.forEach(fhir.create)
