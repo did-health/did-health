@@ -7,6 +7,7 @@ import { useOnboardingState } from '../../store/OnboardingState'
 import FHIRResource from '../fhir/FHIRResourceView'
 import logo from '../../assets/did-health.png'
 import btcLogo from '../../assets/bitcoin-btc-logo.svg'
+import { DAOStatus } from '../dao/DAOStatus'
 import { useTranslation } from 'react-i18next'
 interface FHIRResource {
   accessControlConditions?: any
@@ -268,6 +269,11 @@ export default function ResolveDIDBitcoin() {
           </a>
         </div>
       )}
+                          {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && connectedWalletAddress && (
+                  <div className="mt-6 text-center">
+                    <DAOStatus walletAddress={connectedWalletAddress} did={didDoc?.id ?? ''} />
+                  </div>
+                )}
     </main>
   )
 }

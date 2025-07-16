@@ -4,6 +4,8 @@ import { encryptFHIRFile } from '../../lib/litEncryptFile'
 import { storeEncryptedFileByHash, storePlainFHIRFile } from '../../lib/storeFIleWeb3'
 import '../../types/unisat'
 
+import type { AccessControlConditions } from '@lit-protocol/types';
+
 export default function RegisterDIDBTC() {
   const {
     walletAddress,
@@ -11,9 +13,9 @@ export default function RegisterDIDBTC() {
     encryptionSkipped,
     accessControlConditions,
     fhirResource,
-    setFHIRResource,
+    setFhirResource,
     did,
-    setDID,
+    setDid,
   } = useOnboardingState()
 
   const [status, setStatus] = useState('')
@@ -31,7 +33,7 @@ export default function RegisterDIDBTC() {
       }
 
       setStatus('📦 Preparing FHIR resource...')
-      setFHIRResource(fhirResource)
+      setFhirResource(fhirResource)
 
       const resourceType = fhirResource.resourceType
       let fhirUri: string
@@ -47,7 +49,7 @@ export default function RegisterDIDBTC() {
           file: blob,
           litClient,
           chain: 'bitcoin',
-          accessControlConditions,
+          accessControlConditions: accessControlConditions as AccessControlConditions[],
         })
         const encryptedBlob = new Blob([encryptedJSON], { type: 'application/json' })
         fhirUri = await storeEncryptedFileByHash(encryptedBlob, hash, resourceType)
@@ -81,7 +83,7 @@ export default function RegisterDIDBTC() {
       setStatus('📝 Uploading DID Document to IPFS...')
       const didDocUri = await storePlainFHIRFile(didDoc, `${fhirResource?.id || crypto.randomUUID()}-didDocument`, 'didDocument')
       setDidUri(didDocUri)
-      setDID(did)
+      setDid(did)
 
       // Create inscription payload with full JSON structure
       const inscriptionPayload = {

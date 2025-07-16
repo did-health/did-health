@@ -40,7 +40,7 @@ type OnboardingState = {
   setLitConnected: (value: boolean) => void
   setStorageReady: (value: boolean) => void
   setFHIRResource: (resource: FHIRResource) => void
-  setDID: (did: string) => void
+  setDid: (did: string) => void
   setLitClient: (client: any) => void
   setEmail: (email: string) => void
   setWeb3SpaceDid: (did: string) => void
@@ -56,7 +56,7 @@ type StepCardProps = {
   children: React.ReactNode
 }
 
-export default function OnboardingEth() {
+export default function OnboardingBTC() {
   const { t } = useTranslation()
 
   const {
