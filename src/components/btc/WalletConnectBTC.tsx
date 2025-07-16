@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useOnboardingState } from '../../store/OnboardingState'
-
+import { useTranslation } from 'react-i18next'
 
 export function ConnectWalletBTC() {
   const [walletName, setWalletName] = useState<string | null>(null)
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
   const [isInstalled, setIsInstalled] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
+  const { t } = useTranslation()
   const {
     setWallet,
     setAESKeyFromWallet,
@@ -27,7 +27,7 @@ export function ConnectWalletBTC() {
       } else {
         setWalletName(null)
         setIsInstalled(false)
-        setError('No supported Bitcoin wallets found. Install UniSat or Xverse.')
+        setError(t('noSupportedBitcoinWalletsFound'))
       }
     }
   }, [])
@@ -35,7 +35,7 @@ export function ConnectWalletBTC() {
   // Connect to UniSat
   const connectUniSat = async () => {
     try {
-      if (!window.unisat) throw new Error('UniSat wallet is not available.')
+      if (!window.unisat) throw new Error(t('failedToConnectToUniSat'))
 
       const accounts = await window.unisat.requestAccounts()
       const address = accounts[0]
@@ -46,7 +46,7 @@ export function ConnectWalletBTC() {
       if (!aesKey) await setAESKeyFromWallet(signer)
     } catch (err) {
       console.error('UniSat connection error:', err)
-      setError('Failed to connect to UniSat.')
+      setError(t('failedToConnectToUniSat'))
     }
   }
 
@@ -72,7 +72,7 @@ export function ConnectWalletBTC() {
       if (!aesKey) await setAESKeyFromWallet(signer)
     } catch (err) {
       console.error('Xverse connection error:', err)
-      setError('Failed to connect to Xverse.')
+      setError(t('failedToConnectToXverse'))
     }
   }
 
@@ -89,18 +89,18 @@ export function ConnectWalletBTC() {
 
   return (
     <div className="rounded-2xl border border-gray-200 p-6 shadow-lg bg-white dark:bg-gray-800">
-      <h2 className="text-xl font-bold mb-4">Connect Bitcoin Wallet</h2>
+      <h2 className="text-xl font-bold mb-4">{t('connectBitcoinWallet')}</h2>
 
       {isInstalled && walletName ? (
         <>
           <p className="text-gray-600 dark:text-gray-300 mb-4">
-            Detected wallet: <strong>{walletName}</strong>
+            {t('detectedWallet')} <strong>{walletName}</strong>
           </p>
           <button
             onClick={connectWallet}
             className="btn btn-primary"
           >
-            Connect {walletName}
+           {t('connect')} {walletName}
           </button>
         </>
       ) : (
@@ -114,7 +114,7 @@ export function ConnectWalletBTC() {
             onClick={disconnectWallet}
             className="btn btn-sm bg-red-600 text-white hover:bg-red-700"
           >
-            Disconnect
+            {t('disconnect')}
           </button>
         </div>
       )}

@@ -4,8 +4,9 @@ import { didHealthApps } from './apps/index'
 import type { App } from './apps/index'
 import { useNavigate } from 'react-router-dom'
 import logo from '../../assets/did-health.png' // Adjust the path as needed
-
+import { useTranslation } from 'react-i18next'
 export default function AppGallery() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   return (
@@ -14,7 +15,7 @@ export default function AppGallery() {
         <div className="w-32 h-32 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
           <img src={logo} alt="DID Health Logo" className="w-full h-full object-contain" />
         </div>
-        <h1 className="text-4xl font-bold text-center text-indigo-600">🧩 Available did:health Apps</h1>
+        <h1 className="text-4xl font-bold text-center text-indigo-600">🧩 {t('availableApps')}</h1>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -31,7 +32,7 @@ export default function AppGallery() {
                   onClick={() => navigate(`/apps/${app.id}`)}
                   className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors duration-200"
                 >
-                  <span className="mr-2">🚀</span>Launch App
+                  <span className="mr-2">🚀</span>{t('launchApp')}
                 </button>
               </div>
             </div>
