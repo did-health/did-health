@@ -156,23 +156,23 @@ export default function OnboardingEth() {
 
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
-          <StepCard step="5" title="Access Control Configured">
+          <StepCard step="5" title={t('AccessControlConditions')}>
             {encryptionSkipped ? (
               <>
-                <p className="text-yellow-600 font-medium mb-4">⚠️ Encryption was skipped for this resource type.</p>
+                <p className="text-yellow-600 font-medium mb-4">⚠️ {t('encryptionSkipped')}</p>
                 <button
                   onClick={() => {
                     useOnboardingState.getState().setEncryptionSkipped(false)
                     useOnboardingState.getState().setAccessControlConditions([])
                   }}
-                  className="btn btn-outline btn-warning"
+                  className="btn btn-primary text-blue-600"
                 >
                   🔄 {t('changeEncryptionDecision')}
                 </button>
               </>
             ) : (
               <>
-                <p className="text-green-600 font-medium mb-2">✅ Access Control Conditions have been set.</p>
+                <p className="text-green-600 font-medium mb-2">✅ {t('AccessControlConditionsSet')}</p>
                 {accessControlConditions && accessControlConditions.map((cond: any, idx: number) => {
                   const isSelfOnly =
                     cond.returnValueTest?.comparator === '=' &&
@@ -212,7 +212,7 @@ export default function OnboardingEth() {
                   onClick={() => {
                     useOnboardingState.getState().setAccessControlConditions([])
                   }}
-                  className="btn btn-outline btn-accent"
+                  className="btn btn-primary text-blue-600"
                 >
                   🔄 {t('editAccessControl')}
                 </button>
@@ -229,13 +229,15 @@ export default function OnboardingEth() {
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
           <StepCard step="6" title={t('chooseDID')}>
-            <div>
+            <div  className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
               <span>{did}</span>
               <button className="btn btn-ghost btn-xs" onClick={() => {
                 useOnboardingState.getState().setDid("")
             }}>
               {t('reset')}
-            </button>
+            </button></div>
+            <div>
               <button
                 type="button"
                 onClick={() => {
@@ -247,6 +249,7 @@ export default function OnboardingEth() {
               >
                 {t('selectBlockchain.checkDid')}
               </button>
+              </div>
             </div>
           </StepCard>
         )}

@@ -155,7 +155,7 @@ export default function OnboardingBTC() {
         )}
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
-          <StepCard step="5" title="Access Control Configured">
+          <StepCard step="5" title={t('AccessControlConditions')}>
             {encryptionSkipped ? (
               <>
                 <p className="text-yellow-600 font-medium mb-4">⚠️ {t('encryptionSkipped')}</p>
@@ -164,7 +164,7 @@ export default function OnboardingBTC() {
                     useOnboardingState.getState().setEncryptionSkipped(false)
                     useOnboardingState.getState().setAccessControlConditions([])
                   }}
-                  className="btn btn-outline btn-warning"
+                  className="btn btn-primary text-blue-600"
                 >
                   🔄 {t('changeEncryptionDecision')}
                 </button>
@@ -196,7 +196,7 @@ export default function OnboardingBTC() {
                             <br />
                             {isSelfOnly && (
                               <p className="mt-2 text-green-600 font-medium">
-                                ✅ {t('onlyViewableBy')} <span className="underline">you</span>.
+                                ✅ {t('onlyViewableBy')} <span className="underline">{t('you')}</span>.
                               </p>
                             )}
                           </div>
@@ -209,7 +209,7 @@ export default function OnboardingBTC() {
                   onClick={() => {
                     useOnboardingState.getState().setAccessControlConditions([])
                   }}
-                  className="btn btn-outline btn-accent"
+                  className="btn btn-primary text-blue-600"
                 >
                   🔄 {t('editAccessControl')}
                 </button>
@@ -241,7 +241,7 @@ export default function OnboardingBTC() {
         )}
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
-          <StepCard step="7" title={t('registerDID')}>
+          <StepCard step="7" title={t('RegisterDIDBTC.title')}>
             <RegisterDIDBTC />
           </StepCard>
         )}
@@ -251,11 +251,12 @@ export default function OnboardingBTC() {
 }
 
 export function StepCard({ step, title, children }: StepCardProps) {
+  const { t } = useTranslation()
   return (
     <section className="relative bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-8 transition-transform hover:scale-[1.01] hover:shadow-2xl group">
       <div className="absolute -top-5 left-6">
         <div className="bg-blue-600 dark:bg-blue-400 text-white dark:text-gray-900 text-xs font-bold px-3 py-1 rounded-full shadow-md tracking-wider uppercase">
-          Step {step}
+          {t('step')} {step}
         </div>
       </div>
 

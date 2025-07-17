@@ -1,52 +1,137 @@
 {
-  "didHealthOnboarding": "Incorporación a did:health",
+  "didHealthOnboarding": "Inicio de did:health",
+  "didHealthOnboardingDescription": "Selecciona el tipo de entidad que eres:",
+  "didHealthOnboardingBulletDescription": "Paciente: (una persona que consume servicios de salud) - Profesional: (Médicos, enfermeras y otros profesionales de la salud) - Organización: (Hospital, práctica médica, compañía de seguros, etc.) - Dispositivo: (Monitor, máquina, etc.)",
+  "didHealthCosmosOnboarding": "Inicio de did:health en Cosmos",
+  "didHealthBTCOnboarding": "Inicio de did:health en Bitcoin",
+  "didHealthETHOnboarding": "Inicio de did:health en Ethereum",
+  "didHealthSolanaOnboarding": "Inicio de did:health en Solana",
   "onboardingInstructions": "Sigue los pasos a continuación para crear tu identidad de salud descentralizada.",
-  "connectWallet": "Conectar Billetera",
+  "connectWallet": "Conectar billetera",
+  "connectBitcoinWallet": "Conectar billetera de Bitcoin",
   "connectLit": "Conectar con el Protocolo Lit",
+  "changeEncryptionDecision": "Cambiar decisión de cifrado",
+  "connecttoEpicEHR": "Conectar con Epic EHR",
+  "authorizewithEpicviaSMARTonFHIRtoviewanddownloadyourrecords": "Autoriza con Epic vía SMART on FHIR para ver y descargar tus registros.",
+  "launchEpicLogin": "Iniciar sesión en Epic",
+  "recordsdownloaded": "Registros descargados",
+  "searchEpicFHIRBrands": "Busca tu proveedor de salud de Epic para conectar",
+  "connectToEpic": "Conectar con Epic",
+  "createDID": "Crear did:health",
+  "litConnected": "Conectado a Lit",
+  "detectedWallet": "Billetera detectada",
+  "disconnect": "Desconectar",
+  "failedToConnectToUniSat": "No se pudo conectar con UniSat.",
+  "noSupportedBitcoinWalletsFound": "No se encontraron billeteras de Bitcoin compatibles. Instala UniSat o Xverse.",
+  "failedToConnectToXverse": "No se pudo conectar con Xverse.",
+  "launchApp": "Lanzar aplicación",
+  "availableApps": "Aplicaciones disponibles",
+  "sharewithother": "Compartir con otros",
+  "settingaccessconditions": "Estableciendo condiciones de acceso...",
+  "accessconditionssetuccessfully": "¡Condiciones de acceso establecidas con éxito!",
+  "onlyi": "Solo yo puedo descifrar",
+  "onlyviewableby": "Solo visible por",
+
+  "RegisterDIDBTC": {
+    "title": "Registrar did:health en Bitcoin",
+    "inscribe": "Inscribir este URI de IPFS en Bitcoin mediante:",
+    "unisat": "UniSat",
+    "xverse": "Xverse",
+    "registrationFee": "Tarifa única de registro",
+    "saveTxid": "Guardar txid",
+    "pleaseSend": "Por favor envía",
+    "toAddress": "a la siguiente dirección:",
+    "unisatNotAvailable": "La billetera UniSat no está disponible",
+    "noAccountsFound": "No se encontraron cuentas",
+    "confirmInWallet": "Por favor confirma en tu billetera UniSat...",
+    "paymentSent": "¡Pago enviado con éxito! ID de transacción:",
+    "paymentFailed": "El pago falló",
+    "sendPayment": "Enviar pago vía UniSat",
+    "feeSupport": "Esta tarifa apoya la infraestructura de identidad de salud descentralizada. Después del pago, puedes continuar con el registro.",
+    "estimatedUsd": "USD estimado: {{estimatedUsd}}",
+    "registerDID": "Registrar did:health"
+  },
+
   "setupStorage": {
-    "title": "Configure el almacenamiento de sus datos de salud en Web3.Storage",
+    "title": "Configura el almacenamiento de tus datos de salud en Web3.Storage",
     "input": {
-      "placeholder": "Introduce tu dirección de correo electrónico",
-      "ariaLabel": "Correo electrónico"
+      "placeholder": "Ingresa tu dirección de correo electrónico",
+      "ariaLabel": "Dirección de correo electrónico"
     },
     "button": {
       "verifyAndSetup": "Verificar y configurar"
     },
     "status": {
-      "invalidEmail": "❌ Por favor, introduce una dirección de correo válida",
-      "emailSent": "📧 Correo de verificación enviado. Por favor, revisa tu bandeja de entrada y confirma para continuar.",
-      "spaceReady": "✅ Tu espacio de Web3.Storage está listo (DID: {{did}})",
-      "alreadySetup": "✅ Web3.Storage ya está configurado (DID: {{did}})",
-      "error": "❌ Error al configurar el espacio de Web3.Storage. Intenta de nuevo."
+      "invalidEmail": "Por favor ingresa una dirección de correo válida",
+      "emailSent": "¡Correo de verificación enviado! Revisa tu bandeja de entrada y confirma para continuar.",
+      "spaceReady": "Tu espacio en Web3.Storage está listo (DID: {{did}})",
+      "alreadySetup": "Web3.Storage ya está configurado (DID: {{did}})",
+      "error": "Error al configurar el espacio en Web3.Storage. Por favor intenta nuevamente."
     }
   },
-  "createFHIR": "Crear Recurso FHIR",
-  "fhirCreated": "Registro FHIR Creado",
+
+  "yourHealthRecord": "Tu registro did:health",
+  "createFHIR": "Crear tu registro did:health",
+  "fhirCreated": "Crear tu did:health",
   "created": "Creado con éxito:",
-  "chooseDID": "Elegir Nombre DID",
-  "registerDID": "Registrar DID en la Blockchain",
-  "helpCenterTitle": "Plus de réponses",
+  "chooseDID": "Elige el nombre del DID",
+  "registerDID": "Registrar DID en la blockchain",
+  "setAccessControl": "Establecer control de acceso",
+  "setAccessControlDescription": "Establece quién puede acceder a tus datos de salud.",
+  "AccessControlConditionsSet": "Las condiciones de acceso han sido establecidas.",
+  "encryptionSkipped": "El cifrado se omitió para este tipo de recurso.",
+  "editAccessControl": "Editar control de acceso",
+  "whoCanViewIt": "Quién puede verlo",
+  "walletNotConnected": "Billetera no conectada",
+  "noDIDFound": "No se encontró DID en las cadenas compatibles",
+  "noFHIRResourcesFound": "No se encontraron recursos FHIR",
+  "didResolved": "¡DID resuelto!",
+  "fhirResourceLoaded": "¡Recurso FHIR cargado!",
+  "updateDID": "Actualizar did:health",
+  "viewYourDID": "Ver tu did:health",
+  "resolvedDID": "DID resuelto",
+  "foundOn": "Encontrado en",
+  "unsupportedFHIRResourceType": "Tipo de recurso FHIR no compatible",
+  "credentials": "Credenciales",
+  "serviceEndpoints": "Puntos de servicio",
+  "walletAddress": "Dirección de billetera",
+  "decryptingFHIRResource": "Descifrando recurso FHIR con Lit...",
+  "failedToDecryptFHIR": "No se pudo descifrar el archivo FHIR cifrado. Verifica la conexión con Lit y el acceso a la billetera.",
+  "failedToFetchFHIRResource": "No se pudo obtener el recurso FHIR desde IPFS",
+  "skippingInvalidInscription": "Saltando inscripción inválida",
+  "didNotFoundInInscriptionsFor": "No se encontró el DID en las inscripciones para",
+  "your": "Tu",
+  "step": "Paso",
+  "didCopiedToClipboard": "¡DID copiado al portapapeles!",
+  "failedToCopyDID": "No se pudo copiar el DID",
+  "resolving": "Resolviendo...",
+  "download": "Descargar",
+  "owner": "Propietario",
+  "controller": "Controlador",
+  "serviceCount": "Cantidad de servicios",
+  "resolverTitle": "Resolutor did:health",
+  "AccessControlConditions":"Condiciones de acceso",
   "onboarding": {
-    "connectWalletDescription": "Para comenzar, conecta una billetera criptográfica a tu identidad."
+    "connectWalletDescription": "Para comenzar, conecta una billetera cripto a tu identidad.",
+    "openInMetaMask": "Abrir en MetaMask"
   },
+
   "selectBlockchain": {
-    "title": "Elige Tu Blockchain",
-    "subtitle": "para Crear tu did:health",
-    "checkDid": "Verificar DID",
+    "title": "Crea tu did:health",
+    "subtitle": "Paso 1: Elige una blockchain",
     "lookupDid": "Buscar did:health",
-"lookupDidDescription": "Encuentra tu identificador did:health existente",
+    "lookupDidDescription": "Encuentra tu identificador did:health existente",
+    "checkDid": "¿Ya registrado? Haz clic aquí para ver tu DID.",
     "moreAnswers": "¿Necesitas más respuestas? Haz clic aquí"
   },
-"didHealth": {
-    "title": "¿Qué es un did:health?",
-    "subtitle": "Un did:health es una identidad digital autogestionada que se vincula a tus datos de salud. Permite aplicaciones de salud seguras y descentralizadas, como mensajería directa y descubrimiento de proveedores, identificando de forma confiable a pacientes, profesionales, organizaciones y dispositivos."
-  },
+
   "common": {
     "update": "Actualizar",
     "create": "Crear",
     "search": "Buscar",
-    "changeEncryptionDecision": "Cambiar Decisión de Cifrado"
+    "copy": "Copiar"
   },
+
   "blockchain": {
     "ethereum": {
       "name": "Ethereum",
@@ -58,11 +143,31 @@
     },
     "solana": {
       "name": "Solana",
-      "description": "Próximamente: Crea un DID en el blockchain rápido y escalable Solana"
+      "description": "Crea un DID en la blockchain rápida y escalable de Solana",
+      "inscriptionDescription": "Tu DID se registrará con una inscripción en Solana que hace referencia a tu recurso FHIR cifrado almacenado en Web3.Storage.",
+      "fhirResourcePreview": "Vista previa del recurso FHIR",
+      "createInscription": "Crear inscripción",
+      "inscriptionCreated": "Inscripción creada",
+      "didCreatedSuccess": "Tu DID ha sido registrado con éxito con una inscripción en Solana. La inscripción hace referencia a tu documento cifrado almacenado en Web3.Storage.",
+      "encryptionWithWeb3": "Tu documento será cifrado y almacenado en Web3.Storage. La inscripción hará referencia a este documento cifrado.",
+      "web3StorageUri": "URI de Web3.Storage",
+      "registerWithInscription": "Registrar DID con inscripción"
     },
     "cosmos": {
       "name": "Cosmos",
-      "description": "Próximamente: Usa cadenas de Cosmos como Osmosis, Juno o Stargaze"
+      "description": "Próximamente: Usa cadenas Cosmos como Osmosis, Juno o Stargaze"
     }
+  },
+
+  "chain": "Cadena",
+  "parameters": "Parámetros",
+  "onlyViewableBy": "Solo visible por",
+  "condition": "Condición",
+  "yourDIDBTC": "Tu DID se genera automáticamente desde tu dirección de billetera de Bitcoin:",
+  "copy": "Copiar",
+
+  "didHealth": {
+    "title": "¿Qué es un did:health?",
+    "subtitle": "Un did:health es una identidad digital auto-soberana que vincula tus datos de salud. Permite aplicaciones de salud seguras y descentralizadas, como mensajería directa y descubrimiento de proveedores, al identificar pacientes, profesionales, organizaciones y dispositivos en un ecosistema confiable."
   }
 }

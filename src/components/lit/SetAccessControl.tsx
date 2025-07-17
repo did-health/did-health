@@ -11,6 +11,7 @@ interface SetAccessControlProps {
   setEncryptionSkipped: (skipped: boolean) => void
   setShareError: (error: string | null) => void
 }
+import { useTranslation } from 'react-i18next'
 
 export function SetAccessControl({ 
   onSetAccessConditions, 
@@ -23,7 +24,7 @@ export function SetAccessControl({
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showError, setShowError] = useState('')
-
+  const { t } = useTranslation()
 
   const applyAccessControl = async (conditions: any) => {
     const isValid = await validateAccessControlConditionsSchema(conditions)
@@ -91,12 +92,12 @@ export function SetAccessControl({
           onClick={handleSelfOnly}
           className="btn-primary w-full"
         >
-          🔐 Only I can decrypt
+          🔐 {t('onlyi')}
         </button>
 
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
-            Share with another wallet
+            {t('sharewithother')}
           </label>
           <input
             type="text"
@@ -110,18 +111,18 @@ export function SetAccessControl({
             className="btn-primary w-full"
             disabled={!connectedWallet}
           >
-            🔐 Share with this wallet
+            🔐 {t('sharewithother')}
           </button>
         </div>
 
         {loading && (
           <div className="mt-2 text-sm text-gray-600">
-            Setting access conditions...
+            {t('settingaccessconditions')}
           </div>
         )}
         {showSuccess && (
           <div className="mt-2 text-sm text-green-600">
-            Access conditions set successfully!
+            {t('accessconditionssetuccessfully')}
           </div>
         )}
         {showError && (
