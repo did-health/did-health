@@ -76,6 +76,7 @@
   "yourHealthRecord": "Your did:health Record",
   "createFHIR": "Create your did:health Record",
   "fhirCreated": "Create your did:health",
+  "recordManager": "Record Manager",
   "created": "Successfully created:",
   "chooseDID": "Choose did:health",
   "registerDID": "Register did:health to Blockchain",

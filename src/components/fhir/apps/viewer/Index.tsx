@@ -4,19 +4,24 @@ import type { Resource, FhirResource, BundleEntry } from 'fhir/r4'
 import { useOnboardingState } from '../../../../store/OnboardingState'
 import FHIRResource from '../../FHIRResourceView'
 import FHIRSearchResults from '../../../../components/fhir/FHIRSearchResults'
+import { useTranslation } from 'react-i18next'
+import logo from '../../../../assets/did-health.png'
 const usCoreTypes = [
   'AllergyIntolerance', 'CarePlan', 'CareTeam', 'Condition', 'Coverage', 'Device',
   'DiagnosticReport', 'DocumentReference', 'Encounter', 'Goal', 'Immunization',
   'Location', 'Medication', 'MedicationRequest', 'MedicationStatement', 'Observation',
   'Organization', 'Patient', 'Practitioner', 'PractitionerRole', 'Procedure',
-  'Provenance', 'QuestionnaireResponse', 'RelatedPerson', 'ServiceRequest', 'Specimen',
+  'Provenance', 'QuestionnaireResponse', 'RelatedPerson', 'ServiceRequest', 'OperationOutcome', 'Specimen',
 ] as const
 
 export default function AllResourcesList() {
   const [results, setResults] = useState<Record<string, FhirResource[]>>({})
   const [loading, setLoading] = useState(true)
   const [selectedResource, setSelectedResource] = useState<FhirResource | null>(null)
-  const { aesKey } = useOnboardingState();
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({})
+  const { aesKey } = useOnboardingState()
+  const { t } = useTranslation('fhir')
+  const {t: t2} = useTranslation()
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -29,7 +34,7 @@ export default function AllResourcesList() {
       for (const type of usCoreTypes) {
         try {
           console.log(`Fetching ${type}...`)
-          const bundle = await fhir.search(type)  // Ensure this internally uses aesKey
+          const bundle = await fhir.search(type)
           const entries = bundle.entry || []
           out[type] = entries.map((e: BundleEntry<FhirResource>) => e.resource!).filter(Boolean)
         } catch (err) {
@@ -43,35 +48,69 @@ export default function AllResourcesList() {
     fetchAll()
   }, [aesKey])
 
+  const toggleSection = (type: string) => {
+    setExpandedSections((prev) => ({ ...prev, [type]: !prev[type] }))
+  }
+
+  const jumpTo = (type: string) => {
+    const el = document.getElementById(`section-${type}`)
+    if (el) el.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const filteredTypes = usCoreTypes.filter(type => results[type]?.length > 0)
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center mb-8">
-          <img src="/logo.svg" alt="DID Health Logo" className="h-12 w-auto" />
-          <h1 className="ml-4 text-2xl font-bold">DID Health FHIR Viewer</h1>
+          <img src={logo} alt="did:health" className="h-12 w-auto" />
+          <h1 className="ml-4 text-2xl font-bold">did:health {t2('recordManager')}</h1>
         </div>
+
+        {/* Jump to Select */}
+        {!loading && (
+          <div className="mb-6">
+            <label htmlFor="jump-select" className="block mb-2 text-sm font-medium text-gray-700">
+              {t('jumpToSection', 'Jump to Resource Section')}
+            </label>
+            <select
+              id="jump-select"
+              className="block w-full md:w-1/2 p-2 border rounded shadow-sm focus:outline-none focus:ring focus:border-blue-300"
+              onChange={(e) => jumpTo(e.target.value)}
+              defaultValue=""
+            >
+              <option value="" disabled>{t('selectResource', 'Select a resource...')}</option>
+              {filteredTypes.map((type) => (
+                <option key={type} value={type}>{t(`${type}.label`, type)}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading FHIR data...</p>
+              <p className="mt-4 text-gray-600">{t('loadingMessage', 'Loading FHIR data...')}</p>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
-            {usCoreTypes.map((type) => {
-              const resources = results[type] || []
+            {filteredTypes.map((type) => {
+              const resources = results[type]
+              const isOpen = expandedSections[type] ?? true
               return (
-                <div key={type} className="border p-4 rounded shadow-sm">
-                  <h2 className="text-lg font-semibold mb-2">{type} ({resources.length})</h2>
-                  {resources.length === 0 ? (
-                    <p className="text-sm text-gray-400">No resources found.</p>
-                  ) : (
-                    <div className="overflow-x-auto">
+                <div key={type} id={`section-${type}`} className="border p-4 rounded shadow-sm">
+                  <div className="flex justify-between items-center cursor-pointer" onClick={() => toggleSection(type)}>
+                    <h2 className="text-lg font-semibold">
+                      {t(`${type}.label`, type)} ({resources.length})
+                    </h2>
+                    <span className="text-blue-600 hover:underline text-sm">{isOpen ? t('collapse', 'Collapse') : t('expand', 'Expand')}</span>
+                  </div>
+                  {isOpen && (
+                    <div className="overflow-x-auto mt-4">
                       <FHIRSearchResults
-                        onSelectResource={(resource: FhirResource) => {
-                          setSelectedResource(resource)
-                        }}
+                        onSelectResource={(resource: FhirResource) => setSelectedResource(resource)}
                         bundle={{
                           resourceType: 'Bundle',
                           type: 'collection',
@@ -95,12 +134,12 @@ export default function AllResourcesList() {
       </div>
 
       {/* Selected Resource Modal */}
-      {selectedResource && selectedResource !== null && (
+      {selectedResource && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-               <button
+                <button
                   onClick={() => setSelectedResource(null)}
                   className="text-gray-400 hover:text-gray-500"
                 >
@@ -109,7 +148,7 @@ export default function AllResourcesList() {
                   </svg>
                 </button>
               </div>
-                    <FHIRResource resource={selectedResource} />
+              <FHIRResource resource={selectedResource} />
             </div>
           </div>
         </div>
@@ -117,5 +156,3 @@ export default function AllResourcesList() {
     </div>
   )
 }
-
-

@@ -71,6 +71,7 @@
   },
 
   "yourHealthRecord": "Tu registro did:health",
+  "recordManager": "Gestor de registros",
   "createFHIR": "Crear tu registro did:health",
   "fhirCreated": "Crear tu did:health",
   "created": "Creado con éxito:",
