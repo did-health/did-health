@@ -1,14 +1,11 @@
-export interface SuppressionPattern {
-  pattern: string;
-  description?: string;
-}
-
 export interface SuppressionConfig {
-  resourceType: string;
-  patterns: SuppressionPattern[];
+  global: string[];
+  resourceSpecific: {
+    [resourceType: string]: string[];
+  };
 }
 
 export interface FullSuppressionConfig {
-  searchResults: SuppressionConfig[];
-  details: SuppressionConfig[];
+  searchResults: SuppressionConfig;
+  details: SuppressionConfig;
 }

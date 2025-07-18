@@ -1,0 +1,24 @@
+{
+  "searchResults": [
+    {
+      "resourceType": "global",
+      "patterns": [
+        { "pattern": "*.id" },
+        { "pattern": "*.meta" },
+        { "pattern": "*.implicitRules" },
+        { "pattern": "*.language" }
+      ]
+    }
+  ],
+  "details": [
+    {
+      "resourceType": "global",
+      "patterns": [
+        { "pattern": "*.id" },
+        { "pattern": "*.meta" },
+        { "pattern": "*.implicitRules" },
+        { "pattern": "*.language" }
+      ]
+    }
+  ]
+}

@@ -65,13 +65,19 @@ export async function shouldSuppressField(
 ): Promise<boolean> {
     try {
         const config = await loadSuppression();
-        const resourceConfig = config[mode]?.find(c => c.resourceType === resourceType);
-        const resourcePatterns = resourceConfig?.patterns.map(p => p.pattern) || [];
-        const globalConfig = config[mode]?.find(c => c.resourceType === 'global');
-        const globalPatterns = globalConfig?.patterns.map(p => p.pattern) || [];
+        const resourcePatterns = config[mode]?.resourceSpecific?.[resourceType] || [];
+        const globalPatterns = config[mode]?.global || [];
         const allPatterns = [...globalPatterns, ...resourcePatterns];
 
-        return allPatterns.some((pattern) => matchPath(path, pattern));
+        // Convert patterns to the expected format (path.* for arrays)
+        const formattedPatterns = allPatterns.map(pattern => {
+            if (Array.isArray(pattern)) {
+                return pattern.map(p => `${p}.*`);
+            }
+            return pattern;
+        }).flat();
+
+        return formattedPatterns.some((pattern) => matchPath(path, pattern));
     } catch (error) {
         console.error('Error checking field suppression:', error);
         return false; // Don't suppress if there's an error
