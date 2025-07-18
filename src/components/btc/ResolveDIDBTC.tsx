@@ -6,7 +6,7 @@ import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
 import { useOnboardingState } from '../../store/OnboardingState'
 import FHIRResource from '../fhir/FHIRResourceView'
 import logo from '../../assets/did-health.png'
-import btcLogo from '../../assets/bitcoin-btc-logo.svg'
+import btcLogo from '../../assets/bitcoin-btc-logo.svg' 
 import { DAOStatus } from '../dao/DAOStatus'
 import { useTranslation } from 'react-i18next'
 interface FHIRResource {
@@ -14,7 +14,7 @@ interface FHIRResource {
   [key: string]: any
 }
 
-interface DIDService {
+export interface DIDService {
   type: string
   serviceEndpoint: string
   id?: string
@@ -182,21 +182,43 @@ export default function ResolveDIDBitcoin() {
 
   return (
     <main className="p-6 space-y-6 max-w-xl mx-auto">
-<div className="flex flex-col items-center mb-6">
-        <div className="w-32 h-32 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
-          <img src={logo} alt="DID Health Logo" className="w-full h-full object-contain" />
-        </div>
-        {didDoc?.id && (
-          <div className="mt-4">
-            <a href={`/btc/did/update?did=${didDoc.id}`} className="btn-primary w-full">
-              🔄 {t('common.update')} {t('Your')}  did:health
-            </a>
+      <div className="flex flex-col">
+        <div className="mb-8 text-center flex flex-col items-center">
+          {/* Logos Row */}
+          <div className="flex items-center gap-4 mb-6">
+            {/* DID:Health Logo */}
+            <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-red-400/40 hover:scale-105 transition-transform duration-300">
+              <img
+                src={logo}
+                alt="did:health Logo"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            {/* + Symbol */}
+            <div className="text-3xl font-bold text-gray-500 dark:text-gray-400">+</div>
           </div>
-        )}
-        <h1 className="text-2xl font-bold mt-4 text-center">
-          🔎 {t('viewYourDID')}<span className="text-green-600 dark:text-green-400">did:health</span> Identifier
-        </h1>
+        </div>
       </div>
+      <div className="flex flex-col items-center">
+      {/* Chain Logo */}
+      <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-yellow-400/30 hover:rotate-6 hover:scale-110 transition-all duration-300">
+        <img
+          src={btcLogo}
+          alt="Bitcoin Logo"
+          className="w-full h-full object-contain"
+        />
+      </div>
+      {didDoc?.id && (
+        <div className="mt-4">
+          <a href={`/btc/did/update?did=${didDoc.id}`} className="btn-primary w-full">
+            🔄 {t('common.update')} {t('Your')}  did:health
+          </a>
+        </div>
+      )}
+      <h1 className="text-2xl font-bold mt-4 text-center">
+        🔎 <span className="text-green-600 dark:text-green-400">{t('viewYourDID')}</span>
+      </h1>
+    </div>
       <ConnectWalletBTC />
       <ConnectLit />
 
@@ -243,7 +265,6 @@ export default function ResolveDIDBitcoin() {
           {fhir && (
             <>
               <div className="bg-green-50 border border-green-200 p-4 rounded mt-6 text-sm">
-                <h2 className="text-lg font-semibold mb-2">{t('fhirResource')}</h2>
                 <FHIRResource resource={fhir} />
               </div>
 
@@ -269,11 +290,11 @@ export default function ResolveDIDBitcoin() {
           </a>
         </div>
       )}
-                          {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && connectedWalletAddress && (
-                  <div className="mt-6 text-center">
-                    <DAOStatus walletAddress={connectedWalletAddress} did={didDoc?.id ?? ''} />
-                  </div>
-                )}
+      {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && walletAddress && (
+        <div className="mt-6 text-center">
+          <DAOStatus walletAddress={walletAddress} />
+        </div>
+      )}
     </main>
   )
 }

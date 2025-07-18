@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fhir } from '../../../../store/fhirStore'
 import { oauth2 as SMART } from 'fhirclient'
-import type { Resource} from 'fhir/r4'
+import type { Resource, Bundle, FhirResource } from 'fhir/r4'
 import EpicBrands from './Brands'
 import FHIRResource from '../../FHIRResourceView'
 import logo from '../../../../assets/did-health.png'
@@ -112,7 +112,21 @@ export default function EpicConnector() {
           }
         }
 
-        setResources(all)
+        // Ensure all resources are properly typed as FhirResource
+        const typedResources: FhirResource[] = all.map(r => r as FhirResource)
+        setResources(typedResources)
+        
+        const bundle: Bundle<FhirResource> = {
+          resourceType: 'Bundle',
+          type: 'transaction',
+          entry: typedResources.map(resource => ({
+            resource,
+            fullUrl: `urn:uuid:${resource.id}`
+          }))
+        }
+        console.log("submitting bundle **************")
+        console.log(bundle)
+        await fhir.transaction(bundle)
         setStatus('📦 FHIR data downloaded and saved locally')
       } catch (err: any) {
         console.error('❌ SMART session failed:', err)

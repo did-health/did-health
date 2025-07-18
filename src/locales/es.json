@@ -74,8 +74,8 @@
   "createFHIR": "Crear tu registro did:health",
   "fhirCreated": "Crear tu did:health",
   "created": "Creado con éxito:",
-  "chooseDID": "Elige el nombre del DID",
-  "registerDID": "Registrar DID en la blockchain",
+  "chooseDID": "Elige el nombre del did:health",
+  "registerDID": "Registrar did:health en la blockchain",
   "setAccessControl": "Establecer control de acceso",
   "setAccessControlDescription": "Establece quién puede acceder a tus datos de salud.",
   "AccessControlConditionsSet": "Las condiciones de acceso han sido establecidas.",
@@ -83,13 +83,14 @@
   "editAccessControl": "Editar control de acceso",
   "whoCanViewIt": "Quién puede verlo",
   "walletNotConnected": "Billetera no conectada",
-  "noDIDFound": "No se encontró DID en las cadenas compatibles",
+  "noDIDFound": "No se encontró did:health en las cadenas compatibles",
   "noFHIRResourcesFound": "No se encontraron recursos FHIR",
-  "didResolved": "¡DID resuelto!",
+  "didResolved": "¡did:health resuelto!",
   "fhirResourceLoaded": "¡Recurso FHIR cargado!",
   "updateDID": "Actualizar did:health",
   "viewYourDID": "Ver tu did:health",
-  "resolvedDID": "DID resuelto",
+  "updateYourDIDBTC":"Actualizar Tu did:health con Bitcoin",
+  "resolvedDID": "did:health resuelto",
   "foundOn": "Encontrado en",
   "unsupportedFHIRResourceType": "Tipo de recurso FHIR no compatible",
   "credentials": "Credenciales",
@@ -99,11 +100,11 @@
   "failedToDecryptFHIR": "No se pudo descifrar el archivo FHIR cifrado. Verifica la conexión con Lit y el acceso a la billetera.",
   "failedToFetchFHIRResource": "No se pudo obtener el recurso FHIR desde IPFS",
   "skippingInvalidInscription": "Saltando inscripción inválida",
-  "didNotFoundInInscriptionsFor": "No se encontró el DID en las inscripciones para",
+  "didNotFoundInInscriptionsFor": "No se encontró el did:health en las inscripciones para",
   "your": "Tu",
   "step": "Paso",
-  "didCopiedToClipboard": "¡DID copiado al portapapeles!",
-  "failedToCopyDID": "No se pudo copiar el DID",
+  "didCopiedToClipboard": "¡did:health copiado al portapapeles!",
+  "failedToCopyDID": "No se pudo copiar el did:health",
   "resolving": "Resolviendo...",
   "download": "Descargar",
   "owner": "Propietario",
@@ -121,7 +122,7 @@
     "subtitle": "Paso 1: Elige una blockchain",
     "lookupDid": "Buscar did:health",
     "lookupDidDescription": "Encuentra tu identificador did:health existente",
-    "checkDid": "¿Ya registrado? Haz clic aquí para ver tu DID.",
+    "checkDid": "¿Ya registrado? Haz clic aquí para ver tu did:health.",
     "moreAnswers": "¿Necesitas más respuestas? Haz clic aquí"
   },
 
@@ -139,19 +140,19 @@
     },
     "bitcoin": {
       "name": "Bitcoin",
-      "description": "Próximamente: Registra tu DID usando Bitcoin y Ordinals"
+      "description": "Próximamente: Registra tu did:health usando Bitcoin y Ordinals"
     },
     "solana": {
       "name": "Solana",
-      "description": "Crea un DID en la blockchain rápida y escalable de Solana",
-      "inscriptionDescription": "Tu DID se registrará con una inscripción en Solana que hace referencia a tu recurso FHIR cifrado almacenado en Web3.Storage.",
+      "description": "Crea un did:health en la blockchain rápida y escalable de Solana",
+      "inscriptionDescription": "Tu did:health se registrará con una inscripción en Solana que hace referencia a tu recurso FHIR cifrado almacenado en Web3.Storage.",
       "fhirResourcePreview": "Vista previa del recurso FHIR",
       "createInscription": "Crear inscripción",
       "inscriptionCreated": "Inscripción creada",
-      "didCreatedSuccess": "Tu DID ha sido registrado con éxito con una inscripción en Solana. La inscripción hace referencia a tu documento cifrado almacenado en Web3.Storage.",
+      "didCreatedSuccess": "Tu did:health ha sido registrado con éxito con una inscripción en Solana. La inscripción hace referencia a tu documento cifrado almacenado en Web3.Storage.",
       "encryptionWithWeb3": "Tu documento será cifrado y almacenado en Web3.Storage. La inscripción hará referencia a este documento cifrado.",
       "web3StorageUri": "URI de Web3.Storage",
-      "registerWithInscription": "Registrar DID con inscripción"
+      "registerWithInscription": "Registrar did:health con inscripción"
     },
     "cosmos": {
       "name": "Cosmos",
@@ -163,7 +164,7 @@
   "parameters": "Parámetros",
   "onlyViewableBy": "Solo visible por",
   "condition": "Condición",
-  "yourDIDBTC": "Tu DID se genera automáticamente desde tu dirección de billetera de Bitcoin:",
+  "yourDIDBTC": "Tu did:health se genera automáticamente desde tu dirección de billetera de Bitcoin:",
   "copy": "Copiar",
 
   "didHealth": {

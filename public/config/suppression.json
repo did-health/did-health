@@ -1,0 +1,20 @@
+{
+    "searchResults": {
+        "global": ["id", "meta"],
+        "resourceSpecific": {
+            "Patient": ["communication", "extension"],
+            "Encounter": ["identifier", "contained", "extension"],
+            "Observation": ["component"],
+            "Condition": ["identifier", "verificationStatus", "subject", "recorder", "extension"],
+            "DocumentReference": ["status", "docStatus", "category"]
+        }
+    },
+    "details": {
+        "global": ["meta"],
+        "resourceSpecific": {
+            "Patient": ["link"],
+            "Condition": ["note", "identifier"],
+            "Encounter": ["extension"]
+        }
+    }
+}

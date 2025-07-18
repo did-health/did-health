@@ -15,7 +15,9 @@ import CreateOrganizationForm from '../fhir/CreateOrganizationForm'
 import CreatePractitionerForm from '../fhir/CreatePractitionerForm'
 import CreateDeviceForm from '../fhir/CreateDeviceForm'
 import { SetEncryption } from '../lit/SetEncryption'
-
+import {useTranslation} from 'react-i18next'
+import logo from '../../assets/did-health.png'
+import ethlogo from '../../assets/ethereum-eth-logo.svg'
 interface DIDDocument {
   id: string;
   controller: string;
@@ -81,9 +83,9 @@ function StatusModal({ isOpen, status, onClose }: { isOpen: boolean; status: str
 }
 
 export default function UpdateDIDETH() {
-  const { litClient, litConnected } = useOnboardingState()
+  const { litClient, litConnected, chainId } = useOnboardingState()
   const { address: connectedWalletAddress, isConnected } = useAccount()
-
+  const { t } = useTranslation()
   const [status, setStatus] = useState('')
   const [didDoc, setDidDoc] = useState<DIDDocument | null>(null)
   const [fhir, setFhir] = useState<any | null>(null)
@@ -109,19 +111,22 @@ export default function UpdateDIDETH() {
         setDidFHIRResources([])
 
         if (!isConnected || !connectedWalletAddress) {
-          setStatus('❌ Wallet not connected')
+          setStatus('❌ {t("walletNotConnected")}')
           return
         }
 
         // Only try to resolve on the main chain (Sepolia)
-        const chainId = 11155111 // Sepolia
+        if (!chainId) {
+          setStatus('❌ { t("noChainId") }')
+          return
+        }
         const result = await resolveDidHealth(chainId, connectedWalletAddress)
         if (!result) {
-          setStatus('❌ No DID found on supported chains')
+          setStatus('❌ {t("noDIDFound")}s')
           return
         }
 
-        setStatus('✅ DID resolved!')
+        setStatus('✅resolvedDID')
         const { doc, chainName } = result
         setChainName(chainName)
         setDidDoc(doc)
@@ -132,7 +137,7 @@ export default function UpdateDIDETH() {
         ) || []
 
         if (fhirServices.length === 0) {
-          setStatus('✅ DID resolved, but no FHIR resources found')
+          setStatus('✅ did:health {t("resolvedDID")}')
           return
         }
 
@@ -142,7 +147,7 @@ export default function UpdateDIDETH() {
 
         const isEncrypted = primary.serviceEndpoint.endsWith('.enc') || primary.serviceEndpoint.endsWith('.lit')
 
-        setStatus(`📦 Fetching FHIR resource from ${resourceUrl}...`)
+        setStatus(`📦 {t("fetchingFHIRResource")} ${resourceUrl}...`)
         const response = await fetch(resourceUrl)
         if (!response.ok) throw new Error(`❌ Failed to fetch: ${response.statusText}`)
 
@@ -307,14 +312,34 @@ export default function UpdateDIDETH() {
 
   return (
     <main className="p-6 space-y-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold">✏️ Update Your <span className="text-indigo-600">did:health</span> Resource</h1>
+      <div className="mb-8 flex flex-col">
+              <div className="flex items-center gap-4 mb-6">
+                {/* DID:Health Logo */}
+                <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-red-400/40 hover:scale-105 transition-transform duration-300">
+                  <img
+                    src={logo}
+                    alt="did:health Logo"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div>+</div>
+                {/* Chain Logo */}
+                <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-yellow-400/30 hover:rotate-6 hover:scale-110 transition-all duration-300">
+                  <img
+                    src={ethlogo} // Replace with actual path to Ethereum logo
+                    alt={`eth logo`}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
+      <h1 className="text-2xl font-bold">✏️ {t('updateDID') }</h1>
 
       <ConnectWallet />
       <ConnectLit />
       {/* ✅ Show resolved DID */}
       {didDoc?.id && (
         <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-700 text-sm text-gray-800 dark:text-gray-200">
-          <p className="font-medium text-gray-600 dark:text-gray-400 mb-1">Resolved DID:</p>
+          <p className="font-medium text-gray-600 dark:text-gray-400 mb-1">{t('resolvedDID')}  :</p>
           <code className="block break-words text-indigo-700 dark:text-indigo-400">{didDoc.id}</code>
           <p className="mt-1 text-xs text-gray-500">🔗 Found on: {chainName}</p>
         </div>
@@ -325,14 +350,14 @@ export default function UpdateDIDETH() {
 
       {fhir && (
         <div className="mt-6">
-          <h2 className="text-lg font-semibold">🔐 Edit Access Control</h2>
+          <h2 className="text-lg font-semibold">🔐 {t('editAccessControl')}</h2>
           <SetEncryption />
           <div className="mt-4 text-right">
             <button
               onClick={handleUpdateClick}
               className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
             >
-              🔄 Update did:health
+              🔄 {t('updateDID')}
             </button>
           </div>
         </div>
@@ -343,6 +368,7 @@ export default function UpdateDIDETH() {
         status={status}
         onClose={() => setModalOpen(false)}
       />
+    </div>
     </main>
   )
 }

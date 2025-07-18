@@ -3,6 +3,7 @@ import { ethers } from 'ethers'
 import { arrayify } from '@ethersproject/bytes'
 import { keccak256 } from '@ethersproject/keccak256'
 import { persist } from 'zustand/middleware'
+import type { LitNodeClient } from '@lit-protocol/lit-node-client'
 export interface DIDDocument {
   id: string
   controller: string
@@ -26,7 +27,7 @@ interface OnboardingState {
   walletAddress: string | null
   chainId: number | null
   fhirResource: any | null
-  litClient: any | null
+  litClient:  LitNodeClient | null
   w3upClient: any | null
   litConnected: boolean
   accessControlConditions: any[] | null
@@ -45,7 +46,7 @@ interface OnboardingState {
   setWallet: (address: string, chainId: number) => void
   setWalletAddress: (address: string, chainId: number) => void
   setFhirResource: (resource: any) => void
-  setLitClient: (client: any) => void
+  setLitClient: (client: LitNodeClient) => void
   setWalletConnected: (connected: boolean) => void
   setLitConnected: (connected: boolean) => void
   setAccessControlConditions: (acc: any[]) => void
@@ -58,29 +59,6 @@ interface OnboardingState {
   setWeb3SpaceDid: (did: string | null) => void
   reset: () => void
   resetWallet: () => void
-}
-
-// 🔐 Utility to derive AES key from wallet signature
-const generateEncryptionKeyFromWallet = async (signer: any): Promise<string> => {
-  const message = 'Generate encryption key'
-  
-  // For wagmi, we need to get the actual signer from the wallet client
-  if (typeof signer?.signMessage === 'function') {
-    // If we have a direct signer object
-    const signature = await signer.signMessage(message)
-    const bytes = arrayify(signature)
-    return keccak256(bytes)
-  } else if (typeof signer?.request === 'function') {
-    // If we have a wallet client object
-    const signature = await signer.request({
-      method: 'eth_sign',
-      params: [message]
-    })
-    const bytes = arrayify(signature)
-    return keccak256(bytes)
-  }
-  
-  throw new Error('Invalid signer object provided')
 }
 
 // 🧠 Zustand store with persistence

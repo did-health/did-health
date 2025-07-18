@@ -88,13 +88,13 @@ export default function OnboardingEth() {
         </StepCard>
 
         {walletConnected && (
-          <StepCard step="2" title={t('connectLit')}>
+ 
             <ConnectLit />
-          </StepCard>
+ 
         )}
 
         {walletConnected && litConnected && (
-          <StepCard step="3" title={t('setupStorage.title')}>
+          <StepCard step="2" title={t('setupStorage.title')}>
             <SetupStorage onReady={(client) => {
               setStorageReady(true)
               console.log('Storage setup complete:', client)
@@ -103,12 +103,12 @@ export default function OnboardingEth() {
         )}
 
         {walletConnected && litConnected && storageReady && !fhirResource && (
-          <StepCard step="4" title={t('createFHIR')}>
+          <StepCard step="3" title={t('createFHIR')}>
             <CreateDIDForm />
           </StepCard>
         )}
         {fhirResource && (
-          <StepCard step="4" title={t('fhirCreated')}>
+          <StepCard step="3" title={t('fhirCreated')}>
             <div className="mt-2">
               {(() => {
                 switch (fhirResource.resourceType) {
@@ -149,26 +149,17 @@ export default function OnboardingEth() {
         }
 
         {walletConnected && litConnected && storageReady && fhirResource && !accessControlConditions && !encryptionSkipped && (
-          <StepCard step="5" title={t('setAccessControl')}>
+          <StepCard step="4" title={t('setAccessControl')}>
             <SetEncryption />
           </StepCard>
         )}
 
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
-          <StepCard step="5" title={t('AccessControlConditions')}>
+          <StepCard step="4" title={t('AccessControlConditions')}>
             {encryptionSkipped ? (
               <>
                 <p className="text-yellow-600 font-medium mb-4">⚠️ {t('encryptionSkipped')}</p>
-                <button
-                  onClick={() => {
-                    useOnboardingState.getState().setEncryptionSkipped(false)
-                    useOnboardingState.getState().setAccessControlConditions([])
-                  }}
-                  className="btn btn-primary text-blue-600"
-                >
-                  🔄 {t('changeEncryptionDecision')}
-                </button>
               </>
             ) : (
               <>
@@ -222,13 +213,13 @@ export default function OnboardingEth() {
         )}
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && !did && (
-          <StepCard step="6" title={t('chooseDID')}>
+          <StepCard step="5" title={t('chooseDID')}>
             <SelectDIDFormETH onDIDAvailable={(did) => setDid(did)} />
           </StepCard>
         )}
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
-          <StepCard step="6" title={t('chooseDID')}>
+          <StepCard step="5" title={t('chooseDID')}>
             <div  className="flex items-center gap-2">
               <div className="flex items-center gap-2">
               <span>{did}</span>
@@ -257,7 +248,7 @@ export default function OnboardingEth() {
 
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
-          <StepCard step="7" title={t('registerDID')}>
+          <StepCard step="6" title={t('registerDID')}>
             <RegisterDID />
           </StepCard>
         )}

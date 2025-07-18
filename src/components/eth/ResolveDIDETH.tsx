@@ -24,7 +24,7 @@ export default function ResolveDIDETH() {
       setStatus('❌ Failed to copy DID');
     }
   };
-  const { litClient, litConnected } = useOnboardingState()
+  const { litConnected, litClient, chainId   } = useOnboardingState()
   const { address: connectedWalletAddress, isConnected } = useAccount()
 
   const [status, setStatus] = useState('')
@@ -57,9 +57,15 @@ export default function ResolveDIDETH() {
 
   const handleResolve = async () => {
     try {
+      if (!connectedWalletAddress) {
+        setStatus('❌ Please connect your wallet first')
+        return
+      }
+
+
       // Only resolve if we don't already have a DID
       if (didDoc?.id) {
-        setStatus('✅ DID already resolved')
+        setStatus('❌ ' + t('didAlreadyExists'))
         return
       }
 
@@ -75,9 +81,11 @@ export default function ResolveDIDETH() {
         return
       }
 
-      // Only try to resolve on the main chain (Sepolia)
-      const chainId = 11155111 // Sepolia
       try {
+        if (!chainId) {
+          setStatus('❌ ' + t('noChainId'))
+          return
+        }
         const result = await resolveDidHealth(chainId, connectedWalletAddress)
         if (!result) {
           setStatus('❌ ' + t('noDIDFound'))
@@ -156,6 +164,7 @@ export default function ResolveDIDETH() {
 
   return (
     <main className="p-6 space-y-6 max-w-xl mx-auto">
+
       <div className="flex flex-col items-center mb-6">
         <div className="w-32 h-32 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
           <img src={logo} alt="DID Health Logo" className="w-full h-full object-contain" />
@@ -329,7 +338,7 @@ export default function ResolveDIDETH() {
           )}
                     {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && connectedWalletAddress && (
             <div className="mt-6 text-center">
-              <DAOStatus walletAddress={connectedWalletAddress} did={didDoc?.id ?? ''} />
+              <DAOStatus walletAddress={connectedWalletAddress} />
             </div>
           )}
         </>

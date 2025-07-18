@@ -19,6 +19,7 @@ const CreateDeviceForm: React.FC<CreateDeviceFormProps> = ({ defaultValues, onSu
   const { t: t2 } = useTranslation()
 
   useEffect(() => {
+    if (!device) {      
     if (fhirResource?.resourceType === 'Device') {
       setDevice(fhirResource as Device)
     } else {
@@ -26,6 +27,7 @@ const CreateDeviceForm: React.FC<CreateDeviceFormProps> = ({ defaultValues, onSu
         resourceType: 'Device',
         identifier: [{ system: 'https://www.w3.org/ns/did', value: '' }],
       })
+    }
     }
   }, [fhirResource])
 
@@ -65,15 +67,6 @@ const CreateDeviceForm: React.FC<CreateDeviceFormProps> = ({ defaultValues, onSu
   return (
     <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-background">
       <div className="w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg p-6">
-        <div className="flex justify-center items-center h-24 mb-6">
-          <div className="w-24 h-24 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
-            <img
-              src={logo}
-              alt="did:health Logo"
-              className="w-full h-full object-contain scale-110 transition-transform duration-300 hover:scale-125"
-            />
-          </div>
-        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white text-center">
             🛠️ did:health {t('Device.label')} 

@@ -148,6 +148,8 @@ export const renderLanguageValues = (languages: any[], t: (key: string) => strin
 export const renderIdentifierAndTelecom = (items: Array<ContactPoint | { system?: string; value: string; use?: string; type?: { coding?: Coding[]; text?: string } }>, t: (key: string) => string): React.ReactNode => (
     <ul>
         {items.map((item, i) => {
+            if (!item) return null; // Skip null items
+            
             if ('system' in item && item.system && item.value) {
                 return (
                     <li key={`telecom-${i}`}>
@@ -156,7 +158,7 @@ export const renderIdentifierAndTelecom = (items: Array<ContactPoint | { system?
                     </li>
                 );
             }
-            if (item?.value && !item.system) {
+            if (item?.value && !item?.system) {
                 return (
                     <li key={`identifier-${i}`}>
                         {item.value}

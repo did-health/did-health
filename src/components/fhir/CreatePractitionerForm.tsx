@@ -22,6 +22,7 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
   const { t: t2 } = useTranslation()
 
   useEffect(() => {
+    if (!practitioner) {
     if (fhirResource?.resourceType === 'Practitioner') {
       setPractitioner(fhirResource as Practitioner)
     } else {
@@ -39,6 +40,7 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
           },
         ],
       })
+    }
     }
   }, [fhirResource])
 
@@ -78,7 +80,6 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
   return (
     <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-gray-50 dark:bg-gray-950">
       <div className="w-full max-w-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
-
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
           did:health {t('Practitioner.label')}
         </h2>

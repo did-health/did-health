@@ -34,14 +34,6 @@ export function ConnectLit() {
   }, [])
 
   return (
-    <div>
-      {litConnected ? (
-        <p>✅ {t('litConnected')}</p>
-      ) : error ? (
-        <p style={{ color: 'red' }}>❌ {t('litConnectionFailed')} {error}</p>
-      ) : (
-        <p>{t('connectLit')}</p>
-      )}
-    </div>
+   <div></div>
   )
 }

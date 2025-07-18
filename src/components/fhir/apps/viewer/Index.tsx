@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { fhir } from '../../../../store/fhirStore'
-import type { FhirResource, BundleEntry } from 'fhir/r4'
+import type { FhirResource, BundleEntry, Bundle } from 'fhir/r4'
 import { useOnboardingState } from '../../../../store/OnboardingState'
-
+import FHIRSearchResults from '../../../../components/fhir/FHIRSearchResults'
 const usCoreTypes = [
   'AllergyIntolerance', 'CarePlan', 'CareTeam', 'Condition', 'Coverage', 'Device',
   'DiagnosticReport', 'DocumentReference', 'Encounter', 'Goal', 'Immunization',
@@ -28,6 +28,7 @@ export default function AllResourcesList() {
       const out: Record<string, FhirResource[]> = {}
       for (const type of usCoreTypes) {
         try {
+          console.log(`Fetching ${type}...`)
           const bundle = await fhir.search(type)  // Ensure this internally uses aesKey
           const entries = bundle.entry || []
           out[type] = entries.map((e: BundleEntry<FhirResource>) => e.resource!).filter(Boolean)
@@ -54,11 +55,22 @@ export default function AllResourcesList() {
             {resources.length === 0 ? (
               <p className="text-sm text-gray-400">No resources found.</p>
             ) : (
-              <ul className="text-sm list-disc ml-5">
-                {resources.map((r) => (
-                  <li key={r.id}>{r.id}</li>
-                ))}
-              </ul>
+              <FHIRSearchResults
+                onSelectResource={(resource) => {
+                  // Handle resource selection here if needed
+                  console.log('Selected resource:', resource);
+                }}
+                bundle={{
+                  resourceType: 'Bundle' as const,
+                  type: 'collection' as const,
+                  entry: resources.map(resource => ({
+                    resource,
+                    request: {
+                      method: 'GET' as const,
+                      url: resource.resourceType
+                    }
+                  }))
+                } as Bundle<FhirResource>} />
             )}
           </div>
         )

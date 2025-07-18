@@ -4,7 +4,8 @@
   "ContactPoint.system.phone.label": "Phone",
   "Population.ethnicity.label": "Ethnicity",
   "Patient.Identifier.label": "Identification Type",
-  
+  "Practitioner.qualification.specialty.label": "Qualification",
+  "Practitioner.qualification.specialty.short": "Professional Specialty",
   "Practitioner.name.label": "Name",
   "Practitioner.name.short": "Name of the practitioner",
   "Practitioner.name.definition": "A name associated with the practitioner, usually a human name.",

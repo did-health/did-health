@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useOnboardingState } from '../../store/OnboardingState'
 import { useTranslation } from 'react-i18next'
-
+import { keccak256, toUtf8Bytes } from 'ethers'
 export function ConnectWalletBTC() {
   const [walletName, setWalletName] = useState<string | null>(null)
-  const [walletAddress, setWalletAddress] = useState<string | null>(null)
   const [isInstalled, setIsInstalled] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { t } = useTranslation()
   const {
     setWallet,
+    walletAddress,
+    setWalletAddress,
     setAESKeyFromWallet,
     reset,
     aesKey,
@@ -35,15 +36,26 @@ export function ConnectWalletBTC() {
   // Connect to UniSat
   const connectUniSat = async () => {
     try {
+      
       if (!window.unisat) throw new Error(t('failedToConnectToUniSat'))
+
 
       const accounts = await window.unisat.requestAccounts()
       const address = accounts[0]
-      const signer = window.unisat
-
-      setWalletAddress(address)
+      if (!aesKey){
+        const message = "Generate encryption key";
+        try {
+          const signature = await window.unisat.signMessage(message);
+          const newAesKey = keccak256(toUtf8Bytes(signature));
+          setAESKeyFromWallet(newAesKey)
+        } catch (error) {
+          console.error('Failed to sign message:', error);
+          throw new Error('Failed to generate encryption key');
+        }
+      }
+      setWalletAddress(address, 0)
       setWallet(address, 0) // Bitcoin chain ID = 0
-      if (!aesKey) await setAESKeyFromWallet(signer)
+   
     } catch (err) {
       console.error('UniSat connection error:', err)
       setError(t('failedToConnectToUniSat'))
@@ -67,7 +79,7 @@ export function ConnectWalletBTC() {
         },
       }
 
-      setWalletAddress(address)
+      setWalletAddress(address, 0)
       setWallet(address, 0)
       if (!aesKey) await setAESKeyFromWallet(signer)
     } catch (err) {
@@ -83,7 +95,7 @@ export function ConnectWalletBTC() {
   }
 
   const disconnectWallet = () => {
-    setWalletAddress(null)
+    setWalletAddress('', 0)
     reset() // clears AES key and other wallet state
   }
 
