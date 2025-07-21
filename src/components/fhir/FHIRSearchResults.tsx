@@ -4,7 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { BundleEntry } from 'fhir/r4';
 import { type Column, type FHIRSearchResultsProps, type StructureDefinitionMap } from '../../types';
-import { formatLabel, loadExtensionStructureDefinition, renderElement, resolveDefinitionUrl } from '../../lib/utils';
+import { useFormatLabel } from '@/lib/utils/formatLabel';
+import { loadExtensionStructureDefinition, renderElement, resolveDefinitionUrl } from '../../lib/utils';
 import NoResults from '../../lib/utils/NoResults';
 import { shouldSuppressField } from './SuppressionConfig';
 import { loadStructureDefinitionsFromProfiles } from '../../lib/utils/structuredDefinitionHelper';
@@ -12,6 +13,7 @@ import { loadStructureDefinitionsFromProfiles } from '../../lib/utils/structured
 const COLUMN_WIDTHS_KEY = 'fhir.columnWidths';
 
 const FHIRSearchResults: React.FC<FHIRSearchResultsProps> = ({ bundle, onSelectResource, followReferences }) => {
+  
   const [structureDefs, setStructureDefs] = useState<StructureDefinitionMap>({});
   const [mainStructureDef, setMainStructureDef] = useState<StructureDefinition | null>(null);
   const [columns, setColumns] = useState<Column[]>([]);
@@ -23,11 +25,11 @@ const FHIRSearchResults: React.FC<FHIRSearchResultsProps> = ({ bundle, onSelectR
 
   const entries = (bundle.entry?.map((e: BundleEntry) => e.resource).filter((r: Resource | undefined): r is Resource => r !== undefined) || []);
   const resourceType = entries[0]?.resourceType;
-
+  const formatLabel = useFormatLabel(resourceType as string);
   const persistColumnWidths = (updatedCols: Column[]) => {
     const widths: Record<string, string> = {};
     updatedCols.forEach(col => {
-      if (col.width) widths[col.path] = col.width;
+      if (col.width) widths[col.path] = String(col.width);
     });
     localStorage.setItem(COLUMN_WIDTHS_KEY, JSON.stringify(widths));
   };
@@ -68,15 +70,15 @@ const FHIRSearchResults: React.FC<FHIRSearchResultsProps> = ({ bundle, onSelectR
         let def = defCache.current[resourceType];
         if (!def) {
           const profiles: string[] = (entries[0]?.meta?.profile) || [];
-          def = await loadStructureDefinitionsFromProfiles(profiles, resourceType, [
+          const loadedDef = await loadStructureDefinitionsFromProfiles(profiles, resourceType, [
             '/us-core',
-            '/carin-bb'
           ], '/r4b');
-          if (!def) {
+          if (!loadedDef) {
             console.warn(`No StructureDefinition found for resourceType ${resourceType}`);
             return;
           }
-          defCache.current[resourceType] = def;
+          def = loadedDef;
+          defCache.current[resourceType] = loadedDef;
         }
 
         if (Object.keys(typeMapRef.current).length === 0) {
@@ -138,7 +140,10 @@ const FHIRSearchResults: React.FC<FHIRSearchResultsProps> = ({ bundle, onSelectR
             })
           );
 
-          return filtered.filter((c): c is NonNullable<typeof c> => c !== null);
+          return filtered.filter((c): c is NonNullable<typeof c> => c !== null).map(col => ({
+            ...col,
+            key: col.path // Using path as the key since it's unique per column
+          }));
         };
 
         const columnsWithData = await filterColumnsWithData();
