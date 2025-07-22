@@ -59,6 +59,7 @@ export default function EpicConnector() {
 
         const types = [
           'AllergyIntolerance',
+          'Binary',
           'CarePlan',
           'CareTeam?category=longitudinal',
           'Condition',
@@ -126,7 +127,7 @@ export default function EpicConnector() {
         }
         console.log("submitting bundle **************")
         console.log(bundle)
-        await fhir.transaction(bundle)
+        //await fhir.transaction(bundle)
         setStatus('📦 FHIR data downloaded and saved locally')
       } catch (err: any) {
         console.error('❌ SMART session failed:', err)

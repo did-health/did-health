@@ -105,7 +105,17 @@ export default function AllResourcesList() {
                     <h2 className="text-lg font-semibold">
                       {t(`${type}.label`, type)} ({resources.length})
                     </h2>
-                    <span className="text-blue-600 hover:underline text-sm">{isOpen ? t('collapse', 'Collapse') : t('expand', 'Expand')}</span>
+                    <span className="text-blue-600">
+                      {isOpen ? (
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                    </span>
                   </div>
                   {isOpen && (
                     <div className="overflow-x-auto mt-4">
