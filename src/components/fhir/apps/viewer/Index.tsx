@@ -7,10 +7,10 @@ import FHIRSearchResults from '../../../../components/fhir/FHIRSearchResults'
 import { useTranslation } from 'react-i18next'
 import logo from '../../../../assets/did-health.png'
 const usCoreTypes = [
-  'AllergyIntolerance', 'CarePlan', 'CareTeam', 'Condition', 'Coverage', 'Device',
+  'Patient','AllergyIntolerance', 'CarePlan', 'CareTeam', 'Condition', 'Coverage', 'Device',
   'DiagnosticReport', 'DocumentReference', 'Encounter', 'Goal', 'Immunization',
   'Location', 'Medication', 'MedicationRequest', 'MedicationStatement', 'Observation',
-  'Organization', 'Patient', 'Practitioner', 'PractitionerRole', 'Procedure',
+  'Organization',  'Practitioner', 'PractitionerRole', 'Procedure',
   'Provenance', 'QuestionnaireResponse', 'RelatedPerson', 'ServiceRequest', 'OperationOutcome', 'Specimen',
 ] as const
 
@@ -136,7 +136,7 @@ export default function AllResourcesList() {
       {/* Selected Resource Modal */}
       {selectedResource && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <button
