@@ -202,6 +202,7 @@ const FHIRSearchResults: React.FC<FHIRSearchResultsProps> = ({ bundle, onSelectR
           {resources.map((resource: Resource, rowIdx: number) => (
             <tr
               key={rowIdx}
+              id={`${resource.resourceType}.${resource.id}`}
               onClick={() => onSelectResource?.(resource)}
               className="hover:bg-gray-50 cursor-pointer"
             >

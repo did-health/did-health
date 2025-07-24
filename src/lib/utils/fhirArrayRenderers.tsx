@@ -194,15 +194,36 @@ export const renderArrayOfObjects = (arr: any[], followReferences: boolean, t: (
     return (
         <ul>
             {arr.map((item, i) => {
-
                 if (typeof item !== 'object' || item === null) {
                     return <li key={i}>{String(item)}</li>;
                 }
 
                 if ('reference' in item && typeof item.reference === 'string' && item.reference.includes('/')) {
                     const [resourceType, id] = item.reference.split('/');
-                    return <li key={i}>{t(`types.${resourceType.toLowerCase()}.label`)}</li>
+                    const hash = `#${resourceType}.${id}`;
+                    return (
+                        <li key={i}>
+                            <a 
+                                href={hash}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const target = document.querySelector(hash);
+                                    if (target) {
+                                        e.preventDefault();
+                                        target.scrollIntoView({ behavior: 'smooth' });
+                                    }
+                                }}
+                                className="text-blue-600 hover:underline"
+                                title={`View ${resourceType} ${id}`}
+                            >
+                                {t('view')}
+                            </a>
+                        </li>
+                    );
                 }
+                
+                // Handle case where the item is a reference object but we need to render something
+                return <li key={i}>{JSON.stringify(item)}</li>;
             })}
         </ul>
     );
