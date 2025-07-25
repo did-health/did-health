@@ -18,6 +18,10 @@ import { SetEncryption } from '../lit/SetEncryption'
 import {useTranslation} from 'react-i18next'
 import logo from '../../assets/did-health.png'
 import ethlogo from '../../assets/ethereum-eth-logo.svg'
+interface FHIRResource {
+  accessControlConditions?: any
+  [key: string]: any
+}
 interface DIDDocument {
   id: string;
   controller: string;
@@ -83,14 +87,14 @@ function StatusModal({ isOpen, status, onClose }: { isOpen: boolean; status: str
 }
 
 export default function UpdateDIDETH() {
-  const { litClient, litConnected, chainId } = useOnboardingState()
+  const { litConnected, litClient, chainId, encryptionSkipped , fhirResource, accessControlConditions, setFhirResource, setAccessControlConditions} = useOnboardingState()
   const { address: connectedWalletAddress, isConnected } = useAccount()
   const { t } = useTranslation()
   const [status, setStatus] = useState('')
   const [didDoc, setDidDoc] = useState<DIDDocument | null>(null)
   const [fhir, setFhir] = useState<any | null>(null)
   const [qrCode, setQrCode] = useState<string>('')
-  const [accessControlConditions, setAccessControlConditions] = useState<any | null>(null)
+  
   const [resolvedChainName, setResolvedChainName] = useState<string>('')
   const [didFHIRResources, setDidFHIRResources] = useState<
     { uri: string; resource: any; error?: string }[]
@@ -105,7 +109,7 @@ export default function UpdateDIDETH() {
 
         setStatus('🔍 Resolving DID...')
         setDidDoc(null)
-        setFhir(null)
+        setFhir(fhirResource)
         setQrCode('')
         setChainName('')
         setDidFHIRResources([])
@@ -135,10 +139,9 @@ export default function UpdateDIDETH() {
         const fhirServices = doc.service?.filter(
           (s: any) => s.serviceEndpoint
         ) || []
-
+  
         if (fhirServices.length === 0) {
-          setStatus('✅ did:health {t("resolvedDID")}')
-          return
+          setStatus('✅ ' + t('noFHIRResourcesFound'))
         }
 
         setDidFHIRResources(fhirServices)
@@ -147,12 +150,23 @@ export default function UpdateDIDETH() {
 
         const isEncrypted = primary.serviceEndpoint.endsWith('.enc') || primary.serviceEndpoint.endsWith('.lit')
 
-        setStatus(`📦 {t("fetchingFHIRResource")} ${resourceUrl}...`)
+        setStatus(`📦 ${t('fetchingFHIRResource')} ${resourceUrl}`)
+       console.log(resourceUrl)
+       //return
         const response = await fetch(resourceUrl)
-        if (!response.ok) throw new Error(`❌ Failed to fetch: ${response.statusText}`)
+        console.log('response', response)
+        //return
+        
+console.log('response', response)
+if (!response.ok) {
+  setStatus(`❌ Failed to fetch FHIR resource: ${response.statusText}`)
+  return
+}
 
-        const json = await response.json()
-
+        const json = await response.json() as FHIRResource
+console.log('json', json)
+console.log('isEncrypted', isEncrypted)
+        //return
         if (isEncrypted) {
           setStatus('🔐 Decrypting...')
           const acc = json.accessControlConditions || []
@@ -160,7 +174,7 @@ export default function UpdateDIDETH() {
 
           const accChain = acc?.[0]?.chain || chainName || 'ethereum'
           const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
-
+console.log('decrypted', decrypted)
           setFhir(decrypted)
           setStatus('✅ Decrypted FHIR loaded. Ready to edit.')
         } else {
@@ -172,11 +186,12 @@ export default function UpdateDIDETH() {
         setStatus(err.message || '❌ Unexpected error')
       }
     }
+    
 
     if (isConnected && connectedWalletAddress && litConnected && litClient) {
       load()
     }
-  }, [connectedWalletAddress, isConnected, litConnected, litClient])
+  }, [connectedWalletAddress, isConnected, litClient, litConnected, setStatus, setFhir, setDidDoc, setDidFHIRResources, setQrCode, setResolvedChainName, setAccessControlConditions, setChainName ])
 
   const handleUpdateClick = () => {
     if (!fhir) {
@@ -198,8 +213,7 @@ export default function UpdateDIDETH() {
   const handleUpdateDID = async (updatedFHIR: any) => {
     try {
       const resourceType = updatedFHIR?.resourceType
-      const { encryptionSkipped, accessControlConditions } = useOnboardingState.getState()
-  
+    
       if (!didDoc?.id) {
         setStatus('❌ DID Document not loaded')
         return
@@ -285,6 +299,11 @@ export default function UpdateDIDETH() {
     }
   }
 
+  const handleSubmit = async (updatedFHIR: any) => {
+    console.log('💾 Submitting updated FHIR:', updatedFHIR)
+    setFhirResource(updatedFHIR)
+    setFhir(updatedFHIR)
+  }
 
   const renderForm = () => {
     if (!fhir || typeof fhir.resourceType !== 'string') {
@@ -293,7 +312,7 @@ export default function UpdateDIDETH() {
 
     const props = {
       defaultValues: fhir,
-      onSubmit: handleUpdateDID,
+      onSubmit: handleSubmit,
     }
 
     switch (fhir.resourceType) {
@@ -351,7 +370,9 @@ export default function UpdateDIDETH() {
       {fhir && (
         <div className="mt-6">
           <h2 className="text-lg font-semibold">🔐 {t('editAccessControl')}</h2>
-          <SetEncryption />
+          {encryptionSkipped && (
+            <SetEncryption />
+          )}
           <div className="mt-4 text-right">
             <button
               onClick={handleUpdateClick}
