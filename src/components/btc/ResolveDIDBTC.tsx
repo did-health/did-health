@@ -182,44 +182,46 @@ export default function ResolveDIDBitcoin() {
 
   return (
     <main className="p-6 space-y-6 max-w-xl mx-auto">
-      <div className="flex flex-col">
-        <div className="mb-8 text-center flex flex-col items-center">
-          {/* Logos Row */}
-          <div className="flex items-center gap-4 mb-6">
-            {/* DID:Health Logo */}
-            <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-red-400/40 hover:scale-105 transition-transform duration-300">
-              <img
-                src={logo}
-                alt="did:health Logo"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            {/* + Symbol */}
-            <div className="text-3xl font-bold text-gray-500 dark:text-gray-400">+</div>
-          </div>
+      <div className="mb-8 flex items-center justify-center gap-4">
+        {/* DID:Health Logo */}
+        <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-red-400/40 hover:scale-105 transition-transform duration-300 flex-shrink-0">
+          <img
+            src={logo}
+            alt="did:health Logo"
+            className="w-full h-full object-contain"
+          />
         </div>
+
+        {/* + Symbol */}
+        <div className="text-3xl font-bold text-gray-500 dark:text-gray-400 flex-shrink-0">+</div>
+
+        {/* Bitcoin Logo */}
+        <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-yellow-400/30 hover:rotate-6 hover:scale-110 transition-all duration-300 flex-shrink-0">
+          <img
+            src={btcLogo}
+            alt="Bitcoin Logo"
+            className="w-full h-full object-contain"
+          />
+        </div>
+
+
       </div>
+      {/* Title */}
       <div className="flex flex-col items-center">
-      {/* Chain Logo */}
-      <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-yellow-400/30 hover:rotate-6 hover:scale-110 transition-all duration-300">
-        <img
-          src={btcLogo}
-          alt="Bitcoin Logo"
-          className="w-full h-full object-contain"
-        />
-      </div>
-      {didDoc?.id && (
-        <div className="mt-4">
-          <a href={`/btc/did/update?did=${didDoc.id}`} className="btn-primary w-full">
-            🔄 {t('common.update')} {t('Your')}  did:health
-          </a>
-        </div>
-      )}
-      <h1 className="text-2xl font-bold mt-4 text-center">
+      <h1 className="text-2xl font-bold ml-4">
         🔎 <span className="text-green-600 dark:text-green-400">{t('viewYourDID')}</span>
       </h1>
-    </div>
-      <ConnectWalletBTC />
+      </div>
+      <div className="flex flex-col items-center">
+        {didDoc?.id && (
+          <div className="mt-4">
+            <a href={`/btc/did/update?did=${didDoc.id}`} className="btn-primary w-full">
+              🔄 {t('common.update')} {t('Your')} did:health
+            </a>
+          </div>
+        )}
+        <ConnectWalletBTC />
+      </div>
       <ConnectLit />
 
       {status && <p className="text-sm text-gray-700 mt-4">{status}</p>}
@@ -295,6 +297,8 @@ export default function ResolveDIDBitcoin() {
           <DAOStatus walletAddress={walletAddress} />
         </div>
       )}
+      
     </main>
+
   )
 }

@@ -181,9 +181,26 @@ export default function UpdateDidBTC() {
     }
 
     resolveDid()
-  }, [walletAddress, litConnected, litClient])
+  }, [walletAddress])
 
-  const handleUpdate = async (updatedFHIR: any) => {
+  const handleUpdateClick = () => {
+    if (!fhir) {
+      setStatus('❌ No FHIR resource loaded.')
+      return
+    }
+
+    // Wait for the form to update the FHIR resource
+    const updatedFHIR = useOnboardingState.getState().fhirResource
+    if (!updatedFHIR) {
+      setStatus('❌ No updated FHIR resource found.')
+      return
+    }
+
+    // Call the update handler with the updated FHIR resource
+    handleUpdateDID(updatedFHIR)
+  }
+
+  const handleUpdateDID = async (updatedFHIR: any) => {
     try {
       setModalOpen(true)
       setStatus('📄 {t("preparingUpdate")}...')
@@ -241,14 +258,18 @@ export default function UpdateDidBTC() {
       setStatus(`❌ Failed: ${err.message}`)
     }
   }
+  const handleSubmit = async (updatedFHIR: any) => {
+    //console.log('💾 Submitting updated FHIR:', updatedFHIR)
+    setFhirResource(updatedFHIR)
+  }
 
   const renderForm = () => {
     if (!fhir || typeof fhir.resourceType !== 'string') return null
-    console.log('fhir ======'+JSON.stringify(fhir))
+    //console.log('fhir ======'+JSON.stringify(fhir))
     console.log('fhir.resourceType ======'+fhir.resourceType)
     const props = {
       defaultValues: fhir,
-      onSubmit: handleUpdate,
+      onSubmit: handleSubmit,
     }
 
     switch (fhir.resourceType) {
@@ -268,35 +289,38 @@ export default function UpdateDidBTC() {
   return (
     <main className="p-6 space-y-6 max-w-xl mx-auto">
 
-      <div className="mb-8  flex flex-col">
-  {/* Logos Row */}
-  <div className="flex items-center gap-4 mb-6">
-    
-    {/* DID:Health Logo */}
-    <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-red-400/40 hover:scale-105 transition-transform duration-300">
-      <img
-        src={logo}
-        alt="did:health Logo"
-        className="w-full h-full object-contain"
-      />
-    </div>
+      <div className="mb-8 w-full flex flex-col items-center">
+        {/* Logos Row */}
+        <div className="flex items-center justify-center gap-4 mb-6 w-full">
+          {/* DID:Health Logo */}
+          <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-red-400/40 hover:scale-105 transition-transform duration-300">
+            <img
+              src={logo}
+              alt="did:health Logo"
+              className="w-full h-full object-contain"
+            />
+          </div>
 
-    {/* + Symbol */}
-    <div className="text-3xl font-bold text-gray-500 dark:text-gray-400">+</div>
+          {/* + Symbol */}
+          <div className="text-3xl font-bold text-gray-500 dark:text-gray-400">+</div>
 
-    {/* Chain Logo */}
-    <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-yellow-400/30 hover:rotate-6 hover:scale-110 transition-all duration-300">
-      <img
-        src={btcLogo} // or ethlogo, btclogo, etc.
-        alt="Cosmos Logo"
-        className="w-full h-full object-contain"
-      />
-    </div>
-  </div>
-       <h1 className="text-2xl font-bold">✏️ {t("updateYourDIDBTC")}</h1>
+          {/* Chain Logo */}
+          <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-yellow-400/30 hover:rotate-6 hover:scale-110 transition-all duration-300">
+            <img
+              src={btcLogo}
+              alt="Bitcoin Logo"
+              className="w-full h-full object-contain"
+            />
+          </div>
+        </div>
+        
+        {/* Title */}
+        <div className="w-full text-center mb-4">
+          <h1 className="text-2xl font-bold">✏️ {t("updateYourDIDBTC")}</h1>
+        </div>
+          <ConnectWalletBTC />
+          <ConnectLit />
 
-      <ConnectWalletBTC />
-      <ConnectLit />
 
       {status && <p className="text-sm text-gray-600 mt-2">{status}</p>}
 
@@ -307,14 +331,28 @@ export default function UpdateDidBTC() {
         </div>
       )}
 
-      {renderForm()}
+      {renderForm()
+      }
 
-      {fhir(
+      {fhir && (
         <div className="mt-6">
-          <h2 className="text-lg font-semibold">🔐 {t("editAccessControl")}</h2>
-          <SetEncryption />
+          {encryptionSkipped && (
+            <div>
+              <h2 className="text-lg font-semibold">🔐 {t('editAccessControl')}</h2>
+              <SetEncryption />
+            </div>
+          )}
+          <div className="mt-4 text-right">
+            <button
+              onClick={handleUpdateClick}
+              className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
+            >
+              🔄 {t('updateDID')}
+            </button>
+          </div>
         </div>
       )}
+
 
       {didIpfsUri && (
         <div className="mt-6 space-y-2">
