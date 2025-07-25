@@ -24,7 +24,7 @@ export default function ResolveDIDETH() {
       setStatus('❌ Failed to copy DID');
     }
   };
-  const { litConnected, litClient, chainId   } = useOnboardingState()
+  const { litConnected, litClient, chainId } = useOnboardingState()
   const { address: connectedWalletAddress, isConnected } = useAccount()
 
   const [status, setStatus] = useState('')
@@ -125,15 +125,19 @@ export default function ResolveDIDETH() {
         const json = await response.json()
         console.log('****************' + JSON.stringify(json))
         if (isEncrypted) {
-          setStatus('🔐 Decrypting with Lit Protocol...')
+          if (!litClient) {
+            setStatus('❌ Lit client not connected. Please ensure you are connected to the Lit network.')
+            return
+          }
           try {
             const accChain = json.accessControlConditions?.[0]?.chain || 'ethereum'
+            console.log('Decrypting with Lit client...')
             const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
             setFhir(decrypted)
             setStatus('✅ Decrypted FHIR resource loaded!')
           } catch (decryptErr) {
             console.error('❌ Decryption error:', decryptErr)
-            setStatus('❌ Failed to decrypt FHIR resource')
+            setStatus(`❌ Failed to decrypt FHIR resource: ${decryptErr instanceof Error ? decryptErr.message : 'Unknown error'}`)
           }
         } else {
           setFhir(json)
@@ -157,10 +161,12 @@ export default function ResolveDIDETH() {
 
   useEffect(() => {
     // Only resolve if we have a wallet connection and no existing DID
-    if (isConnected && connectedWalletAddress && !didDoc?.id) {
+    if (isConnected && connectedWalletAddress && !didDoc?.id && litClient) {
       handleResolve()
+    } else if (isConnected && connectedWalletAddress && !litClient) {
+      setStatus('🔌 Connecting to Lit Network...')
     }
-  }, [isConnected, connectedWalletAddress])
+  }, [isConnected, connectedWalletAddress, litClient, litConnected])
 
   return (
     <main className="p-6 space-y-6 max-w-xl mx-auto">
