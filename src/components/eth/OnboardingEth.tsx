@@ -148,19 +148,17 @@ export default function OnboardingEth() {
           })
         }
 
-        {walletConnected && litConnected && storageReady && fhirResource && !accessControlConditions && !encryptionSkipped && (
+        {walletConnected && litConnected && storageReady && fhirResource && (!accessControlConditions || accessControlConditions.length === 0) && !encryptionSkipped && (
           <StepCard step="4" title={t('setAccessControl')}>
             <SetEncryption />
           </StepCard>
         )}
 
 
-        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
+        {walletConnected && litConnected && storageReady && fhirResource && ((accessControlConditions && accessControlConditions.length > 0) || encryptionSkipped) && (
           <StepCard step="4" title={t('AccessControlConditions')}>
             {encryptionSkipped ? (
-              <>
-                <p className="text-yellow-600 font-medium mb-4">⚠️ {t('encryptionSkipped')}</p>
-              </>
+              <></>
             ) : (
               <>
                 <p className="text-green-600 font-medium mb-2">✅ {t('AccessControlConditionsSet')}</p>

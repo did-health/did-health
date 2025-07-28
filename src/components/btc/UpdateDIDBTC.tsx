@@ -13,6 +13,7 @@ import CreatePractitionerForm from '../fhir/CreatePractitionerForm'
 import CreateDeviceForm from '../fhir/CreateDeviceForm'
 import { SetEncryption } from '../lit/SetEncryption'
 import { useTranslation } from 'react-i18next'
+import { SetupStorage } from '../SetupStorage'
 import logo from '../../assets/did-health.png'
 import btcLogo from '../../assets/bitcoin-btc-logo.svg'
 interface FHIRResource {
@@ -33,6 +34,7 @@ export default function UpdateDidBTC() {
     accessControlConditions,
     encryptionSkipped,
     setFhirResource,
+    setStorageReady,
   } = useOnboardingState()
 
   const [status, setStatus] = useState('')
@@ -203,8 +205,8 @@ export default function UpdateDidBTC() {
   const handleUpdateDID = async (updatedFHIR: any) => {
     try {
       setModalOpen(true)
-      setStatus('📄 {t("preparingUpdate")}...')
-
+      setStatus('📄 Preparing update...')
+      
       const resourceType = updatedFHIR?.resourceType
       setFhirResource(updatedFHIR)
 
@@ -290,6 +292,9 @@ export default function UpdateDidBTC() {
     <main className="p-6 space-y-6 max-w-xl mx-auto">
 
       <div className="mb-8 w-full flex flex-col items-center">
+        {/* Storage Setup */}
+
+
         {/* Logos Row */}
         <div className="flex items-center justify-center gap-4 mb-6 w-full">
           {/* DID:Health Logo */}
@@ -321,7 +326,7 @@ export default function UpdateDidBTC() {
           <ConnectWalletBTC />
           <ConnectLit />
 
-
+      
       {status && <p className="text-sm text-gray-600 mt-2">{status}</p>}
 
       {didDoc?.id && (
@@ -342,6 +347,17 @@ export default function UpdateDidBTC() {
               <SetEncryption />
             </div>
           )}
+          <div className="w-full max-w-md mb-6 p-4 bg-white/5 rounded-lg">
+            <h3 className="text-lg font-semibold mb-2">{t('setupStorage.title')}</h3>
+            <SetupStorage onReady={(client) => {
+              setStorageReady(true)
+              console.log('Storage setup complete:', client)
+            }} />
+
+            {!useOnboardingState.getState().storageReady && (
+              <p className="mt-2 text-sm text-yellow-500">{t('setupStorage.description')}</p>
+            )}
+          </div>
           <div className="mt-4 text-right">
             <button
               onClick={handleUpdateClick}

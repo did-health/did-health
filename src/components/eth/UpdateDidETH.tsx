@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useAccount } from 'wagmi'
 import { useOnboardingState } from '../../store/OnboardingState'
 import { ConnectWallet } from './WalletConnectETH'
@@ -18,6 +18,7 @@ import { SetEncryption } from '../lit/SetEncryption'
 import {useTranslation} from 'react-i18next'
 import logo from '../../assets/did-health.png'
 import ethlogo from '../../assets/ethereum-eth-logo.svg'
+import { SetupStorage } from '../SetupStorage'
 interface FHIRResource {
   accessControlConditions?: any
   [key: string]: any
@@ -87,14 +88,18 @@ function StatusModal({ isOpen, status, onClose }: { isOpen: boolean; status: str
 }
 
 export default function UpdateDIDETH() {
-  const { litConnected, litClient, chainId, encryptionSkipped , fhirResource, accessControlConditions, setFhirResource, setAccessControlConditions} = useOnboardingState()
+  const { litConnected, litClient, chainId, 
+    storageReady,
+    encryptionSkipped , fhirResource, 
+    accessControlConditions, setFhirResource, 
+    setAccessControlConditions,
+    setStorageReady} = useOnboardingState()
   const { address: connectedWalletAddress, isConnected } = useAccount()
   const { t } = useTranslation()
   const [status, setStatus] = useState('')
   const [didDoc, setDidDoc] = useState<DIDDocument | null>(null)
   const [fhir, setFhir] = useState<any | null>(null)
-  const [qrCode, setQrCode] = useState<string>('')
-  
+
   const [resolvedChainName, setResolvedChainName] = useState<string>('')
   const [didFHIRResources, setDidFHIRResources] = useState<
     { uri: string; resource: any; error?: string }[]
@@ -102,96 +107,107 @@ export default function UpdateDIDETH() {
   const [modalOpen, setModalOpen] = useState(false)
   const [chainName, setChainName] = useState<string>('ethereum')
 
+  // Memoize the load function to prevent unnecessary re-renders
+  const loadData = useCallback(async () => {
+    try {
+      if (!connectedWalletAddress || !litConnected || !litClient) return
+
+      setStatus('🔍 Resolving DID...')
+      setDidDoc(null)
+      setFhir(fhirResource)
+      setChainName('')
+      setDidFHIRResources([])
+
+      if (!isConnected || !connectedWalletAddress) {
+        setStatus('❌ {t("walletNotConnected")}')
+        return
+      }
+
+      // Only try to resolve on the main chain (Sepolia)
+      if (!chainId) {
+        setStatus('❌ { t("noChainId") }')
+        return
+      }
+      
+      const result = await resolveDidHealth(chainId, connectedWalletAddress)
+      if (!result) {
+        setStatus('❌ {t("noDIDFound")}')
+        return
+      }
+
+      setStatus('✅ Resolved DID')
+      const { doc, chainName: resolvedChain } = result
+      setChainName(resolvedChain)
+      setDidDoc(doc)
+
+      // Extract FHIRResource service endpoints
+      const fhirServices = doc.service?.filter(
+        (s: any) => s.serviceEndpoint
+      ) || []
+
+      if (fhirServices.length === 0) {
+        setStatus('✅ ' + t('noFHIRResourcesFound'))
+        return
+      }
+
+      setDidFHIRResources(fhirServices)
+      const primary = fhirServices[0]
+      const resourceUrl = primary.serviceEndpoint
+      const isEncrypted = resourceUrl.endsWith('.enc') || resourceUrl.endsWith('.lit')
+
+      setStatus(`📦 ${t('fetchingFHIRResource')} ${resourceUrl}`)
+      const response = await fetch(resourceUrl)
+      
+      if (!response.ok) {
+        setStatus(`❌ Failed to fetch FHIR resource: ${response.statusText}`)
+        return
+      }
+
+      const json = await response.json() as FHIRResource
+      
+      if (isEncrypted) {
+        setStatus('🔐 Decrypting...')
+        const acc = json.accessControlConditions || []
+        setAccessControlConditions(acc)
+
+        const accChain = acc?.[0]?.chain || resolvedChain || 'ethereum'
+        const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
+        setFhir(decrypted)
+        setStatus('✅ Decrypted FHIR loaded. Ready to edit.')
+      } else {
+        setFhir(json)
+        setStatus('✅ Plaintext FHIR loaded. Ready to edit.')
+      }
+    } catch (err: any) {
+      console.error('Error loading data:', err)
+      setStatus(err.message || '❌ Unexpected error')
+    }
+  }, [
+    connectedWalletAddress,
+    isConnected,
+    litClient,
+    litConnected,
+    chainId,
+    fhirResource,
+    t
+  ])
+
+  // Main effect to load data
   useEffect(() => {
-    const load = async () => {
-      try {
-        if (!connectedWalletAddress || !litConnected || !litClient) return
+    if (isConnected && connectedWalletAddress && litConnected && litClient) {
+      const controller = new AbortController()
+      
+      // Load data with a small delay to prevent rapid re-fetches
+      const timer = setTimeout(() => {
+        loadData().catch(console.error)
+      }, 100)
 
-        setStatus('🔍 Resolving DID...')
-        setDidDoc(null)
-        setFhir(fhirResource)
-        setQrCode('')
-        setChainName('')
-        setDidFHIRResources([])
-
-        if (!isConnected || !connectedWalletAddress) {
-          setStatus('❌ {t("walletNotConnected")}')
-          return
-        }
-
-        // Only try to resolve on the main chain (Sepolia)
-        if (!chainId) {
-          setStatus('❌ { t("noChainId") }')
-          return
-        }
-        const result = await resolveDidHealth(chainId, connectedWalletAddress)
-        if (!result) {
-          setStatus('❌ {t("noDIDFound")}s')
-          return
-        }
-
-        setStatus('✅resolvedDID')
-        const { doc, chainName } = result
-        setChainName(chainName)
-        setDidDoc(doc)
-
-        // Extract FHIRResource service endpoints
-        const fhirServices = doc.service?.filter(
-          (s: any) => s.serviceEndpoint
-        ) || []
-  
-        if (fhirServices.length === 0) {
-          setStatus('✅ ' + t('noFHIRResourcesFound'))
-        }
-
-        setDidFHIRResources(fhirServices)
-        const primary = fhirServices[0]
-        const resourceUrl = primary.serviceEndpoint
-
-        const isEncrypted = primary.serviceEndpoint.endsWith('.enc') || primary.serviceEndpoint.endsWith('.lit')
-
-        setStatus(`📦 ${t('fetchingFHIRResource')} ${resourceUrl}`)
-       console.log(resourceUrl)
-       //return
-        const response = await fetch(resourceUrl)
-        console.log('response', response)
-        //return
-        
-console.log('response', response)
-if (!response.ok) {
-  setStatus(`❌ Failed to fetch FHIR resource: ${response.statusText}`)
-  return
-}
-
-        const json = await response.json() as FHIRResource
-console.log('json', json)
-console.log('isEncrypted', isEncrypted)
-        //return
-        if (isEncrypted) {
-          setStatus('🔐 Decrypting...')
-          const acc = json.accessControlConditions || []
-          useOnboardingState.setState({ accessControlConditions: acc })
-
-          const accChain = acc?.[0]?.chain || chainName || 'ethereum'
-          const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
-console.log('decrypted', decrypted)
-          setFhir(decrypted)
-          setStatus('✅ Decrypted FHIR loaded. Ready to edit.')
-        } else {
-          setFhir(json)
-          setStatus('✅ Plaintext FHIR loaded. Ready to edit.')
-        }
-      } catch (err: any) {
-        console.error(err)
-        setStatus(err.message || '❌ Unexpected error')
+      return () => {
+        controller.abort()
+        clearTimeout(timer)
       }
     }
-    
-
-    if (isConnected && connectedWalletAddress && litConnected && litClient) {
-      load()
-    }
-  }, [connectedWalletAddress, isConnected, litClient, litConnected, setStatus, setFhir, setDidDoc, setDidFHIRResources, setQrCode, setResolvedChainName, setAccessControlConditions, setChainName ])
+  }, [isConnected, connectedWalletAddress, litConnected, litClient, loadData])
 
   const handleUpdateClick = () => {
     if (!fhir) {
@@ -279,7 +295,7 @@ console.log('decrypted', decrypted)
       }
   
       // 📦 Upload updated DID Document to IPFS
-      const didDocUrl = await storePlainFHIRFile(updatedDidDoc, `did-${uuidv4()}`, 'didDocument')
+      const didDocUrl = await storePlainFHIRFile(updatedDidDoc, `didhealth-${uuidv4()}`, 'didDocument')
       if (!didDocUrl) throw new Error('❌ Failed to upload updated DID Document')
   
       // 🔗 Update the DID registry on-chain with the new DID Document URI
@@ -298,6 +314,7 @@ console.log('decrypted', decrypted)
       setStatus(`❌ ${err.message || 'Unexpected error updating DID'}`)
     }
   }
+
 
   const handleSubmit = async (updatedFHIR: any) => {
     console.log('💾 Submitting updated FHIR:', updatedFHIR)
@@ -355,6 +372,7 @@ console.log('decrypted', decrypted)
 
       <ConnectWallet />
       <ConnectLit />
+
       {/* ✅ Show resolved DID */}
       {didDoc?.id && (
         <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-700 text-sm text-gray-800 dark:text-gray-200">
@@ -368,18 +386,28 @@ console.log('decrypted', decrypted)
       {renderForm()}
 
       {fhir && (
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold">🔐 {t('editAccessControl')}</h2>
-          {encryptionSkipped && (
-            <SetEncryption />
-          )}
-          <div className="mt-4 text-right">
-            <button
-              onClick={handleUpdateClick}
-              className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
-            >
-              🔄 {t('updateDID')}
-            </button>
+        <div>
+          {storageReady && (
+            <SetupStorage onReady={(client) => {
+              setStorageReady(true)
+              console.log('Storage setup complete:', client)
+            }} />
+      )}
+          <div className="mt-6">
+            {!encryptionSkipped && (
+              <div>
+                <h2 className="text-lg font-semibold">🔐 {t('editAccessControl')}</h2>
+                <SetEncryption />
+              </div>
+            )}
+            <div className="mt-4 text-right">
+              <button
+                onClick={handleUpdateClick}
+                className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
+              >
+                🔄 {t('updateDID')}
+              </button>
+            </div>
           </div>
         </div>
       )}

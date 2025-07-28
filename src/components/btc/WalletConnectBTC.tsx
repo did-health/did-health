@@ -101,10 +101,12 @@ export function ConnectWalletBTC() {
 
   return (
     <div className="rounded-2xl border border-gray-200 p-6 shadow-lg bg-white dark:bg-gray-800">
-      <h2 className="text-xl font-bold mb-4">{t('connectBitcoinWallet')}</h2>
-
-      {isInstalled && walletName ? (
+   
+      {isInstalled && walletName && !walletAddress ? (
+        
         <>
+          <h2 className="text-xl font-bold mb-4">{t('connectBitcoinWallet')}</h2>
+
           <p className="text-gray-600 dark:text-gray-300 mb-4">
             {t('detectedWallet')} <strong>{walletName}</strong>
           </p>
@@ -121,7 +123,7 @@ export function ConnectWalletBTC() {
 
       {walletAddress && (
         <div className="mt-4 space-y-2">
-          <p className="text-green-600 text-sm">✅ Connected: {walletAddress}</p>
+          <p className="text-green-600 text-sm">✅ Connected: {walletAddress} {t('to')} {walletName}</p>
           <button
             onClick={disconnectWallet}
             className="btn btn-sm bg-red-600 text-white hover:bg-red-700"

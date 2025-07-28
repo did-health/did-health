@@ -80,6 +80,17 @@ export function SetAccessControl({
           value: connectedWallet,
         },
       },
+      {
+        contractAddress: '',
+        standardContractType: '',
+        chain: litChain,
+        method: '',
+        parameters: [':userAddress'],
+        returnValueTest: {
+          comparator: '=',
+          value: e.sharedAddress,
+        },
+      },
     ]
     await applyAccessControl(acc)
   }
@@ -101,8 +112,8 @@ export function SetAccessControl({
           </label>
           <input
             type="text"
-            value={connectedWallet}
-            placeholder="Connected wallet address"
+            value={t('sharedAddress')}
+            placeholder={t('sharedAddress')}
             className="w-full p-2 border rounded"
             disabled
           />
