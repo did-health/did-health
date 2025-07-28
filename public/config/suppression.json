@@ -1,14 +1,72 @@
 {
-    "searchResults": {
-        "global": ["id", "meta"],
-        "resourceSpecific": {
-            "Patient": ["communication", "extension"],
-            "Encounter": ["identifier", "contained", "extension"],
-            "Observation": ["component"],
-            "Condition": ["identifier", "verificationStatus", "subject", "recorder", "extension"],
-            "DocumentReference": ["status", "docStatus", "category"]
-        }
-    },
+"searchResults": {
+  "global": ["id", "meta", "implicitRules", "language", "text", "contained"],
+  "resourceSpecific": {
+    "Patient": ["extension", "communication", "link", "generalPractitioner", "managingOrganization"],
+    
+    "Encounter": ["identifier", "extension", "serviceProvider", "partOf", "appointment", "location", "hospitalization"],
+    
+    "Observation": ["identifier", "extension", "component", "specimen", "device", "referenceRange", "note"],
+    
+    "AllergyIntolerance": ["identifier", "extension", "note", "reaction", "recorder", "asserter"],
+    
+    "Condition": ["identifier", "extension", "verificationStatus", "stage", "recorder", "asserter", "note"],
+    
+    "Medication": ["identifier", "extension", "ingredient", "batch"],
+    
+    "MedicationRequest": ["identifier", "extension", "note", "priorPrescription", "detectedIssue", "substitution", "dosageInstruction"],
+    
+    "MedicationStatement": ["identifier", "extension", "note", "derivedFrom", "dosage"],
+    
+    "MedicationDispense": ["identifier", "extension", "note", "substitution", "dosageInstruction", "eventHistory"],
+    
+    "MedicationAdministration": ["identifier", "extension", "note", "dosage", "eventHistory"],
+    
+    "DiagnosticReport": ["identifier", "extension", "note", "resultsInterpreter", "specimen", "imagingStudy"],
+    
+    "ImagingStudy": ["identifier", "extension", "description", "note", "series", "numberOfSeries", "numberOfInstances"],
+    
+    "DocumentReference": ["identifier", "extension", "status", "docStatus", "relatesTo", "context", "category"],
+    
+    "Immunization": ["identifier", "extension", "note", "education", "programEligibility", "fundingSource"],
+    
+    "CarePlan": ["identifier", "extension", "activity", "note", "goal"],
+    
+    "CareTeam": ["identifier", "extension", "participant", "reasonCode", "note"],
+    
+    "Goal": ["identifier", "extension", "note", "expressedBy", "addresses"],
+    
+    "Procedure": ["identifier", "extension", "performer", "note", "focalDevice", "used"],
+    "ServiceRequest": ["identifier", "extension", "note", "reasonReference", "relevantHistory", "supportingInfo"],
+
+    "AdvanceDirective": ["identifier", "extension", "note", "custodian", "witness", "attester"],
+
+    "CareExperiencePreference": ["identifier", "extension", "note"],
+
+    "Coverage": ["identifier", "extension", "class", "costToBeneficiary", "relationship", "order"],
+
+    "ExplanationOfBenefit": ["identifier", "extension", "related", "careTeam", "supportingInfo", "procedure", "insurance", "item", "addItem", "total", "payment", "processNote", "benefitPeriod"],
+
+    "Appointment": ["identifier", "extension", "slot", "reasonCode", "supportingInformation", "description"],
+
+    "Location": ["identifier", "extension", "position", "hoursOfOperation", "telecom"],
+
+    "Practitioner": ["identifier", "extension", "telecom", "qualification", "address"],
+
+    "PractitionerRole": ["identifier", "extension", "telecom", "availableTime", "notAvailable"],
+
+    "Organization": ["identifier", "extension", "alias", "telecom", "address", "endpoint"],
+
+    "RelatedPerson": ["identifier", "extension", "telecom", "address", "photo"],
+
+    "Device": ["identifier", "extension", "version", "property", "note", "safety"],
+
+    "QuestionnaireResponse": ["identifier", "extension", "authored", "item", "status"],
+
+    "Consent": ["identifier", "extension", "policy", "provision", "verification", "sourceReference"]
+  }
+},
+
     "details": {
         "global": ["meta"],
         "resourceSpecific": {
