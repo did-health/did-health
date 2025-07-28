@@ -28,7 +28,7 @@ export function SetupStorage({ onReady }: { onReady: (client: any) => void }) {
           console.log('initializing client')
           const newClient = await create()
           setClient(newClient)
-          setStatus(t('setupStorage.status.alreadySetup', { did: web3SpaceDid }))
+          setStatus(t('setupStorage.status.alreadySetup'))
           setStorageReady(true)
         } catch (err) {
           console.error('Error initializing client:', err)
@@ -79,7 +79,7 @@ console.log('Rendering status:', status);
       console.log('web3SpaceDid', web3SpaceDid)
       console.log('space', space)
       console.log('storageReady', storageReady)
-      setStatus(t('setupStorage.status.spaceReady', { did: space.did() }))
+      setStatus(t('setupStorage.status.spaceReady'))
       onReady(newClient)
     } catch (err) {
       console.error(err)
@@ -99,7 +99,7 @@ console.log('Rendering status:', status);
 
       await client.setCurrentSpace(newDid)
       setWeb3SpaceDid(newDid)
-      setStatus(t('setupStorage.status.spaceReady', { did: newDid }))
+      setStatus(t('setupStorage.status.spaceReady'))
     } catch (err) {
       console.error('Error resetting space:', err)
       setStatus(t('setupStorage.status.error'))
