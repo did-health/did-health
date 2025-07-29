@@ -277,7 +277,7 @@ export default function ResolveDIDETH() {
 
           {accessControlConditions?.length > 0 && (
             <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[400px]">
-              <h2 className="text-lg font-semibold mb-4">🔐 Access Control Conditions</h2>
+              <h2 className="text-lg font-semibold mb-4">🔐 {t('AccessControlConditions')}</h2>
               {accessControlConditions.map((cond: any, idx: number) => {
                 const isSelfOnly =
                   cond?.returnValueTest?.comparator === '=' &&
@@ -321,28 +321,7 @@ export default function ResolveDIDETH() {
             </div>
           )}
 
-          {didFHIRResources.length > 1 && (
-            <div className="bg-gray-100 p-4 rounded mt-6 text-sm">
-              {didFHIRResources.map(({ uri, resource, error }, idx) => (
-                <div key={idx} className="bg-white rounded border border-gray-200 mb-4 p-4 shadow-sm">
-                  <p className="text-sm mb-2 break-all">
-                    🔗 <a href={uri} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{uri}</a>
-                  </p>
-                  {error ? (
-                    <p className="text-red-500">❌ Failed to load: {error}</p>
-                  ) : (
-                    <>
-                      <FHIRResource resource={resource} />
-                      <pre className="mt-4 bg-gray-50 p-2 rounded text-xs overflow-x-auto">
-                        <code>{JSON.stringify(resource, null, 2)}</code>
-                      </pre>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-                    {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && connectedWalletAddress && (
+          {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && connectedWalletAddress && (
             <div className="mt-6 text-center">
               <DAOStatus walletAddress={connectedWalletAddress} />
             </div>

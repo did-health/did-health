@@ -163,31 +163,22 @@ export default function OnboardingEth() {
               <>
                 <p className="text-green-600 font-medium mb-2">✅ {t('AccessControlConditionsSet')}</p>
                 {accessControlConditions && accessControlConditions.map((cond: any, idx: number) => {
-                  const isSelfOnly =
+                  const isSelf =
                     cond.returnValueTest?.comparator === '=' &&
                     String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase();
 
                   return (
                     <div key={idx} className="bg-gray-100 rounded p-4 shadow">
-                      <p className="font-semibold text-gray-700 mb-1">Condition #{idx + 1}</p>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                        <div>
-                          <span className="font-medium text-gray-600">Chain:</span>{' '}
-                          {String(cond.chain ?? 'N/A')}
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Parameters:</span>{' '}
-                          {Array.isArray(cond.parameters)
-                            ? cond.parameters.map((p: unknown) => String(p)).join(', ')
-                            : 'N/A'}
-                        </div>
+                       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+
                         <div>
                           <div className="ml-2">
-                            {t('whoCanViewIt')}
-                            <br />
-                            {isSelfOnly && (
+                            <div>
+                           {cond.returnValueTest?.value.toLowerCase()}
+                            </div>
+                            {isSelf && (
                               <p className="mt-2 text-green-600 font-medium">
-                                ✅  {t('onlyViewableBy')} <span className="underline">{t('you')}</span>.
+                                ✅  {t('ViewableBy')} <span className="underline">{t('you')}</span>.
                               </p>
                             )}
                           </div>

@@ -24,6 +24,8 @@ export function SetAccessControl({
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showError, setShowError] = useState('')
+  const [shareAddress, setShareAddress] = useState('')
+  const [sharedAddresses, setSharedAddresses] = useState<string[]>([])
   const { t } = useTranslation()
 
   const applyAccessControl = async (conditions: any) => {
@@ -63,11 +65,41 @@ export function SetAccessControl({
   const { chainId } = useOnboardingState();
   const litChain = chainId ? getLitChainByChainId(chainId as number) : 'ethereum';
 
-  const handleShareWithOther = async () => {
-    if (!connectedWallet || !/^0x[a-fA-F0-9]{40}$/.test(connectedWallet)) {
-      setShowError('Please enter a valid Wallet address.')
+  const addSharedAddress = () => {
+    if (!connectedWallet) {
+      setShowError('Please connect your wallet first')
       return
     }
+    
+    const address = shareAddress.trim()
+
+    
+    if (sharedAddresses.includes(address.toLowerCase())) {
+      setShowError('This address is already in the list')
+      return
+    }
+    
+    setSharedAddresses(prev => [...prev, address.toLowerCase()])
+    setShareAddress('')
+    setShowError('')
+  }
+  
+  const removeSharedAddress = (addressToRemove: string) => {
+    setSharedAddresses(prev => prev.filter(addr => addr !== addressToRemove))
+  }
+  
+  const handleShareWithOther = async () => {
+    if (!connectedWallet) {
+      setShowError('Please connect your wallet first')
+      return
+    }
+    
+    if (sharedAddresses.length === 0) {
+      setShowError('Please add at least one shared address')
+      return
+    }
+    
+    // Start with the owner's access control
     const acc = [
       {
         contractAddress: '',
@@ -77,10 +109,14 @@ export function SetAccessControl({
         parameters: [':userAddress'],
         returnValueTest: {
           comparator: '=',
-          value: connectedWallet,
+          value: connectedWallet.toLowerCase(),
         },
       },
-      {
+    ]
+    
+    // Add access control for each shared address
+    sharedAddresses.forEach(address => {
+      acc.push({
         contractAddress: '',
         standardContractType: '',
         chain: litChain,
@@ -88,10 +124,11 @@ export function SetAccessControl({
         parameters: [':userAddress'],
         returnValueTest: {
           comparator: '=',
-          value: e.sharedAddress,
+          value: address.toLowerCase(),
         },
-      },
-    ]
+      })
+    })
+    
     await applyAccessControl(acc)
   }
 
@@ -110,17 +147,48 @@ export function SetAccessControl({
           <label className="block text-sm font-medium text-gray-700">
             {t('sharewithother')}
           </label>
-          <input
-            type="text"
-            value={t('sharedAddress')}
-            placeholder={t('sharedAddress')}
-            className="w-full p-2 border rounded"
-            disabled
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={shareAddress}
+              onChange={(e) => setShareAddress(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addSharedAddress()}
+              placeholder="0x..."
+              className="flex-1 p-2 border rounded"
+            />
+            <button
+              onClick={addSharedAddress}
+              className="px-4 bg-blue-500 text-white rounded hover:bg-blue-600"
+              disabled={!connectedWallet}
+            >
+              {t('add')}
+            </button>
+          </div>
+          
+          {sharedAddresses.length > 0 && (
+            <div className="mt-2 space-y-2">
+              <p className="text-sm text-gray-600">Shared addresses:</p>
+              <ul className="space-y-1">
+                {sharedAddresses.map((address, index) => (
+                  <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                    <span className="font-mono text-sm">{address}</span>
+                    <button
+                      onClick={() => removeSharedAddress(address)}
+                      className="text-red-500 hover:text-red-700"
+                      title="Remove address"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
           <button
             onClick={handleShareWithOther}
-            className="btn-primary w-full"
-            disabled={!connectedWallet}
+            className="btn-primary w-full mt-4"
+            disabled={!connectedWallet || sharedAddresses.length === 0}
           >
             🔐 {t('sharewithother')}
           </button>

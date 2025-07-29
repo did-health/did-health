@@ -238,21 +238,40 @@ export default function UpdateDidBTC() {
         fhirUri = await storeEncryptedFileByHash(encryptedBlob, hash, resourceType)
       }
 
-      // Rebuild DID Document
-      const newDidDoc = {
-        id: did,
-        controller: walletAddress,
-        service: [
-          {
-            id: `${did}#fhir`,
-            type: resourceType,
-            serviceEndpoint: fhirUri,
-          },
-        ],
+      const updatedService = {
+        id: `${didDoc.id}#fhir`,
+        type: resourceType,
+        serviceEndpoint: fhirUri
       }
+  
+      const existingServices = Array.isArray(didDoc.service) ? didDoc.service : []
 
+      const updatedServices = []
+      
+      let replaced = false
+      
+      for (const s of existingServices) {
+        if (s.id?.includes('#fhir') && s.type === resourceType) {
+          updatedServices.push(updatedService)
+          replaced = true
+        } else {
+          updatedServices.push(s)
+        }
+      }
+      
+      // Append if no match was replaced
+      if (!replaced) {
+        updatedServices.push(updatedService)
+      }
+  
+      const updatedDidDoc = {
+        ...didDoc,
+        service: updatedServices
+      }
+  
+      // 📦 Upload updated DID Document to IPFS
       setStatus('📁 {t("uploadingUpdatedDIDDocumentToIPFS")}...')
-      const didDocUri = await storePlainFHIRFile(newDidDoc, `${updatedFHIR.id}-didDocument.json`, 'didDocument')
+      const didDocUri = await storePlainFHIRFile(updatedDidDoc, `${updatedFHIR.id}-didDocument.json`, 'didDocument')
       setDidIpfsUri(didDocUri)
       setStatus(`✅ {t("didDocumentUploaded")}. {t("reInscribeManuallyAtUnisat")}`)
     } catch (err: any) {
@@ -343,7 +362,7 @@ export default function UpdateDidBTC() {
         <div className="mt-6">
           {encryptionSkipped && (
             <div>
-              <h2 className="text-lg font-semibold">🔐 {t('editAccessControl')}</h2>
+              <h2 className="text-lg font-semibold">🔐 {t('AccessControlConditions')}</h2>
               <SetEncryption />
             </div>
           )}

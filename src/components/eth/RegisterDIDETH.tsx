@@ -141,7 +141,7 @@ export function RegisterDID() {
       setTimeout(() => setActiveStep(5), 1000)
     } catch (err: any) {
       console.error('❌ Registration error:', err)
-      setError(err.message || '❌ Registration failed. See console for details.')
+      setError('❌ Registration failed. See console for details.')
     }
   }
   

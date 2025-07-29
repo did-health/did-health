@@ -91,6 +91,7 @@ export default function UpdateDIDETH() {
   const { litConnected, litClient, chainId, 
     storageReady,
     encryptionSkipped , fhirResource, 
+    walletAddress,
     accessControlConditions, setFhirResource, 
     setAccessControlConditions,
     setStorageReady} = useOnboardingState()
@@ -284,10 +285,24 @@ export default function UpdateDIDETH() {
       }
   
       const existingServices = Array.isArray(didDoc.service) ? didDoc.service : []
-      const updatedServices = [
-        ...existingServices.filter((s: { type: string; id?: string }) => s.id?.includes('#fhir')),
-        updatedService
-      ]
+
+      const updatedServices = []
+      
+      let replaced = false
+      
+      for (const s of existingServices) {
+        if (s.id?.includes('#fhir') && s.type === resourceType) {
+          updatedServices.push(updatedService)
+          replaced = true
+        } else {
+          updatedServices.push(s)
+        }
+      }
+      
+      // Append if no match was replaced
+      if (!replaced) {
+        updatedServices.push(updatedService)
+      }
   
       const updatedDidDoc = {
         ...didDoc,
@@ -394,12 +409,48 @@ export default function UpdateDIDETH() {
             }} />
       )}
           <div className="mt-6">
+
             {!encryptionSkipped && (
-              <div>
-                <h2 className="text-lg font-semibold">🔐 {t('editAccessControl')}</h2>
-                <SetEncryption />
-              </div>
+              <>
+                <h2>{t('AccessControlConditions')}</h2>
+                <p className="text-green-600 font-medium mb-2">✅ {t('AccessControlConditionsSet')}</p>
+                {accessControlConditions && accessControlConditions.map((cond: any, idx: number) => {
+                  const isSelf =
+                    cond.returnValueTest?.comparator === '=' &&
+                    String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase();
+
+                  return (
+                    <div key={idx} className="bg-gray-100 rounded p-4 shadow">
+                       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+
+                        <div>
+                          <div className="ml-2">
+                            <div>
+                           {cond.returnValueTest?.value.toLowerCase()}
+                            </div>
+                            {isSelf && (
+                              <p className="mt-2 text-green-600 font-medium">
+                                ✅  {t('ViewableBy')} <span className="underline">{t('you')}</span>.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <button
+                  onClick={() => {
+                    useOnboardingState.getState().setAccessControlConditions([])
+                  }}
+                  className="btn btn-primary text-blue-600"
+                >
+                  🔄 {t('editAccessControl')}
+                </button>
+              </>
             )}
+            {(encryptionSkipped || (accessControlConditions && accessControlConditions.length > 0)) && (
             <div className="mt-4 text-right">
               <button
                 onClick={handleUpdateClick}
@@ -407,7 +458,9 @@ export default function UpdateDIDETH() {
               >
                 🔄 {t('updateDID')}
               </button>
+              
             </div>
+          )}
           </div>
         </div>
       )}
