@@ -69,10 +69,11 @@
       "invalidEmail": "Please enter a valid email address",
       "emailSent": "Verification email sent! Please check your inbox and confirm to continue.",
       "spaceReady": "Your Web3.Storage space is ready (DID: {{did}})",
-      "alreadySetup": "Web3.Storage already set up (DID: {{did}})",
+      "alreadySetup": "Web3.Storage already set up",
       "error": "Error setting up Web3.Storage space. Please try again."
     }
   },
+  "sharedAddress": "Shared Address",
   "yourHealthRecord": "Your did:health Record",
   "createFHIR": "Create your did:health Record",
   "fhirCreated": "Create your did:health",

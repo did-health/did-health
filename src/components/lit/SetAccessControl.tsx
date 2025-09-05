@@ -93,32 +93,33 @@ export function SetAccessControl({
       setShowError('Please connect your wallet first')
       return
     }
-    
+  
     if (sharedAddresses.length === 0) {
       setShowError('Please add at least one shared address')
       return
     }
-    
-    // Start with the owner's access control
-    const acc = [
-      {
-        contractAddress: '',
-        standardContractType: '',
-        chain: litChain,
-        method: '',
-        parameters: [':userAddress'],
-        returnValueTest: {
-          comparator: '=',
-          value: connectedWallet.toLowerCase(),
-        },
+  
+    // Start with the owner's access control condition
+    const baseCondition = {
+      contractAddress: '',
+      standardContractType: '',
+      conditionType: 'evmBasic',
+      chain: litChain,
+      method: '',
+      parameters: [':userAddress'],
+      returnValueTest: {
+        comparator: '=',
+        value: connectedWallet.toLowerCase(),
       },
-    ]
-    
-    // Add access control for each shared address
-    sharedAddresses.forEach(address => {
-      acc.push({
+    }
+  
+    // Build all ACCs
+    const allConditions = [
+      baseCondition,
+      ...sharedAddresses.map(address => ({
         contractAddress: '',
         standardContractType: '',
+        conditionType: 'evmBasic',
         chain: litChain,
         method: '',
         parameters: [':userAddress'],
@@ -126,11 +127,17 @@ export function SetAccessControl({
           comparator: '=',
           value: address.toLowerCase(),
         },
-      })
-    })
-    
-    await applyAccessControl(acc)
+      })),
+    ]
+  
+    // Interleave with 'or' between each condition
+    const interleaved = allConditions.flatMap((acc, index) =>
+      index === 0 ? [acc] : [{ conditionType: 'or' }, acc]
+    )
+  
+    await applyAccessControl(interleaved)
   }
+  
 
 
   return (

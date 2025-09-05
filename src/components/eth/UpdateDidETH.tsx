@@ -362,115 +362,125 @@ export default function UpdateDIDETH() {
   }
 
   return (
-    <main className="p-6 space-y-6 max-w-xl mx-auto">
-      <div className="mb-8 flex flex-col">
-              <div className="flex items-center gap-4 mb-6">
-                {/* DID:Health Logo */}
-                <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-red-400/40 hover:scale-105 transition-transform duration-300">
-                  <img
-                    src={logo}
-                    alt="did:health Logo"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <div>+</div>
-                {/* Chain Logo */}
-                <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-yellow-400/30 hover:rotate-6 hover:scale-110 transition-all duration-300">
-                  <img
-                    src={ethlogo} // Replace with actual path to Ethereum logo
-                    alt={`eth logo`}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </div>
-      <h1 className="text-2xl font-bold">✏️ {t('updateDID') }</h1>
-
-      <ConnectWallet />
-      <ConnectLit />
-
-      {/* ✅ Show resolved DID */}
-      {didDoc?.id && (
-        <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-700 text-sm text-gray-800 dark:text-gray-200">
-          <p className="font-medium text-gray-600 dark:text-gray-400 mb-1">{t('resolvedDID')}  :</p>
-          <code className="block break-words text-indigo-700 dark:text-indigo-400">{didDoc.id}</code>
-          <p className="mt-1 text-xs text-gray-500">🔗 Found on: {chainName}</p>
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header with Logios */}
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center gap-6 mb-4">
+            {/* DID:Health Logo */}
+            <div className="w-16 h-16 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-red-400/40 hover:scale-105 transition-transform duration-300">
+              <img
+                src={logo}
+                alt="did:health Logo"
+                className="w-full h-full object-contain p-2"
+              />
+            </div>
+            <div className="text-2xl font-bold text-gray-600 dark:text-gray-300">+</div>
+            {/* Chain Logo */}
+            <div className="w-16 h-16 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-yellow-400/30 hover:rotate-6 hover:scale-110 transition-all duration-300">
+              <img
+                src={ethlogo}
+                alt="Ethereum logo"
+                className="w-full h-full object-contain p-2"
+              />
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">✏️ {t('updateDID')}</h1>
         </div>
-      )}
 
-      {status && <p className="text-sm text-gray-600">{status}</p>}
-      {renderForm()}
+        {/* Main Content */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 space-y-6">
+          <ConnectWallet />
+          <ConnectLit />
 
-      {fhir && (
-        <div>
-          {storageReady && (
-            <SetupStorage onReady={(client) => {
-              setStorageReady(true)
-              console.log('Storage setup complete:', client)
-            }} />
-      )}
-          <div className="mt-6">
-
-            {!encryptionSkipped && (
-              <>
-                <h2>{t('AccessControlConditions')}</h2>
-                <p className="text-green-600 font-medium mb-2">✅ {t('AccessControlConditionsSet')}</p>
-                {accessControlConditions && accessControlConditions.map((cond: any, idx: number) => {
-                  const isSelf =
-                    cond.returnValueTest?.comparator === '=' &&
-                    String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase();
-
-                  return (
-                    <div key={idx} className="bg-gray-100 rounded p-4 shadow">
-                       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-
-                        <div>
-                          <div className="ml-2">
-                            <div>
-                           {cond.returnValueTest?.value.toLowerCase()}
-                            </div>
-                            {isSelf && (
-                              <p className="mt-2 text-green-600 font-medium">
-                                ✅  {t('ViewableBy')} <span className="underline">{t('you')}</span>.
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                <button
-                  onClick={() => {
-                    useOnboardingState.getState().setAccessControlConditions([])
-                  }}
-                  className="btn btn-primary text-blue-600"
-                >
-                  🔄 {t('editAccessControl')}
-                </button>
-              </>
-            )}
-            {(encryptionSkipped || (accessControlConditions && accessControlConditions.length > 0)) && (
-            <div className="mt-4 text-right">
-              <button
-                onClick={handleUpdateClick}
-                className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
-              >
-                🔄 {t('updateDID')}
-              </button>
-              
+          {/* Show resolved DID */}
+          {didDoc?.id && (
+            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+              <p className="font-medium text-gray-600 dark:text-gray-300 mb-1">{t('resolvedDID')}:</p>
+              <code className="block break-words text-indigo-600 dark:text-indigo-300 text-sm p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                {didDoc.id}
+              </code>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                🔗 Found on: {chainName}
+              </p>
             </div>
           )}
-          </div>
-        </div>
-      )}
 
-      <StatusModal
-        isOpen={modalOpen}
-        status={status}
-        onClose={() => setModalOpen(false)}
-      />
-    </div>
+          {status && (
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-sm">
+              {status}
+            </div>
+          )}
+
+          {renderForm()}
+
+          {fhir && (
+            <div className="space-y-6">
+              {storageReady && (
+                <div> 
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">{t('setupStorage.title')}</h2>
+               
+               <SetupStorage 
+                  onReady={(client) => {
+                    setStorageReady(true)
+                    console.log('Storage setup complete:', client)
+                  }} 
+                />
+                 </div>
+              )}
+
+              {!encryptionSkipped && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+                    {t('AccessControlConditions')}
+                  </h2>
+                  <p className="text-green-600 dark:text-green-400 font-medium">
+                    ✅ {t('AccessControlConditionsSet')}
+                  </p>
+                  
+                  {accessControlConditions?.map((cond: any, idx: number) => {
+                    const isSelf = cond.returnValueTest?.comparator === '=' &&
+                      String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase();
+
+                    return (
+                      <div key={idx} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div className="text-sm text-gray-800 dark:text-gray-200">
+                          <div className="font-mono text-sm break-all">
+                            {cond.returnValueTest?.value.toLowerCase()}
+                          </div>
+                          {isSelf && (
+                            <p className="mt-2 text-green-600 dark:text-green-400 font-medium">
+                              ✅ {t('ViewableBy')} <span className="underline">{t('you')}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => useOnboardingState.getState().setAccessControlConditions([])}
+                    className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                  >
+                    🔄 {t('editAccessControl')}
+                  </button>
+                </div>
+              )}
+
+              {(encryptionSkipped || ((accessControlConditions?.length ?? 0) > 0)) && (
+                <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={handleUpdateClick}
+                    className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
+                  >
+                    🔄 {t('updateDID')}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </main>
   )
 }

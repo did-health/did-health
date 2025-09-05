@@ -7,8 +7,10 @@ import { generateQRCode } from '../../lib/QRCodeGeneration'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
 import { resolveDidHealth, resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
 import FHIRResource from '../fhir/FHIRResourceView'
+import { DownloadFhirButton } from '../buttons/DownloadFhirButton'
+import { SaveFhirButton } from '../buttons/SaveFhirButton'
 import logo from '../../assets/did-health.png'
-import { ethers } from 'ethers'
+import ethlogo from '../../assets/ethereum-eth-logo.svg'
 import { useTranslation } from 'react-i18next'
 import { DAOStatus } from '../dao/DAOStatus'
 
@@ -172,8 +174,24 @@ export default function ResolveDIDETH() {
     <main className="p-6 space-y-6 max-w-xl mx-auto">
 
       <div className="flex flex-col items-center mb-6">
-        <div className="w-32 h-32 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
-          <img src={logo} alt="DID Health Logo" className="w-full h-full object-contain" />
+        <div className="flex items-center gap-4 mb-6">
+          {/* DID:Health Logo */}
+          <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-red-400/40 hover:scale-105 transition-transform duration-300">
+            <img
+              src={logo}
+              alt="did:health Logo"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div>+</div>
+          {/* Chain Logo */}
+          <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-yellow-400/30 hover:rotate-6 hover:scale-110 transition-all duration-300">
+            <img
+              src={ethlogo} // Replace with actual path to Ethereum logo
+              alt={`eth logo`}
+              className="w-full h-full object-contain"
+            />
+          </div>
         </div>
         {didDoc?.id && (
           <div className="mt-4">
@@ -310,10 +328,22 @@ export default function ResolveDIDETH() {
 
           {fhir && (
             <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[600px]">
-              <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                
-                {t('yourHealthRecord')}
-              </h2>
+              <div className="mb-2">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-lg font-semibold">
+                    {t('yourHealthRecord')}
+                  </h2>
+                  <div className="flex space-x-2">
+                    <SaveFhirButton 
+                      fhirResource={fhir} 
+                      className="bg-green-600 hover:bg-green-700"
+                      onSave={() => alert('FHIR resource saved successfully!')}
+                      onError={(error) => alert(`Error saving FHIR resource: ${error.message}`)}
+                    />
+                    <DownloadFhirButton fhirResource={fhir} />
+                  </div>
+                </div>
+              </div>
               <FHIRResource resource={fhir} />
               <pre className="mt-4 bg-white p-2 rounded text-xs overflow-x-auto">
                 <code>{JSON.stringify(fhir, null, 2)}</code>

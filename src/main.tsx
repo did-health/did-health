@@ -1,3 +1,8 @@
+import { Buffer } from 'buffer';   // 👈 ensure buffer v6 is loaded first
+
+if (typeof window !== 'undefined' && !(window as any).Buffer) {
+  (window as any).Buffer = Buffer;
+}
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

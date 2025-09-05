@@ -33,6 +33,7 @@ export default function UpdateDidBTC() {
     litConnected,
     accessControlConditions,
     encryptionSkipped,
+    storageReady,
     setFhirResource,
     setStorageReady,
   } = useOnboardingState()
@@ -366,17 +367,20 @@ export default function UpdateDidBTC() {
               <SetEncryption />
             </div>
           )}
-          <div className="w-full max-w-md mb-6 p-4 bg-white/5 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">{t('setupStorage.title')}</h3>
-            <SetupStorage onReady={(client) => {
-              setStorageReady(true)
-              console.log('Storage setup complete:', client)
-            }} />
-
-            {!useOnboardingState.getState().storageReady && (
-              <p className="mt-2 text-sm text-yellow-500">{t('setupStorage.description')}</p>
-            )}
-          </div>
+          {storageReady && (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-white">{t('setupStorage.title')}</h2>
+              <SetupStorage 
+                onReady={(client) => {
+                  setStorageReady(true)
+                  console.log('Storage setup complete:', client)
+                }} 
+              />
+              {!useOnboardingState.getState().storageReady && (
+                <p className="mt-2 text-sm text-yellow-500">{t('setupStorage.description')}</p>
+              )}
+            </div>
+          )}
           <div className="mt-4 text-right">
             <button
               onClick={handleUpdateClick}

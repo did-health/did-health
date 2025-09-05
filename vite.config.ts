@@ -1,71 +1,42 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import fs from 'fs';
-import rollupNodePolyFill from 'rollup-plugin-polyfill-node';
-import inject from '@rollup/plugin-inject';
-import wasm from 'vite-plugin-wasm';
-import topLevelAwait from 'vite-plugin-top-level-await';
+// vite.config.ts
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+// @ts-ignore - rollup-plugin-node-polyfills has type issues with newer Vite
+import rollupNodePolyFill from 'rollup-plugin-node-polyfills'
+import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill'
+import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill'
+import path from 'path'
 
 export default defineConfig({
-  envDir: './',
-  envPrefix: 'VITE_',
-
-  define: {
-    global: 'globalThis',
-    'process.env': {}, // legacy support
-    'process.env.TYPED_ARRAY_SUPPORT': JSON.stringify(true),
-  },
-
-  plugins: [
-    react(),
-    wasm({
-      // Configure WebAssembly for IPFS
-      importObject: {
-        env: {
-          TYPED_ARRAY_SUPPORT: true,
-        },
-      },
-      // Explicitly handle .wasm files
-      include: ['**/*.wasm'],
-      exclude: ['node_modules/**/*.wasm'],
-    }),
-    topLevelAwait(),
-  ],
-
-  base: '',  // Use empty base for IPFS deployment
-
+  plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      buffer: 'buffer',
+      buffer: 'buffer/',          // enforce single buffer polyfill
       process: 'process/browser',
+      stream: 'stream-browserify',
+      '@': path.resolve(__dirname, './src')
     },
   },
-
   optimizeDeps: {
-    include: ['buffer', 'process', '@xmtp/proto', '@lit-protocol/encryption'],
-    exclude: ['@xmtp/wasm-bindings', '@xmtp/browser-sdk'],
-  },
-
-  build: {
-    target: ['es2020'],
-    cssTarget: ['chrome61', 'safari11'],
-    outDir: 'dist',
-    rollupOptions: {
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',    // allow "global" usage
+      },
       plugins: [
-        rollupNodePolyFill(),
-        inject({
-          Buffer: ['buffer', 'Buffer'],
+        NodeGlobalsPolyfillPlugin({
+          buffer: true,
+          process: true,
         }),
+        NodeModulesPolyfillPlugin(),
       ],
     },
   },
-
-  server: {
-    host: '0.0.0.0',
-    port: 3000,
-    strictPort: true,
-
+  build: {
+    rollupOptions: {
+      plugins: [
+        // @ts-ignore - Type issues with rollup-plugin-node-polyfills
+        rollupNodePolyFill() as any,  // type assertion to bypass the type error
+      ],
+    },
   },
-});
+})
