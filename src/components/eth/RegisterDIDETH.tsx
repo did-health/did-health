@@ -7,6 +7,7 @@ import { Dialog } from '@headlessui/react'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
 import { usePublicClient, useChainId } from 'wagmi'
 import { chainIdToLitChain } from '../../lib/getChains'
+import { useTranslation } from 'react-i18next'
 
 export function RegisterDID() {
   const {
@@ -16,7 +17,7 @@ export function RegisterDID() {
     accessControlConditions,
     encryptionSkipped,
     ipfsUri,
-    setDID,
+    setDid,
     setIpfsUri,
     walletAddress,
   } = useOnboardingState()
@@ -28,6 +29,7 @@ export function RegisterDID() {
   const [txHash, setTxHash] = useState<string | null>(null)
   const [finalDid, setFinalDid] = useState<string | null>(null)
   const chainId = useChainId()
+  const { t } = useTranslation();
   console.log('🔗 Connected Chain ID:', chainId)
   const litChain = chainIdToLitChain[chainId] ?? 'ethereum' // default fallback
   console.log('🔗 Lit Chain:', litChain)
@@ -63,8 +65,8 @@ export function RegisterDID() {
       // ✅ Inject the DID into the FHIR identifier
       const didIdentifier = { system: 'https://www.w3.org/ns/did', value: did }
       const existingIds = Array.isArray(fhirResource.identifier) ? fhirResource.identifier : []
-      const newIdentifiers = existingIds.some(id => id.system === didIdentifier.system)
-        ? existingIds.map(id => id.system === didIdentifier.system ? didIdentifier : id)
+      const newIdentifiers = existingIds.some((id: { system: string }) => id?.system === didIdentifier.system)
+        ? existingIds.map((id: { system: string }) => id?.system === didIdentifier.system ? didIdentifier : id)
         : [...existingIds, didIdentifier]
   
       const fhirWithDid = { ...fhirResource, identifier: newIdentifiers }
@@ -79,6 +81,9 @@ export function RegisterDID() {
       } else {
         if (!litClient) {
           throw new Error('Lit client is not initialized');
+        }
+        if (!accessControlConditions) {
+          throw new Error('Access control conditions are required');
         }
         const { encryptedJSON, hash } = await encryptFHIRFile({
           file: resourceBlob,
@@ -131,12 +136,12 @@ export function RegisterDID() {
       setActiveStep(4)
       setTxHash(tx)
       setFinalDid(did)
-      setDID(did)
+      setDid(did)
   
       setTimeout(() => setActiveStep(5), 1000)
     } catch (err: any) {
       console.error('❌ Registration error:', err)
-      setError(err.message || '❌ Registration failed. See console for details.')
+      setError('❌ Registration failed. See console for details.')
     }
   }
   
@@ -206,7 +211,7 @@ export function RegisterDID() {
                       <div>
                         <h3 className="font-semibold text-green-800">Registration Complete!</h3>
                         <p className="text-green-700 mt-1">
-                          Your DID has been successfully registered.
+                          Your did:health has been successfully registered.
                         </p>
                       </div>
                     </div>
@@ -221,7 +226,7 @@ export function RegisterDID() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        View DID
+                        View Your did:health
                       </a>
                       <a 
                         href={getExplorerLink(txHash)} 
@@ -229,7 +234,7 @@ export function RegisterDID() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        View on Etherscan
+                        View Your Registration on Etherscan
                       </a>
                     </div>
                   </div>

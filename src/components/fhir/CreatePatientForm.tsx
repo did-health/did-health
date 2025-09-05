@@ -16,20 +16,23 @@ interface CreatePatientFormProps {
 
 const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
-  const { fhirResource, setFHIRResource } = useOnboardingState()
+  const { fhirResource, setFhirResource } = useOnboardingState()
   const webcamRef = useRef<Webcam | null>(null)
   const [patient, setPatient] = useState<Patient>(defaultValues)
   const [showCamera, setShowCamera] = useState(false)
   const [status, setStatus] = useState<string>('')
   const { t } = useTranslation(['fhir'])
+  const { t: t2 } = useTranslation()
 
   useEffect(() => {
-    if (fhirResource?.resourceType === 'Patient') {
-      setPatient(fhirResource as Patient)
-    } else {
-      setPatient({
-        resourceType: 'Patient',
-      })
+    if (!patient) {
+      if (fhirResource?.resourceType === 'Patient') {
+        setPatient(fhirResource as Patient)
+      } else {
+        setPatient({
+          resourceType: 'Patient',
+        })
+      }
     }
   }, [fhirResource])
 
@@ -60,7 +63,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
       updatedPatient.id = uuidv4()
     }
     // Update the FHIR resource in Zustand
-    setFHIRResource(updatedPatient)
+    setFhirResource(updatedPatient)
     // Call the parent's onSubmit handler with the updated data
     onSubmit(updatedPatient)
     setStatus('✅ FHIR updated successfully')
@@ -81,19 +84,10 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
   return (
     <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-background">
       <div className="w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg p-6">
-        <div className="flex justify-center items-center h-24 mb-6">
-          <div className="w-24 h-24 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
-            <img
-              src={logo}
-              alt="did:health Logo"
-              className="w-full h-full object-contain scale-110 transition-transform duration-300 hover:scale-125"
-            />
-          </div>
-        </div>
         <div className="space-y-4">
           {status && <p className="text-sm text-gray-600 mb-4">{status}</p>}
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
-            🧬 did:health {t('Patient.label')} Record
+            🧬 did:health {t('Patient.label')} 
           </h2>
 
   {/* Demographics */}
@@ -190,11 +184,11 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
   {/* Contact Info */}
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Phone</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.phone.label')}</label>
       <input name="telecom.1.value" value={patient?.telecom?.[1]?.value || ''} onChange={handleInputChange} className="input input-bordered w-full" />
     </div>
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Email</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.email.label')}</label>
       <input name="telecom.2.value" value={patient?.telecom?.[2]?.value || ''} onChange={handleInputChange} className="input input-bordered w-full" />
     </div>
   </div>
@@ -295,7 +289,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
               onClick={updatePatient}
               className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              {patient.id ? t('common.update') : t('common.create')} {t('Patient.label')}
+              {patient.id ? t2('common.update') : t2('common.create')} {t('Patient.label')}
             </button>
   </div>
 </div>

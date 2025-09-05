@@ -24,9 +24,11 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
       try {
         const baseProfile = resourceType !== 'Empty' && resourceType !== 'Unknown'
           ? `/us-core/StructureDefinition-us-core-${resourceType.toLowerCase()}.json`
-          : '/r4b/profiles-types.json';
+          : '/r4b/profiles-resources.json';
+
         const coreTypes = '/r4b/profiles-types.json';
 
+        console.log(baseProfile)
         const [mainDef, typesDef] = await Promise.all([
           fetch(baseProfile).then((res) => res.json()),
           fetch(coreTypes).then((res) => res.json())

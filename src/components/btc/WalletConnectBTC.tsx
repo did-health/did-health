@@ -1,89 +1,120 @@
-// src/components/ConnectWalletBTC.tsx
-import { useEffect, useState } from 'react';
-import { useOnboardingState } from '../../store/OnboardingState';
-
+import { useEffect, useState } from 'react'
+import { useOnboardingState } from '../../store/OnboardingState'
+import { useTranslation } from 'react-i18next'
+import { keccak256, toUtf8Bytes } from 'ethers'
 export function ConnectWalletBTC() {
-  const [walletName, setWalletName] = useState<string | null>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const [walletName, setWalletName] = useState<string | null>(null)
+  const [isInstalled, setIsInstalled] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { t } = useTranslation()
   const {
-    setWalletConnected,
-    setWalletAddress: setGlobalWalletAddress,
-  } = useOnboardingState();
+    setWallet,
+    walletAddress,
+    setWalletAddress,
+    setAESKeyFromWallet,
+    reset,
+    aesKey,
+  } = useOnboardingState()
 
+  // Detect wallet
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (window.unisat) {
-        setWalletName('UniSat');
-        setIsInstalled(true);
+        setWalletName('UniSat')
+        setIsInstalled(true)
       } else if (window.xverse) {
-        setWalletName('Xverse');
-        setIsInstalled(true);
+        setWalletName('Xverse')
+        setIsInstalled(true)
       } else {
-        setWalletName(null);
-        setIsInstalled(false);
-        setError('No supported Bitcoin wallets found. Install UniSat or Xverse.');
+        setWalletName(null)
+        setIsInstalled(false)
+        setError(t('noSupportedBitcoinWalletsFound'))
       }
     }
-  }, []);
+  }, [])
 
+  // Connect to UniSat
   const connectUniSat = async () => {
     try {
-      if (!window.unisat) {
-        throw new Error('UniSat wallet is not available.');
-      }
-      const accounts = await window.unisat.requestAccounts();
-      setWalletAddress(accounts[0]);
-      setWalletConnected(true);
-      setGlobalWalletAddress(accounts[0]);
-    } catch (err) {
-      console.error('UniSat connection error:', err);
-      setError('Failed to connect to UniSat.');
-    }
-  };
+      
+      if (!window.unisat) throw new Error(t('failedToConnectToUniSat'))
 
+
+      const accounts = await window.unisat.requestAccounts()
+      const address = accounts[0]
+      if (!aesKey){
+        const message = "Generate encryption key";
+        try {
+          const signature = await window.unisat.signMessage(message);
+          const newAesKey = keccak256(toUtf8Bytes(signature));
+          setAESKeyFromWallet(newAesKey)
+        } catch (error) {
+          console.error('Failed to sign message:', error);
+          throw new Error('Failed to generate encryption key');
+        }
+      }
+      setWalletAddress(address, 0)
+      setWallet(address, 0) // Bitcoin chain ID = 0
+   
+    } catch (err) {
+      console.error('UniSat connection error:', err)
+      setError(t('failedToConnectToUniSat'))
+    }
+  }
+
+  // Connect to Xverse
   const connectXverse = async () => {
     try {
-      if (!window.xverse) {
-        throw new Error('Xverse wallet is not available.');
+      const xverse = (window as any).xverse
+      if (!xverse) throw new Error('Xverse wallet is not available.')
+
+      const response = await xverse.connect()
+      const address = response?.addresses?.bitcoin
+      if (!address) throw new Error('No Bitcoin address returned.')
+
+      const signer = {
+        signMessage: async (msg: string) => {
+          const result = await xverse.request('signMessage', { payload: msg })
+          return result?.signature || ''
+        },
       }
-      const response = await window.xverse.connect();
-      const address = response?.addresses?.bitcoin;
-      if (address) {
-        setWalletAddress(address);
-        setWalletConnected(true);
-        setGlobalWalletAddress(address);
-      } else {
-        throw new Error('No Bitcoin address returned.');
-      }
+
+      setWalletAddress(address, 0)
+      setWallet(address, 0)
+      if (!aesKey) await setAESKeyFromWallet(signer)
     } catch (err) {
-      console.error('Xverse connection error:', err);
-      setError('Failed to connect to Xverse.');
+      console.error('Xverse connection error:', err)
+      setError(t('failedToConnectToXverse'))
     }
-  };
+  }
 
   const connectWallet = () => {
-    setError(null);
-    if (walletName === 'UniSat') return connectUniSat();
-    if (walletName === 'Xverse') return connectXverse();
-  };
+    setError(null)
+    if (walletName === 'UniSat') return connectUniSat()
+    if (walletName === 'Xverse') return connectXverse()
+  }
+
+  const disconnectWallet = () => {
+    setWalletAddress('', 0)
+    reset() // clears AES key and other wallet state
+  }
 
   return (
     <div className="rounded-2xl border border-gray-200 p-6 shadow-lg bg-white dark:bg-gray-800">
-      <h2 className="text-xl font-bold mb-4">Connect Bitcoin Wallet</h2>
-
-      {isInstalled && walletName ? (
+   
+      {isInstalled && walletName && !walletAddress ? (
+        
         <>
+          <h2 className="text-xl font-bold mb-4">{t('connectBitcoinWallet')}</h2>
+
           <p className="text-gray-600 dark:text-gray-300 mb-4">
-            Detected wallet: <strong>{walletName}</strong>
+            {t('detectedWallet')} <strong>{walletName}</strong>
           </p>
           <button
             onClick={connectWallet}
             className="btn btn-primary"
           >
-            Connect {walletName}
+           {t('connect')} {walletName}
           </button>
         </>
       ) : (
@@ -91,17 +122,16 @@ export function ConnectWalletBTC() {
       )}
 
       {walletAddress && (
-        <p className="mt-4 text-green-600">✅ Connected: {walletAddress}</p>
+        <div className="mt-4 space-y-2">
+          <p className="text-green-600 text-sm">✅ Connected: {walletAddress} {t('to')} {walletName}</p>
+          <button
+            onClick={disconnectWallet}
+            className="btn btn-sm bg-red-600 text-white hover:bg-red-700"
+          >
+            {t('disconnect')}
+          </button>
+        </div>
       )}
     </div>
-  );
-}
-
-// Extend window type for Xverse
-declare global {
-  interface Window {
-    xverse?: {
-      connect: () => Promise<{ addresses: { bitcoin: string } }>
-    }
-  }
+  )
 }

@@ -14,7 +14,7 @@ interface CreatePractitionerFormProps {
 
 const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
-  const { fhirResource, setFHIRResource } = useOnboardingState()
+  const { fhirResource, setFhirResource } = useOnboardingState()
   const [practitioner, setPractitioner] = useState<Practitioner>(defaultValues)
   const [showCamera, setShowCamera] = useState(false)
   const webcamRef = useRef<Webcam>(null)
@@ -22,6 +22,7 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
   const { t: t2 } = useTranslation()
 
   useEffect(() => {
+    if (!practitioner) {
     if (fhirResource?.resourceType === 'Practitioner') {
       setPractitioner(fhirResource as Practitioner)
     } else {
@@ -39,6 +40,7 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
           },
         ],
       })
+    }
     }
   }, [fhirResource])
 
@@ -70,17 +72,15 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
     if (!updatedPractitioner.id) {
       updatedPractitioner.id = uuidv4()
     }
-    setFHIRResource(updatedPractitioner)
+    setFhirResource(updatedPractitioner)
   }
 
   if (!practitioner) return null
 
   return (
-    <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-gray-50 dark:bg-gray-950">
       <div className="w-full max-w-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
-
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
-          did:health {t('Practitioner.label')}Record
+          did:health {t('Practitioner.label')}
         </h2>
         <div className="space-y-4">
           {/* Demographics */}
@@ -108,11 +108,11 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
               <input id="birthDate" type="date" name="birthDate" value={practitioner.birthDate || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactDetail.short')}</label>
+              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.phone.label')}</label>
               <input id="phone" type="tel" name="telecom.0.value" value={practitioner.telecom?.[0]?.value || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactDetail.short')}</label>
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.email.label')}</label>
               <input id="email" type="email" name="telecom.1.value" value={practitioner.telecom?.[1]?.value || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
@@ -178,7 +178,6 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
           </div>
         </div>
       </div>
-    </div>
   )
 }
 

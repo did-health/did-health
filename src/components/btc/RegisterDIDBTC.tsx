@@ -3,17 +3,19 @@ import { useOnboardingState } from '../../store/OnboardingState'
 import { encryptFHIRFile } from '../../lib/litEncryptFile'
 import { storeEncryptedFileByHash, storePlainFHIRFile } from '../../lib/storeFIleWeb3'
 import '../../types/unisat'
-
+import type { AccessControlConditions } from '@lit-protocol/types';
+import { useTranslation } from 'react-i18next'
 export default function RegisterDIDBTC() {
+  const { t } = useTranslation()
   const {
     walletAddress,
     litClient,
     encryptionSkipped,
     accessControlConditions,
     fhirResource,
-    setFHIRResource,
+    setFhirResource,
     did,
-    setDID,
+    setDid,
   } = useOnboardingState()
 
   const [status, setStatus] = useState('')
@@ -31,7 +33,7 @@ export default function RegisterDIDBTC() {
       }
 
       setStatus('📦 Preparing FHIR resource...')
-      setFHIRResource(fhirResource)
+      setFhirResource(fhirResource)
 
       const resourceType = fhirResource.resourceType
       let fhirUri: string
@@ -47,7 +49,7 @@ export default function RegisterDIDBTC() {
           file: blob,
           litClient,
           chain: 'bitcoin',
-          accessControlConditions,
+          accessControlConditions: accessControlConditions as AccessControlConditions[],
         })
         const encryptedBlob = new Blob([encryptedJSON], { type: 'application/json' })
         fhirUri = await storeEncryptedFileByHash(encryptedBlob, hash, resourceType)
@@ -81,7 +83,7 @@ export default function RegisterDIDBTC() {
       setStatus('📝 Uploading DID Document to IPFS...')
       const didDocUri = await storePlainFHIRFile(didDoc, `${fhirResource?.id || crypto.randomUUID()}-didDocument`, 'didDocument')
       setDidUri(didDocUri)
-      setDID(did)
+      setDid(did)
 
       // Create inscription payload with full JSON structure
       const inscriptionPayload = {
@@ -111,12 +113,11 @@ export default function RegisterDIDBTC() {
       {status && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 space-y-4">
-            <h1 className="text-2xl font-bold mb-4">Registration Status</h1>
             <div className="space-y-4">
               <p className="text-sm text-gray-600">{status}</p>
               {didUri && (
                 <div className="border border-green-300 bg-green-50 p-4 rounded text-sm">
-                  <p className="font-medium text-green-800">✅ Your DID Document is live at:</p>
+                  <p className="font-medium text-green-800">{t('RegisterDIDBTC.success')}</p>
                   <div className="flex items-center gap-2 mt-2">
                     <code className="block break-all text-xs">{didUri}</code>
                     <button
@@ -134,14 +135,14 @@ export default function RegisterDIDBTC() {
                     </button>
                   </div>
                   <p className="mt-2 text-green-700">
-                    Please inscribe this <code>ipfs://</code> URI on Bitcoin via:
+                    {t('RegisterDIDBTC.inscribe')}
                     <div className="flex gap-2 mt-2">
                       <a 
                         className="text-blue-700 underline hover:text-blue-800"
                         target="_blank" 
                         href={`https://unisat.io/inscribe?tab=text&text=${encodeURIComponent(didUri)}`}
                       >
-                        Unisat
+                        {t('RegisterDIDBTC.unisat')}
                       </a>
                       <a 
                         className="text-blue-700 underline hover:text-blue-800"
@@ -169,7 +170,7 @@ export default function RegisterDIDBTC() {
                           }
                         }}
                       >
-                        📬 Save txid
+                        {t('RegisterDIDBTC.saveTxid')}
                       </button>
                     </div>
 
@@ -180,13 +181,11 @@ export default function RegisterDIDBTC() {
           </div>
         </div>
       )}
-      <h1 className="text-2xl font-bold"> Register Your <code>did:health:btc</code></h1>
-
       {walletAddress && (
         <div className="border border-yellow-300 bg-yellow-50 p-4 rounded space-y-2">
-          <p className="font-semibold text-yellow-800"> One-Time Registration Fee</p>
+          <p className="font-semibold text-yellow-800"> {t('RegisterDIDBTC.registrationFee')}</p>
           <p className="text-sm text-yellow-700">
-            Please send <strong>{feeAmountSats.toLocaleString()} sats</strong> (~{estimatedUsd}) to the address below:
+            {t('RegisterDIDBTC.pleaseSend')}<strong>{feeAmountSats.toLocaleString()} sats</strong> {t('RegisterDIDBTC.toAddress')}:
           </p>
           <div className="flex flex-col gap-2">
             <code className="block p-2 text-xs bg-white border border-yellow-200 rounded break-all">
@@ -196,13 +195,13 @@ export default function RegisterDIDBTC() {
               onClick={async () => {
                 try {
                   if (!window.unisat) {
-                    throw new Error('UniSat wallet is not available');
+                    throw new Error(t('RegisterDIDBTC.unisatNotAvailable'));
                   }
 
                   // First request accounts to ensure wallet is properly connected
                   const accounts = await window.unisat.requestAccounts();
                   if (!accounts || accounts.length === 0) {
-                    throw new Error('No accounts found');
+                    throw new Error(t('RegisterDIDBTC.noAccountsFound'));
                   }
 
                   // Log the wallet instance and its methods
@@ -214,25 +213,25 @@ export default function RegisterDIDBTC() {
                     💰 Transaction Details:
                     Amount: ${feeAmountSats.toLocaleString()} sats ($10.00)
                     Recipient: ${feeAddress}
-                    Please confirm in your UniSat wallet...
+                    {t('RegisterDIDBTC.confirmInWallet')}
                   `);
 
                   // Now try to send the transaction using the correct UniSat API method (sendBitcoin)
                   const tx = await window.unisat.sendBitcoin(feeAddress, feeAmountSats, 'sat');
 
-                  setStatus(`✅ Payment sent successfully! Transaction ID: ${tx.txid}`);
+                  setStatus(`✅ {t('RegisterDIDBTC.paymentSent')} ${tx.txid}`);
                 } catch (err: any) {
                   console.error('Payment error:', err);
-                  setStatus(`❌ Payment failed: ${err.message || 'Unknown error'}`);
+                  setStatus(`❌ {t('RegisterDIDBTC.paymentFailed')}: ${err.message || 'Unknown error'}`);
                 }
               }}
               className="btn btn-primary w-full"
             >
-              Send Payment via UniSat
+              {t('RegisterDIDBTC.sendPayment')}
             </button>
           </div>
           <p className="text-xs text-yellow-600">
-            This fee supports decentralized health identity infrastructure. After payment, you can continue with registration.
+            {t('RegisterDIDBTC.feeSupport')}
           </p>
         </div>
       )}
@@ -243,7 +242,7 @@ export default function RegisterDIDBTC() {
             onClick={handleRegister}
             className="btn btn-primary"
           >
-            Register DID
+            {t('RegisterDIDBTC.registerDID')}
           </button>
         )}
         {!didUri || !walletAddress && (

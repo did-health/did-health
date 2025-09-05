@@ -96,7 +96,7 @@ export const renderAddressValues = (addresses: Address[], t: (key: string) => st
                     {address.postalCode && <span>{address.postalCode}</span>}
                 </div>
                 {address.country && <div>{address.country}</div>}
-                {address.use && <div><em>({t(`Address.use.${address.use}.label`)})</em></div>}
+                {address.use && <div><em>{address.use}</em></div>}
             </li>
         ))}
     </ul>
@@ -109,17 +109,16 @@ export const renderHumanNameValues = (names: HumanName[], t: (key: string) => st
     <ul>
         {names.map((name, i) => (
             <li key={`name-${i}`}>
-                <strong>{t('HumanName.name.label')}</strong>
                 {name.prefix && <span>{name.prefix.join(' ')} </span>}
                 {name.given && <span>{name.given.join(' ')} </span>}
                 {name.family && <span>{name.family}</span>}
                 {name.suffix && <span> {name.suffix.join(', ')}</span>}
-                {name.use && <div><em>({t(`HumanName.use.${name.use}.label`)})</em></div>}
+                {name.use && <div><em></em></div>}
                 {name.period && (
                     <div className="period">
                         <small>
-                            {name.period.start && <span>{t('HumanName.period.from.label')} {name.period.start}</span>}
-                            {name.period.end && <span>{t('HumanName.period.to.label')} {name.period.end}</span>}
+                            {name.period.start && <span>{name.period.start}</span>}
+                            {name.period.end && <span>{name.period.end}</span>}
                         </small>
                     </div>
                 )}
@@ -135,10 +134,9 @@ export const renderLanguageValues = (languages: any[], t: (key: string) => strin
     <ul>
         {languages.map((lang, i) => (
             <li key={`lang-${i}`}>
-                <strong>{t('Language.label')}</strong>
                 {lang.language?.coding?.[0]?.display || lang.language?.coding?.[0]?.code || ''}
                 {lang.language?.text && <span> ({lang.language.text})</span>}
-                {lang.preferred && <strong> ({t('Language.preferred.label')})</strong>}
+                {lang.preferred && <strong> ({lang.preferred})</strong>}
             </li>
         ))}
     </ul>
@@ -150,19 +148,21 @@ export const renderLanguageValues = (languages: any[], t: (key: string) => strin
 export const renderIdentifierAndTelecom = (items: Array<ContactPoint | { system?: string; value: string; use?: string; type?: { coding?: Coding[]; text?: string } }>, t: (key: string) => string): React.ReactNode => (
     <ul>
         {items.map((item, i) => {
+            if (!item) return null; // Skip null items
+            
             if ('system' in item && item.system && item.value) {
                 return (
                     <li key={`telecom-${i}`}>
-                        <strong>{t(`ContactPoint.system.${item.system}.label`)}</strong>: {item.value}
-                        {item.use && <span> ({t(`ContactPoint.use.${item.use}.label`)})</span>}
+                        {item.value}
+                        {item.use && <span> ({item.use})</span>}
                     </li>
                 );
             }
-            if (item?.value && !item.system) {
+            if (item?.value && !item?.system) {
                 return (
                     <li key={`identifier-${i}`}>
-                        <strong>{t(`Identifier.label`)}</strong>: {item.value}
-                        {item.use && <span> ({t(`Identifier.use.${item.use}.label`)})</span>}
+                        {item.value}
+                        {item.use && <span> ({item.use})</span>}
                     </li>
                 );
             }
@@ -194,15 +194,36 @@ export const renderArrayOfObjects = (arr: any[], followReferences: boolean, t: (
     return (
         <ul>
             {arr.map((item, i) => {
-
                 if (typeof item !== 'object' || item === null) {
                     return <li key={i}>{String(item)}</li>;
                 }
 
                 if ('reference' in item && typeof item.reference === 'string' && item.reference.includes('/')) {
                     const [resourceType, id] = item.reference.split('/');
-                    return <li key={i}>{t(`types.${resourceType.toLowerCase()}.label`)}</li>
+                    const hash = `#${resourceType}.${id}`;
+                    return (
+                        <li key={i}>
+                            <a 
+                                href={hash}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const target = document.querySelector(hash);
+                                    if (target) {
+                                        e.preventDefault();
+                                        target.scrollIntoView({ behavior: 'smooth' });
+                                    }
+                                }}
+                                className="text-blue-600 hover:underline"
+                                title={`View ${resourceType} ${id}`}
+                            >
+                                {t('view')}
+                            </a>
+                        </li>
+                    );
                 }
+                
+                // Handle case where the item is a reference object but we need to render something
+                return <li key={i}>{JSON.stringify(item)}</li>;
             })}
         </ul>
     );

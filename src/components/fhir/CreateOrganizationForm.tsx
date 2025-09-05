@@ -13,11 +13,13 @@ interface CreateOrganizationFormProps {
 
 const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
-  const { fhirResource, setFHIRResource } = useOnboardingState()
+  const { fhirResource, setFhirResource } = useOnboardingState()
   const [organization, setOrganization] = useState<Organization>(defaultValues)
   const { t } = useTranslation(['fhir'])
+  const { t: t2 } = useTranslation()
 
   useEffect(() => {
+    if (!organization) {
     if (fhirResource?.resourceType === 'Organization') {
       setOrganization(fhirResource as Organization)
     } else {
@@ -28,6 +30,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
           { type: { coding: [{ code: '', system: 'http://terminology.hl7.org/CodeSystem/v2-0203' }] }, value: '' },
         ],
       })
+    }
     }
   }, [fhirResource])
 
@@ -71,7 +74,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
       updatedOrg.id = uuidv4()
     }
 
-    setFHIRResource(updatedOrg)
+    setFhirResource(updatedOrg)
     //navigate('/onboarding/ethereum')
   }
 
@@ -80,11 +83,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
   return (
     <div className="flex justify-center items-start min-h-screen p-4 bg-background">
       <div className="w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg p-6">
-        <div className="flex justify-center items-center h-24 mb-6">
-          <div className="w-24 h-24 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
-            <img src={logo} alt="Logo" className="w-full h-full object-contain" />
-          </div>
-        </div>
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
             🏢 did:health {t('Organization.label')} 
@@ -112,10 +110,23 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
               onChange={handleInputChange}
               className="input input-bordered w-full"
             >
-              <option value="">Select Type...</option>
-              <option value="prov">Provider Organization</option>
-              <option value="dept">Department</option>
-              <option value="team">Team</option>
+              <option value="">{t('Organization.type.label')}</option>
+              <option value="prov">Healthcare Provider</option>
+              <option value="dept">Hospital Department</option>
+              <option value="team">Care Team</option>
+              <option value="govt">Government Agency</option>
+              <option value="ins">Insurance Company</option>
+              <option value="pay">Payer</option>
+              <option value="edu">Educational Institution</option>
+              <option value="reli">Religious Organization</option>
+              <option value="crs">Clinical Research Sponsor</option>
+              <option value="pharm">Pharmacy</option>
+              <option value="lab">Laboratory</option>
+              <option value="ambul">Ambulance Service</option>
+              <option value="emg">Emergency Services</option>
+              <option value="ngo">Non-Governmental Organization</option>
+              <option value="bus">Business Entity</option>
+              <option value="other">Other</option>
             </select>
           </div>
 
@@ -136,7 +147,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
           {/* Organization Contact */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">({t('ContactPoint.system.label')})</label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.phone.label')}</label>
               <input
                 type="tel"
                 name="telecom.0.value"
@@ -146,7 +157,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
               />
             </div>
             <div>
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">({t('ContactPoint.system.label')})</label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.email.label')}</label>
               <input
                 type="email"
                 name="telecom.1.value"
@@ -230,7 +241,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ default
               onClick={handleSubmit}
               className="btn btn-primary w-full sm:w-auto"
             >
-              {organization?.id ? t('common.update') : t('common.create')} {t('Organization.label')}
+              {organization?.id ? t2('common.update') : t2('common.create')} {t('Organization.label')}
             </button>
           </div>
         </div>

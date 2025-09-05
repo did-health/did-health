@@ -32,6 +32,8 @@
     "buffer": "^6.0.3",
     "daisyui": "^5.0.43",
     "ethers": "^6.14.3",
+    "fhirclient": "^2.6.0",
+    "fuse.js": "^7.1.0",
     "graphql": "^16.11.0",
     "graphql-request": "^7.2.0",
     "i18next": "^25.2.1",
@@ -44,6 +46,7 @@
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.0",
     "react-i18next": "^15.5.2",
+    "react-icons": "^5.5.0",
     "react-qr-reader": "^3.0.0-beta-1",
     "react-router-dom": "^7.6.1",
     "react-webcam": "^7.2.0",
@@ -54,12 +57,13 @@
     "usehooks-ts": "^3.1.1",
     "uuid": "^11.1.0",
     "viem": "^2.30.5",
-    "vite": "^5.4.14",
+    "vite": "^5.4.19",
     "wagmi": "^2.15.4",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+    "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@google-cloud/translate": "^9.2.0",
     "@rollup/plugin-inject": "^5.0.5",
     "@tailwindcss/aspect-ratio": "^0.4.2",
@@ -77,6 +81,7 @@
     "eslint": "^8.55.0",
     "postcss": "^8.5.4",
     "prettier": "^3.1.1",
+    "rollup-plugin-node-polyfills": "^0.2.1",
     "tailwindcss": "3.4.3",
     "tailwindcss-animate": "^1.0.7",
     "terser": "^5.43.0",
@@ -86,5 +91,9 @@
     "vite-plugin-node-polyfills": "^0.24.0",
     "vite-plugin-top-level-await": "^1.5.0",
     "vite-plugin-wasm": "^3.4.1"
+  },
+  "resolutions": {
+    "buffer": "^6.0.3",
+    "safe-buffer": "^5.2.1"
   }
 }

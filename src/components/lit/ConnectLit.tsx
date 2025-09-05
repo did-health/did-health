@@ -4,17 +4,19 @@ import { LitNodeClient } from '@lit-protocol/lit-node-client'
 import { LIT_NETWORK } from '@lit-protocol/constants'
 import { useChainId } from 'wagmi'
 import { chainIdToLitChain } from '../../lib/getChains'
+import { useTranslation } from 'react-i18next'
 
 export function ConnectLit() {
   const { litConnected, setLitConnected, setLitClient } = useOnboardingState()
   const [error, setError] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   useEffect(() => {
     async function connectLit() {
       try {
         const lit = new LitNodeClient({
           litNetwork: LIT_NETWORK.DatilTest,
-          debug: true
+          debug: false
         })
 
         await lit.connect()
@@ -32,14 +34,6 @@ export function ConnectLit() {
   }, [])
 
   return (
-    <div>
-      {litConnected ? (
-        <p>✅ Connected to Lit</p>
-      ) : error ? (
-        <p style={{ color: 'red' }}>❌ Error: {error}</p>
-      ) : (
-        <p>Connecting to Lit...</p>
-      )}
-    </div>
+   <div></div>
   )
 }

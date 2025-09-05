@@ -1,4 +1,9 @@
 {
+  "Practitioner.label": "Professionnel de santé",
+  "ContactPoint.system.email.label": "Courriel",
+  "ContactPoint.system.phone.label": "Téléphone",
+  "Population.ethnicity.label": "Ethnicité",
+  "Patient.Identifier.label": "Type d'identification",
   "Practitioner.name.label": "Nom",
   "Practitioner.name.short": "Nom du professionnel",
   "Practitioner.name.definition": "Un nom associé au professionnel, généralement un nom humain.",
