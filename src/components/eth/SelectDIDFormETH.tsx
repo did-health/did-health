@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useOnboardingState } from "../../store/OnboardingState";
 import { useConfig, useChainId } from "wagmi";
-
+import { useTranslation } from "react-i18next";
 import deployedContracts from "../../generated/deployedContracts";
 import { JsonRpcProvider } from "ethers";
 import { ethers } from "ethers"; // if not already imported
@@ -13,8 +13,8 @@ type Props = {
 export function SelectDIDFormETH({ onDIDAvailable }: Props) {
   const config = useConfig();
   const chainId = useChainId();
-  const { fhirResource, did } = useOnboardingState();
-
+  const { did } = useOnboardingState();
+  const { t } = useTranslation();
   const [didInput, setDidInput] = useState("");
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(false);
@@ -99,14 +99,6 @@ export function SelectDIDFormETH({ onDIDAvailable }: Props) {
           </div>
         </div>
       )}
-
-      {fhirResource && (
-        <div className="bg-green-100 text-green-800 text-sm p-3 rounded shadow">
-          ✅ FHIR record created: <strong>{fhirResource.resourceType}</strong>
-        </div>
-      )}
-
-
       <div className="space-y-2">
        <input
           type="text"
@@ -121,7 +113,7 @@ export function SelectDIDFormETH({ onDIDAvailable }: Props) {
           }}
         />
         <p className="text-sm text-gray-500">
-          Full DID: <code>{fullDID}</code>
+          {t('yourDID')}: <code>{fullDID}</code>
         </p>
       </div>
 

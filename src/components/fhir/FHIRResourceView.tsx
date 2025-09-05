@@ -1,29 +1,34 @@
 import { useEffect, useState } from 'react';
 import _get from 'lodash/get';
+import { useTranslation } from 'react-i18next';
 import {
   formatLabel,
   loadExtensionStructureDefinition,
   renderElement,
   resolveDefinitionUrl
 } from '../../lib/utils';
+import type { FHIRRendererProps } from '../../types';
 import type { ElementDefinition } from 'fhir/r4';
 import type { FHIRResourceProps } from '../../types';
 import type { StructureDefinitionMap } from '../../types/fhir/StructureDefintion';
 import type { StructureDefinition } from 'fhir/r4';
 
 const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences }) => {
+  const { t } = useTranslation(['fhir']);
   const [structureDefs, setStructureDefs] = useState<StructureDefinitionMap>({});
   const [mainStructureDef, setMainStructureDef] = useState<StructureDefinition | null>(null);
-  const resourceType = resource?.resourceType || (resource && typeof resource === 'object' && Object.keys(resource).length > 0 ? 'Unknown' : 'Empty');
+  const resourceType = resource?.resourceType || 'Unknown';
 
   useEffect(() => {
     const fetchStructureDefs = async () => {
       try {
         const baseProfile = resourceType !== 'Empty' && resourceType !== 'Unknown'
           ? `/us-core/StructureDefinition-us-core-${resourceType.toLowerCase()}.json`
-          : '/r4b/profiles-types.json';
+          : '/r4b/profiles-resources.json';
+
         const coreTypes = '/r4b/profiles-types.json';
 
+        console.log(baseProfile)
         const [mainDef, typesDef] = await Promise.all([
           fetch(baseProfile).then((res) => res.json()),
           fetch(coreTypes).then((res) => res.json())
@@ -50,7 +55,7 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
   if (!mainStructureDef) {
     return (
       <div className="flex justify-center items-center py-8 text-gray-500 text-lg font-medium">
-        Loading structure definitions...
+        {t('fhir:loading.structureDefinitions', 'Loading structure definitions...')}
       </div>
     );
   }
@@ -75,7 +80,6 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
     return value !== undefined && value !== null && !(Array.isArray(value) && value.length === 0);
   });
 
-  // Tailwind styled helper to render photo attachments
   const renderPhotoAttachment = (attachmentOrArray: any) => {
     if (Array.isArray(attachmentOrArray)) {
       return (
@@ -114,17 +118,9 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
 
   return (
     <div className="overflow-x-auto border border-gray-300 rounded-lg shadow-md mt-6">
+      <h2 className="text-lg font-semibold mb-2">🔥 {t(resourceType + '.label')}</h2>
       <table className="min-w-full divide-y divide-gray-200 text-sm font-sans">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="px-6 py-3 text-left font-semibold text-gray-700 tracking-wide uppercase">
-              Field
-            </th>
-            <th className="px-6 py-3 text-left font-semibold text-gray-700 tracking-wide uppercase">
-              Value
-            </th>
-          </tr>
-        </thead>
+
         <tbody className="divide-y divide-gray-100 bg-white">
           {topLevelElements.map((el: ElementDefinition, idx: number) => {
             const path = el.path.split('.').slice(1).join('.');
@@ -134,7 +130,36 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
             const value = _get(resource, relativePath);
             const typeUrl = el.type?.[0]?.profile?.[0] || el.type?.[0]?.code;
 
-            // Detect photo attachments (single or array)
+            if (path === 'subject' || path === 'encounter') return null;
+
+            const translationPath = `${resourceType}.${el.path}`;
+            // Try different translation paths with fallbacks
+            const label = t(
+              [
+                `fhir:${translationPath}.label`,
+                `fhir:${path}.label`,
+                `fhir:${resourceType}.${el.path.split('.').pop()}.label`,
+                formatLabel(path)
+              ],
+              { defaultValue: formatLabel(path) }
+            );
+            const short = t(
+              [
+                `fhir:${translationPath}.short`,
+                `fhir:${path}.short`,
+                `fhir:${resourceType}.${el.path.split('.').pop()}.short`
+              ],
+              { defaultValue: '' }
+            );
+            const definition = t(
+              [
+                `fhir:${translationPath}.definition`,
+                `fhir:${path}.definition`,
+                `fhir:${resourceType}.${el.path.split('.').pop()}.definition`
+              ],
+              { defaultValue: '' }
+            );
+
             const isPhotoAttachment =
               (Array.isArray(value) &&
                 value.every(
@@ -143,15 +168,12 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
                 )) ||
               (value?.contentType?.startsWith('image/') && typeof value?.data === 'string');
 
-            if (path === 'subject' || path === 'encounter') return null;
-
             return (
-              <tr
-                key={idx}
-                className="hover:bg-gray-50 transition-colors duration-200 cursor-default"
-              >
+              <tr key={idx} className="hover:bg-gray-50 transition-colors duration-200 cursor-default">
                 <td className="px-6 py-4 font-medium text-gray-800 align-top w-48 whitespace-nowrap">
-                  {formatLabel(path)}
+                  <span title={short || definition} className="underline decoration-dotted cursor-help">
+                    {label}
+                  </span>
                 </td>
                 <td className="px-6 py-4 text-gray-700 align-top max-w-3xl break-words">
                   {isPhotoAttachment
@@ -165,7 +187,8 @@ const FHIRResource: React.FC<FHIRResourceProps> = ({ resource, followReferences 
                           loadExtensionStructureDefinition(url, structureDefs, setStructureDefs),
                         resolveDefinitionUrl: (type: string) =>
                           resolveDefinitionUrl(type, structureDefs),
-                        followReferences
+                        followReferences,
+                        t
                       })}
                 </td>
               </tr>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useOnboardingState } from '../../store/OnboardingState'
-
+import { useTranslation } from 'react-i18next'
 import { useChainId } from 'wagmi'
 import { chainIdToLitChain } from '../../lib/getChains'
 import { SetAccessControl } from './SetAccessControl'
@@ -26,6 +26,7 @@ const chainId = useChainId()
 console.log('🔗 Connected Chain ID:', chainId)
 const litChain = chainIdToLitChain[chainId] ?? 'ethereum' // default fallback
 console.log('🔗 Lit Chain:', litChain)
+const { t } = useTranslation()
   useEffect(() => {
     console.table({
       walletConnected,
@@ -39,7 +40,7 @@ console.log('🔗 Lit Chain:', litChain)
   if (!fhirResource) {
     return (
       <InfoCard title="Missing FHIR Resource" type="error">
-        Please complete prior steps to define the resource.
+        {t('MissingFHIRResource')}
       </InfoCard>
     )
   }
@@ -47,25 +48,12 @@ console.log('🔗 Lit Chain:', litChain)
   const resourceType = fhirResource.resourceType
 
   if (['Organization', 'Practitioner'].includes(resourceType)) {
+    setEncryptionSkipped(true)
     return (
-      <InfoCard title="Encryption Not Required" type="warning">
+      <InfoCard title={t('EncryptionNotRequired')} type="warning">
         <p className="mb-4">
-          <strong>Note:</strong> {resourceType} records are <strong>not encrypted</strong>.
+          <strong>{t('Note')}:</strong>did:health {resourceType}s <strong>{t('areNotEncrypted')}</strong>.
         </p>
-        <p className="mb-4">
-          To control access, apply for DAO membership to participate in record governance.
-        </p>
-        <div className="space-y-2">
-          <button
-            className="btn btn-outline btn-warning"
-            onClick={() => {
-              setEncryptionSkipped(true)
-              console.log('✅ Skipped encryption for:', resourceType)
-            }}
-          >
-            Confirm No Encryption Required
-          </button>
-        </div>
       </InfoCard>
     )
   }
@@ -91,10 +79,6 @@ console.log('🔗 Lit Chain:', litChain)
         <p className="text-red-600 mt-4 text-sm font-medium">{shareError}</p>
       )}
 
-      <EncryptionStatus
-        skipped={encryptionSkipped}
-        conditions={accessControlConditions}
-      />
     </div>
   )
 }
@@ -114,31 +98,4 @@ function InfoCard({ title, type, children }: { title: string; type: 'error' | 'w
   )
 }
 
-function EncryptionStatus({
-  skipped,
-  conditions,
-}: {
-  skipped: boolean
-  conditions: any
-}) {
-  if (!skipped && !conditions) return null
-  return (
-    <div className="mt-6 p-4 bg-gray-100 border rounded text-sm text-gray-700">
-      {skipped ? (
-        <p>🔓 <strong>Encryption Skipped</strong> — this record will not be encrypted.</p>
-      ) : (
-        <>
-          <p>🔐 <strong>Encryption Enabled</strong> with the following access rules:</p>
-          <ul className="mt-2 list-disc pl-6">
-            {conditions?.map((cond: any, idx: number) => (
-              <li key={idx}>
-                <code>{cond.method}</code> on <strong>{cond.chain}</strong>{' '}
-                → <code>{cond.returnValueTest.comparator} {cond.returnValueTest.value}</code>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
-  )
-}
+

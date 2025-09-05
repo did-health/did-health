@@ -1,7 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 import { ConnectWallet } from './WalletConnectETH'
 import { ConnectLit } from '../lit/ConnectLit'
 import { SetupStorage } from '../SetupStorage'
@@ -16,6 +15,7 @@ import CreateDeviceForm from '../fhir/CreateDeviceForm'
 import CreatePatientForm from '../fhir/CreatePatientForm'
 import CreatePractitionerForm from '../fhir/CreatePractitionerForm'
 import CreateOrganizationForm from '../fhir/CreateOrganizationForm'
+
 type StepCardProps = {
   step: string
   title: string
@@ -32,16 +32,23 @@ export default function OnboardingEth() {
     fhirResource,
     did,
     accessControlConditions, // 
-    setDID,
+    setDid,
     encryptionSkipped, // <-- Add this line
     walletAddress, // <-- Add this line to get walletAddress from state
     setStorageReady,
   } = useOnboardingState()
 
-  console.log(did)
+  console.log('did', did)
+  console.log('walletConnected', walletConnected)
+  console.log('litConnected', litConnected)
+  console.log('storageReady', storageReady)
+  console.log('fhirResource', fhirResource)
+  console.log('accessControlConditions', accessControlConditions)
+  console.log('encryptionSkipped', encryptionSkipped)
+  console.log('walletAddress', walletAddress)
   const handleSubmit = async (updatedFHIR: any) => {
     console.log('💾 Submitting updated FHIR:', updatedFHIR)
-    useOnboardingState.getState().setFHIRResource(updatedFHIR)
+    useOnboardingState.getState().setFhirResource(updatedFHIR)
   }
   return (
     <main className="p-6 sm:p-10 max-w-3xl mx-auto text-gray-800 dark:text-white">
@@ -81,13 +88,13 @@ export default function OnboardingEth() {
         </StepCard>
 
         {walletConnected && (
-          <StepCard step="2" title={t('connectLit')}>
+ 
             <ConnectLit />
-          </StepCard>
+ 
         )}
 
         {walletConnected && litConnected && (
-          <StepCard step="3" title={t('setupStorage.title')}>
+          <StepCard step="2" title={t('setupStorage.title')}>
             <SetupStorage onReady={(client) => {
               setStorageReady(true)
               console.log('Storage setup complete:', client)
@@ -96,16 +103,12 @@ export default function OnboardingEth() {
         )}
 
         {walletConnected && litConnected && storageReady && !fhirResource && (
-          <StepCard step="4" title={t('createFHIR')}>
+          <StepCard step="3" title={t('createFHIR')}>
             <CreateDIDForm />
           </StepCard>
         )}
         {fhirResource && (
-          <StepCard step="4" title={t('fhirCreated')}>
-            <p className="text-green-600 dark:text-green-400 font-medium">
-              ✅ {t('created')} <strong>{fhirResource.resourceType}</strong>
-            </p>
-
+          <StepCard step="3" title={t('fhirCreated')}>
             <div className="mt-2">
               {(() => {
                 switch (fhirResource.resourceType) {
@@ -121,7 +124,7 @@ export default function OnboardingEth() {
                   default:
                     return (
                       <p className="text-sm text-red-500">
-                        ❌ Unsupported FHIR resource type: 
+                        ❌  {t('unsupportedFHIRResourceType')}
                       </p>
                     )
                 }
@@ -145,58 +148,37 @@ export default function OnboardingEth() {
           })
         }
 
-        {walletConnected && litConnected && storageReady && fhirResource && !accessControlConditions && !encryptionSkipped && (
-          <StepCard step="5" title={t('setAccessControl')}>
+        {walletConnected && litConnected && storageReady && fhirResource && (!accessControlConditions || accessControlConditions.length === 0) && !encryptionSkipped && (
+          <StepCard step="4" title={t('setAccessControl')}>
             <SetEncryption />
           </StepCard>
         )}
 
 
-        {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
-          <StepCard step="5" title="Access Control Configured">
+        {walletConnected && litConnected && storageReady && fhirResource && ((accessControlConditions && accessControlConditions.length > 0) || encryptionSkipped) && (
+          <StepCard step="4" title={t('AccessControlConditions')}>
             {encryptionSkipped ? (
-              <>
-                <p className="text-yellow-600 font-medium mb-4">⚠️ Encryption was skipped for this resource type.</p>
-                <button
-                  onClick={() => {
-                    useOnboardingState.getState().setEncryptionSkipped(false)
-                    useOnboardingState.getState().setAccessControlConditions(null)
-                  }}
-                  className="btn btn-outline btn-warning"
-                >
-                  🔄 Change Encryption Decision
-                </button>
-              </>
+              <></>
             ) : (
               <>
-                <p className="text-green-600 font-medium mb-2">✅ Access Control Conditions have been set.</p>
-                {accessControlConditions.map((cond: any, idx: number) => {
-                  const isSelfOnly =
+                <p className="text-green-600 font-medium mb-2">✅ {t('AccessControlConditionsSet')}</p>
+                {accessControlConditions && accessControlConditions.map((cond: any, idx: number) => {
+                  const isSelf =
                     cond.returnValueTest?.comparator === '=' &&
                     String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase();
 
                   return (
                     <div key={idx} className="bg-gray-100 rounded p-4 shadow">
-                      <p className="font-semibold text-gray-700 mb-1">Condition #{idx + 1}</p>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+
                         <div>
-                          <span className="font-medium text-gray-600">Chain:</span>{' '}
-                          {String(cond.chain ?? 'N/A')}
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Parameters:</span>{' '}
-                          {Array.isArray(cond.parameters)
-                            ? cond.parameters.map((p: unknown) => String(p)).join(', ')
-                            : 'N/A'}
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-600">Return Value Test:</span>
                           <div className="ml-2">
-                            Who Can View it:
-                            <br />
-                            {isSelfOnly && (
+                            <div>
+                           {cond.returnValueTest?.value.toLowerCase()}
+                            </div>
+                            {isSelf && (
                               <p className="mt-2 text-green-600 font-medium">
-                                ✅ Only viewable by <span className="underline">you</span>.
+                                ✅  {t('ViewableBy')} <span className="underline">{t('you')}</span>.
                               </p>
                             )}
                           </div>
@@ -208,11 +190,11 @@ export default function OnboardingEth() {
 
                 <button
                   onClick={() => {
-                    useOnboardingState.getState().setAccessControlConditions(null)
+                    useOnboardingState.getState().setAccessControlConditions([])
                   }}
-                  className="btn btn-outline btn-accent"
+                  className="btn btn-primary text-blue-600"
                 >
-                  🔄 Edit Access Control
+                  🔄 {t('editAccessControl')}
                 </button>
               </>
             )}
@@ -220,20 +202,22 @@ export default function OnboardingEth() {
         )}
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && !did && (
-          <StepCard step="6" title={t('chooseDID')}>
-            <SelectDIDFormETH onDIDAvailable={(did) => setDID(did)} />
+          <StepCard step="5" title={t('chooseDID')}>
+            <SelectDIDFormETH onDIDAvailable={(did) => setDid(did)} />
           </StepCard>
         )}
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
-          <StepCard step="6" title={t('chooseDID')}>
-            <div>
+          <StepCard step="5" title={t('chooseDID')}>
+            <div  className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
               <span>{did}</span>
               <button className="btn btn-ghost btn-xs" onClick={() => {
-                useOnboardingState.getState().setDID("")
+                useOnboardingState.getState().setDid("")
             }}>
-              Reset
-            </button>
+              {t('reset')}
+            </button></div>
+            <div>
               <button
                 type="button"
                 onClick={() => {
@@ -245,6 +229,7 @@ export default function OnboardingEth() {
               >
                 {t('selectBlockchain.checkDid')}
               </button>
+              </div>
             </div>
           </StepCard>
         )}
@@ -252,7 +237,7 @@ export default function OnboardingEth() {
 
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
-          <StepCard step="7" title={t('registerDID')}>
+          <StepCard step="6" title={t('registerDID')}>
             <RegisterDID />
           </StepCard>
         )}
@@ -263,11 +248,12 @@ export default function OnboardingEth() {
 }
 
 export function StepCard({ step, title, children }: StepCardProps) {
+  const { t } = useTranslation()
   return (
     <section className="relative bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-8 transition-transform hover:scale-[1.01] hover:shadow-2xl group">
       <div className="absolute -top-5 left-6">
         <div className="bg-blue-600 dark:bg-blue-400 text-white dark:text-gray-900 text-xs font-bold px-3 py-1 rounded-full shadow-md tracking-wider uppercase">
-          Step {step}
+          {t('step')} {step}
         </div>
       </div>
 

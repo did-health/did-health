@@ -7,10 +7,15 @@ import { generateQRCode } from '../../lib/QRCodeGeneration'
 import { getLitDecryptedFHIR } from '../../lib/litSessionSigs'
 import { resolveDidHealth, resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
 import FHIRResource from '../fhir/FHIRResourceView'
+import { DownloadFhirButton } from '../buttons/DownloadFhirButton'
+import { SaveFhirButton } from '../buttons/SaveFhirButton'
 import logo from '../../assets/did-health.png'
+import ethlogo from '../../assets/ethereum-eth-logo.svg'
+import { useTranslation } from 'react-i18next'
 import { DAOStatus } from '../dao/DAOStatus'
 
 export default function ResolveDIDETH() {
+  const { t } = useTranslation();
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -21,7 +26,7 @@ export default function ResolveDIDETH() {
       setStatus('❌ Failed to copy DID');
     }
   };
-  const { litClient, litConnected } = useOnboardingState()
+  const { litConnected, litClient, chainId } = useOnboardingState()
   const { address: connectedWalletAddress, isConnected } = useAccount()
 
   const [status, setStatus] = useState('')
@@ -54,9 +59,15 @@ export default function ResolveDIDETH() {
 
   const handleResolve = async () => {
     try {
+      if (!connectedWalletAddress) {
+        setStatus('❌ Please connect your wallet first')
+        return
+      }
+
+
       // Only resolve if we don't already have a DID
       if (didDoc?.id) {
-        setStatus('✅ DID already resolved')
+        setStatus('❌ ' + t('didAlreadyExists'))
         return
       }
 
@@ -68,22 +79,24 @@ export default function ResolveDIDETH() {
       setDidFHIRResources([])
   
       if (!isConnected || !connectedWalletAddress) {
-        setStatus('❌ Wallet not connected')
+        setStatus('❌ ' + t('walletNotConnected'))
         return
       }
 
-      // Only try to resolve on the main chain (Sepolia)
-      const chainId = 11155111 // Sepolia
       try {
+        if (!chainId) {
+          setStatus('❌ ' + t('noChainId'))
+          return
+        }
         const result = await resolveDidHealth(chainId, connectedWalletAddress)
         if (!result) {
-          setStatus('❌ No DID found on supported chains')
+          setStatus('❌ ' + t('noDIDFound'))
           return
         }
         const { doc, chainName } = result
         setResolvedChainName(chainName)
         setDidDoc(doc)
-        setStatus('✅ DID resolved!')
+        setStatus('✅ ' + t('didResolved'))
 
   
         // Generate QR code
@@ -96,7 +109,7 @@ export default function ResolveDIDETH() {
         ) || []
   
         if (fhirServices.length === 0) {
-          setStatus('✅ DID resolved, but no FHIR resources found')
+          setStatus('✅ ' + t('noFHIRResourcesFound'))
         }
   
         setDidFHIRResources(fhirServices)
@@ -114,24 +127,28 @@ export default function ResolveDIDETH() {
         const json = await response.json()
         console.log('****************' + JSON.stringify(json))
         if (isEncrypted) {
-          setStatus('🔐 Decrypting with Lit Protocol...')
+          if (!litClient) {
+            setStatus('❌ Lit client not connected. Please ensure you are connected to the Lit network.')
+            return
+          }
           try {
             const accChain = json.accessControlConditions?.[0]?.chain || 'ethereum'
+            console.log('Decrypting with Lit client...')
             const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
             setFhir(decrypted)
             setStatus('✅ Decrypted FHIR resource loaded!')
           } catch (decryptErr) {
             console.error('❌ Decryption error:', decryptErr)
-            setStatus('❌ Failed to decrypt FHIR resource')
+            setStatus(`❌ Failed to decrypt FHIR resource: ${decryptErr instanceof Error ? decryptErr.message : 'Unknown error'}`)
           }
         } else {
           setFhir(json)
-          setStatus('✅ Plaintext FHIR resource loaded!')
+          setStatus('✅ ' + t('fhirResourceLoaded'))
         }
   
       } catch (err) {
         if (err instanceof Error && err.message.includes('No DID found for address')) {
-          setStatus('❌ No DID found on supported chains')
+          setStatus('❌ ' + t('noDIDFound'))
           return
         }
         throw err
@@ -146,26 +163,45 @@ export default function ResolveDIDETH() {
 
   useEffect(() => {
     // Only resolve if we have a wallet connection and no existing DID
-    if (isConnected && connectedWalletAddress && !didDoc?.id) {
+    if (isConnected && connectedWalletAddress && !didDoc?.id && litClient) {
       handleResolve()
+    } else if (isConnected && connectedWalletAddress && !litClient) {
+      setStatus('🔌 Connecting to Lit Network...')
     }
-  }, [isConnected, connectedWalletAddress])
+  }, [isConnected, connectedWalletAddress, litClient, litConnected])
 
   return (
     <main className="p-6 space-y-6 max-w-xl mx-auto">
+
       <div className="flex flex-col items-center mb-6">
-        <div className="w-32 h-32 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
-          <img src={logo} alt="DID Health Logo" className="w-full h-full object-contain" />
+        <div className="flex items-center gap-4 mb-6">
+          {/* DID:Health Logo */}
+          <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-red-400/40 hover:scale-105 transition-transform duration-300">
+            <img
+              src={logo}
+              alt="did:health Logo"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div>+</div>
+          {/* Chain Logo */}
+          <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-yellow-400/30 hover:rotate-6 hover:scale-110 transition-all duration-300">
+            <img
+              src={ethlogo} // Replace with actual path to Ethereum logo
+              alt={`eth logo`}
+              className="w-full h-full object-contain"
+            />
+          </div>
         </div>
         {didDoc?.id && (
           <div className="mt-4">
             <a href={`/ethereum/did/update?did=${didDoc.id}`} className="btn-primary w-full">
-              🔄 Update DID
+              🔄 {t('common.update')} did:health
             </a>
           </div>
         )}
         <h1 className="text-2xl font-bold mt-4 text-center">
-          🔎 View Your <span className="text-green-600 dark:text-green-400">did:health</span> Identifier
+          🔎 <span className="text-green-600 dark:text-green-400">{t('viewYourDID')}</span>
         </h1>
       </div>
 
@@ -180,7 +216,7 @@ export default function ResolveDIDETH() {
             onClick={() => (window.location.href = '/')}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
           >
-            Create a did:health Identifier
+            {t('createDID')}
           </button>
         </div>
       )}
@@ -189,9 +225,9 @@ export default function ResolveDIDETH() {
         <>
           <div className="flex items-center gap-4 mt-4">
             <div className="flex-1">
-              <p className="font-semibold">Resolved DID:</p>
+              <p className="font-semibold">{t('resolvedDID')}</p>
               <code className="block p-2 bg-gray-100 rounded whitespace-pre-wrap break-all max-w-full">{didDoc.id}</code>
-              <p className="text-sm text-gray-500 mt-1">🧠 Found on: {resolvedChainName}</p>
+              <p className="text-sm text-gray-500 mt-1">🧠 {t('foundOn')}: {resolvedChainName}</p>
             </div>
             <button 
               onClick={() => copyToClipboard(didDoc.id)}
@@ -206,26 +242,26 @@ export default function ResolveDIDETH() {
 
           {qrCode && (
             <div className="mt-4">
-              <h2 className="text-lg font-semibold">DID Document QR Code</h2>
+              <h2 className="text-lg font-semibold">did:health QR Code</h2>
               <img src={qrCode} alt="QR Code" width={300} height={300} />
             </div>
           )}
 
           <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[400px]">
-            <h2 className="text-lg font-semibold mb-4">📄 Resolved DID Document</h2>
+            <h2 className="text-lg font-semibold mb-4">📄 {t('resolvedDID')}</h2>
             <div className="grid gap-y-2 text-gray-800">
-              <div><span className="font-medium text-gray-600">DID:</span> <code className="bg-white px-2 py-1 rounded">{didDoc.id}</code></div>
-              <div><span className="font-medium text-gray-600">Wallet Address:</span> <code className="bg-white px-2 py-1 rounded">{didDoc.controller}</code></div>
+              <div><span className="font-medium text-gray-600">{t('resolvedDID')}:</span> <code className="bg-white px-2 py-1 rounded">{didDoc.id}</code></div>
+              <div><span className="font-medium text-gray-600">{t('walletAddress')}:</span> <code className="bg-white px-2 py-1 rounded">{didDoc.controller}</code></div>
 
               {didDoc?.service?.length > 0 && (
                 <div>
-                  <span className="font-medium text-gray-600">Service Endpoints:</span>
+                  <span className="font-medium text-gray-600">{t('serviceEndpoints')}:</span>
                   <ul className="list-disc list-inside mt-1 ml-2">
                     {didDoc.service.map((svc: any, idx: number) => (
                       <li key={idx}>
                         <span className="font-semibold">{svc.type}:</span>{' '}
                         <a href={svc.serviceEndpoint} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-words">
-                          🔥 View FHIR Resource
+                          🔥 {t('yourHealthRecord') }
                         </a>
                       </li>
                     ))}
@@ -235,7 +271,7 @@ export default function ResolveDIDETH() {
 
               {didDoc.credentials && (
                 <div>
-                  <span className="font-medium text-gray-600">Credentials:</span>
+                  <span className="font-medium text-gray-600">{t('credentials')}:</span>
                   <ul className="list-disc list-inside ml-2 mt-1">
                     {Object.entries(didDoc.credentials).map(([key, val]) => (
                       <li key={key}>
@@ -259,7 +295,7 @@ export default function ResolveDIDETH() {
 
           {accessControlConditions?.length > 0 && (
             <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[400px]">
-              <h2 className="text-lg font-semibold mb-4">🔐 Access Control Conditions</h2>
+              <h2 className="text-lg font-semibold mb-4">🔐 {t('AccessControlConditions')}</h2>
               {accessControlConditions.map((cond: any, idx: number) => {
                 const isSelfOnly =
                   cond?.returnValueTest?.comparator === '=' &&
@@ -288,15 +324,26 @@ export default function ResolveDIDETH() {
             </div>
           )}
 
-          {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && connectedWalletAddress && (
-            <div className="mt-6 text-center">
-              <DAOStatus walletAddress={connectedWalletAddress} did={didDoc?.id ?? ''} />
-            </div>
-          )}
+
 
           {fhir && (
             <div className="bg-gray-100 p-4 rounded mt-6 text-sm overflow-auto max-h-[600px]">
-              <h2 className="text-lg font-semibold mb-2">🧾 FHIR Resource</h2>
+              <div className="mb-2">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-lg font-semibold">
+                    {t('yourHealthRecord')}
+                  </h2>
+                  <div className="flex space-x-2">
+                    <SaveFhirButton 
+                      fhirResource={fhir} 
+                      className="bg-green-600 hover:bg-green-700"
+                      onSave={() => alert('FHIR resource saved successfully!')}
+                      onError={(error) => alert(`Error saving FHIR resource: ${error.message}`)}
+                    />
+                    <DownloadFhirButton fhirResource={fhir} />
+                  </div>
+                </div>
+              </div>
               <FHIRResource resource={fhir} />
               <pre className="mt-4 bg-white p-2 rounded text-xs overflow-x-auto">
                 <code>{JSON.stringify(fhir, null, 2)}</code>
@@ -304,26 +351,9 @@ export default function ResolveDIDETH() {
             </div>
           )}
 
-          {didFHIRResources.length > 0 && (
-            <div className="bg-gray-100 p-4 rounded mt-6 text-sm">
-              <h2 className="text-lg font-semibold mb-2">🌐 Alternate FHIR Resources</h2>
-              {didFHIRResources.map(({ uri, resource, error }, idx) => (
-                <div key={idx} className="bg-white rounded border border-gray-200 mb-4 p-4 shadow-sm">
-                  <p className="text-sm mb-2 break-all">
-                    🔗 <a href={uri} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{uri}</a>
-                  </p>
-                  {error ? (
-                    <p className="text-red-500">❌ Failed to load: {error}</p>
-                  ) : (
-                    <>
-                      <FHIRResource resource={resource} />
-                      <pre className="mt-4 bg-gray-50 p-2 rounded text-xs overflow-x-auto">
-                        <code>{JSON.stringify(resource, null, 2)}</code>
-                      </pre>
-                    </>
-                  )}
-                </div>
-              ))}
+          {fhir && (fhir.resourceType === 'Practitioner' || fhir.resourceType === 'Organization') && connectedWalletAddress && (
+            <div className="mt-6 text-center">
+              <DAOStatus walletAddress={connectedWalletAddress} />
             </div>
           )}
         </>

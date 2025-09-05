@@ -7,6 +7,7 @@ import { useOnboardingState } from '../../store/OnboardingState'
 import logo from '../../assets/did-health.png'
 import Webcam from 'react-webcam'
 import { useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface CreatePatientFormProps {
   defaultValues: Patient
@@ -15,20 +16,23 @@ interface CreatePatientFormProps {
 
 const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
-  const { fhirResource, setFHIRResource } = useOnboardingState()
+  const { fhirResource, setFhirResource } = useOnboardingState()
   const webcamRef = useRef<Webcam | null>(null)
   const [patient, setPatient] = useState<Patient>(defaultValues)
   const [showCamera, setShowCamera] = useState(false)
   const [status, setStatus] = useState<string>('')
-
+  const { t } = useTranslation(['fhir'])
+  const { t: t2 } = useTranslation()
 
   useEffect(() => {
-    if (fhirResource?.resourceType === 'Patient') {
-      setPatient(fhirResource as Patient)
-    } else {
-      setPatient({
-        resourceType: 'Patient',
-      })
+    if (!patient) {
+      if (fhirResource?.resourceType === 'Patient') {
+        setPatient(fhirResource as Patient)
+      } else {
+        setPatient({
+          resourceType: 'Patient',
+        })
+      }
     }
   }, [fhirResource])
 
@@ -59,7 +63,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
       updatedPatient.id = uuidv4()
     }
     // Update the FHIR resource in Zustand
-    setFHIRResource(updatedPatient)
+    setFhirResource(updatedPatient)
     // Call the parent's onSubmit handler with the updated data
     onSubmit(updatedPatient)
     setStatus('✅ FHIR updated successfully')
@@ -80,35 +84,26 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
   return (
     <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-background">
       <div className="w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg p-6">
-        <div className="flex justify-center items-center h-24 mb-6">
-          <div className="w-24 h-24 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-2 ring-green-400/50">
-            <img
-              src={logo}
-              alt="did:health Logo"
-              className="w-full h-full object-contain scale-110 transition-transform duration-300 hover:scale-125"
-            />
-          </div>
-        </div>
         <div className="space-y-4">
           {status && <p className="text-sm text-gray-600 mb-4">{status}</p>}
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
-            🧬 {patient?.id ? 'Edit' : 'Create'} did:health Patient Record
+            🧬 did:health {t('Patient.label')} 
           </h2>
 
   {/* Demographics */}
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">First Name</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('HumanName.given.label')}</label>
       <input name="name.0.given.0" value={patient?.name?.[0]?.given?.[0] || ''} onChange={handleInputChange} className="input input-bordered w-full" />
     </div>
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Last Name</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('HumanName.family.label')}</label>
       <input name="name.0.family" value={patient?.name?.[0]?.family || ''} onChange={handleInputChange} className="input input-bordered w-full" />
     </div>
 {/* Patient Photo (Webcam or Preview) */}
 <div className="space-y-2">
   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 block">
-    Patient Photo
+    {t('Patient.photo.label')}
   </label>
 
   {/* Existing Photo */}
@@ -171,7 +166,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
 
 
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Gender</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Patient.gender.label')}</label>
       <select name="gender" value={patient?.gender || ''} onChange={handleInputChange} className="input input-bordered w-full">
         <option value="">Select...</option>
         <option value="male">Male</option>
@@ -181,7 +176,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
       </select>
     </div>
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Birth Date</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Patient.birthDate.label')}</label>
       <input type="date" name="birthDate" value={patient?.birthDate || ''} onChange={handleInputChange} className="input input-bordered w-full" />
     </div>
   </div>
@@ -189,31 +184,31 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
   {/* Contact Info */}
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Phone</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.phone.label')}</label>
       <input name="telecom.1.value" value={patient?.telecom?.[1]?.value || ''} onChange={handleInputChange} className="input input-bordered w-full" />
     </div>
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Email</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.email.label')}</label>
       <input name="telecom.2.value" value={patient?.telecom?.[2]?.value || ''} onChange={handleInputChange} className="input input-bordered w-full" />
     </div>
   </div>
 
   {/* Address */}
   <div>
-    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Address</label>
+    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Address.label')}</label>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <input name="address.0.line.0" placeholder="Street" value={patient?.address?.[0]?.line?.[0] || ''} onChange={handleInputChange} className="input input-bordered w-full" />
-      <input name="address.0.city" placeholder="City" value={patient?.address?.[0]?.city || ''} onChange={handleInputChange} className="input input-bordered w-full" />
-      <input name="address.0.state" placeholder="State" value={patient?.address?.[0]?.state || ''} onChange={handleInputChange} className="input input-bordered w-full" />
-      <input name="address.0.postalCode" placeholder="Postal Code" value={patient?.address?.[0]?.postalCode || ''} onChange={handleInputChange} className="input input-bordered w-full" />
-      <input name="address.0.country" placeholder="Country" value={patient?.address?.[0]?.country || ''} onChange={handleInputChange} className="input input-bordered w-full" />
+      <input name="address.0.line.0" placeholder= {t('Address.line.label')} value={patient?.address?.[0]?.line?.[0] || ''} onChange={handleInputChange} className="input input-bordered w-full" />
+      <input name="address.0.city" placeholder={  t('Address.city.label')} value={patient?.address?.[0]?.city || ''} onChange={handleInputChange} className="input input-bordered w-full" />
+      <input name="address.0.state" placeholder={t('Address.state.label')} value={patient?.address?.[0]?.state || ''} onChange={handleInputChange} className="input input-bordered w-full" />
+      <input name="address.0.postalCode" placeholder={t('Address.postalCode.label')} value={patient?.address?.[0]?.postalCode || ''} onChange={handleInputChange} className="input input-bordered w-full" />
+      <input name="address.0.country" placeholder={t('Address.country.label')} value={patient?.address?.[0]?.country || ''} onChange={handleInputChange} className="input input-bordered w-full" />
     </div>
   </div>
 
   {/* Identifiers */}
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Identifier Type</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Patient.Identifier.label')}</label>
       <select name="identifier.1.type.coding.0.code" value={patient?.identifier?.[1]?.type?.coding?.[0]?.code || ''} onChange={handleInputChange} className="input input-bordered w-full">
         <option value="">Select...</option>
         <option value="DL">Driver License</option>
@@ -230,7 +225,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
   {/* Other Fields */}
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Marital Status</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Patient.maritalStatus.label')}</label>
       <select name="maritalStatus.coding.0.code" value={patient?.maritalStatus?.coding?.[0]?.code || ''} onChange={handleInputChange} className="input input-bordered w-full">
         <option value="">Select...</option>
         <option value="M">Married</option>
@@ -241,7 +236,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
       </select>
     </div>
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Multiple Birth</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Patient.multipleBirth[x].label')}</label>
       <select name="multipleBirthBoolean" value={patient?.multipleBirthBoolean ? 'true' : 'false'} onChange={handleInputChange} className="input input-bordered w-full">
         <option value="false">No</option>
         <option value="true">Yes</option>
@@ -251,11 +246,11 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
 
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Preferred Language</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Patient.language.label')}</label>
       <input name="communication.0.language.coding.0.code" value={patient?.communication?.[0]?.language?.coding?.[0]?.code || ''} onChange={handleInputChange} className="input input-bordered w-full" placeholder="e.g. en, es, fr" />
     </div>
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Birth Sex</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Patient.gender.label')}</label>
       <select name="extension.2.valueCode" value={patient?.extension?.[2]?.valueCode || ''} onChange={handleInputChange} className="input input-bordered w-full">
         <option value="">Select...</option>
         <option value="M">Male</option>
@@ -267,7 +262,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
 
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Race</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Population.race.label')}</label>
       <select name="extension.0.extension.0.valueCoding.code" value={patient?.extension?.[0]?.extension?.[0]?.valueCoding?.code || ''} onChange={handleInputChange} className="input input-bordered w-full">
         <option value="">Select Race</option>
         <option value="1002-5">American Indian or Alaska Native</option>
@@ -279,7 +274,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
       </select>
     </div>
     <div>
-      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Ethnicity</label>
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Population.ethnicity.label')}</label>
       <select name="extension.1.extension.0.valueCoding.code" value={patient?.extension?.[1]?.extension?.[0]?.valueCoding?.code || ''} onChange={handleInputChange} className="input input-bordered w-full">
         <option value="">Select Ethnicity</option>
         <option value="2135-2">Hispanic or Latino</option>
@@ -294,7 +289,7 @@ const CreatePatientForm: React.FC<CreatePatientFormProps> = ({ defaultValues, on
               onClick={updatePatient}
               className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              {patient.id ? '💾 Update Patient' : '✅ Save Patient Record'}
+              {patient.id ? t2('common.update') : t2('common.create')} {t('Patient.label')}
             </button>
   </div>
 </div>

@@ -191,8 +191,9 @@ export const renderElement = ({
     structureDefs,
     onLoadExtensionDef,
     resolveDefinitionUrl: resolveDefUrl,
-    followReferences
-}: FHIRRendererProps): React.ReactNode => {
+    followReferences,
+    t
+}: FHIRRendererProps & { t: (key: string) => string }): React.ReactNode => {
 
     const resolveUrl = resolveDefUrl || resolveDefinitionUrl;
     followReferences = followReferences ?? true;
@@ -207,7 +208,7 @@ export const renderElement = ({
     const referenceObj = extractFirstReference(value);
 
     if (referenceObj && referenceObj.reference) {
-        return renderArrayOfObjects([referenceObj], followReferences);
+        return renderArrayOfObjects([referenceObj], followReferences, t);
     }
 
     // Handle arrays
@@ -227,32 +228,32 @@ export const renderElement = ({
 
         // Case 1: "contained" resources
         if (value.some(v => v?.resourceType)) {
-            return renderContainedResources(value);
+            return renderContainedResources(value, t);
         }
 
         // Case 2: "name" data structures
         if (value.some(v => typeof v === 'object' && (v?.family || (v?.given && Array.isArray(v.given))))) {
-            return renderHumanNameValues(value);
+            return renderHumanNameValues(value, t);
         }
 
         // Case 3: "maritalStatus" and other CodeableConcept structures
         if (value.some(v => typeof v === 'object' && v?.coding && Array.isArray(v.coding))) {
-            return renderCodeableConceptValues(value);
+            return renderCodeableConceptValues(value, t);
         }
 
         // Case 4: "language" data structures
         if (value.some(v => typeof v === 'object' && v?.language?.coding)) {
-            return renderLanguageValues(value);
+            return renderLanguageValues(value, t);
         }
 
         // Case 5: "address" data structures
         if (value.some(v => typeof v === 'object' && (v?.line || (v?.city && v?.state)))) {
-            return renderAddressValues(value);
+            return renderAddressValues(value, t);
         }
 
         // Case 6: "identifier" and "telecom" data structures
         if (value.some(v => typeof v === 'object' && (v?.system || v?.use || v?.type))) {
-            return renderIdentifierAndTelecom(value);
+            return renderIdentifierAndTelecom(value, t);
         }
 
         // Case 8: "extension" values and simple primitives
@@ -261,8 +262,9 @@ export const renderElement = ({
                 defUrl,
                 structureDefs,
                 onLoadExtensionDef,
-                resolveDefinitionUrl: resolveUrl
-            }, renderElement);
+                resolveDefinitionUrl: resolveUrl,
+                t
+            }, renderElement, t);
         }
 
         // Default case: Use the existing array object renderer
@@ -279,7 +281,7 @@ export const renderElement = ({
 
     // Handle non-array CodeableConcept (single object)
     if (typeof value === 'object' && value !== null && value.coding && Array.isArray(value.coding)) {
-        return renderCodeableConceptValues(value);
+        return renderCodeableConceptValues(value, t);
     }
 
     // Handle single objects
@@ -294,50 +296,12 @@ export const renderElement = ({
             (value[key]?.text || (value[key]?.coding && Array.isArray(value[key].coding)))
         );
 
-        // Hospitalization type
-        if (hasTextOrCodingProps && !value.url && !value.resourceType) {
-            return (
-                <div>
-                    {Object.keys(value).map((key, index) => {
-                        const item = value[key];
-
-                        // Handle text property
-                        if (item?.text) {
-                            return (
-                                <div key={index}>
-                                    <strong>{key.charAt(0).toUpperCase() + key.slice(1)}</strong>: {item.text}
-                                </div>
-                            );
-                        }
-
-                        // Handle coding array
-                        if (item?.coding && Array.isArray(item.coding) && item.coding[0]?.display) {
-                            return (
-                                <div key={index}>
-                                    <strong>{key.charAt(0).toUpperCase() + key.slice(1)}</strong>: {item.coding[0].display}
-                                </div>
-                            );
-                        }
-
-                        return null;
-                    }).filter(Boolean)}
-                </div>
-            );
-        }
-
-        // Handle serviceProvider reference
-        if (path === 'serviceProvider' && value.display) {
-            return <span>{value.display}</span>;
-        }
-
-        // Handle FHIR Extensions
-        if (value.url && (
-            value.valueString ||
+        if (
             value.valueCode ||
             value.valueCoding ||
             value.valueBoolean ||
             value.extension
-        )) {
+        ) {
             const extUrl = value.url;
             const extDef = structureDefs[extUrl];
 
@@ -376,6 +340,48 @@ export const renderElement = ({
 
                     if (subValue === undefined) return null;
 
+                    if (Array.isArray(subValue)) {
+                        if (subValue.length === 0) {
+                            return <span className="text-gray-500">(empty array)</span>;
+                        }
+
+                        if (subValue.some((item: any) => item?.reference)) {
+                            return renderContainedResources(subValue, t);
+                        }
+
+                        if (subValue.some((item: any) => item?.system && item?.value)) {
+                            return renderIdentifierAndTelecom(subValue, t);
+                        }
+
+                        if (subValue.some((item: any) => item?.coding)) {
+                            return renderCodeableConceptValues(subValue, t);
+                        }
+
+                        if (subValue.some((item: any) => item?.address)) {
+                            return renderAddressValues(subValue, t);
+                        }
+
+                        if (subValue.some((item: any) => item?.name)) {
+                            return renderHumanNameValues(subValue, t);
+                        }
+
+                        if (subValue.some((item: any) => item?.language)) {
+                            return renderLanguageValues(subValue, t);
+                        }
+
+                        if (subValue.some((item: any) => item?.extension)) {
+                            return renderExtensionValues(subValue, subPath, {
+                                defUrl: typeUrl,
+                                structureDefs,
+                                onLoadExtensionDef,
+                                resolveDefinitionUrl: resolveUrl,
+                                t
+                            }, renderElement, t);
+                        }
+
+                        return renderArrayOfObjects(subValue, followReferences, t);
+                    }
+
                     return (
                         <div key={idx}>
                             <strong>{subPath}</strong>: {renderElement({
@@ -385,7 +391,8 @@ export const renderElement = ({
                                 structureDefs,
                                 onLoadExtensionDef,
                                 resolveDefinitionUrl: resolveUrl,
-                                followReferences
+                                followReferences,
+                                t
                             })}
                         </div>
                     );

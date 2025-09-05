@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useDAOOnboardingState } from '../../store/DAOOnboardingState'
+import type { PractitionerQualificationWithSpecialty } from '../../types/fhir'
 import { resolveDidHealthAcrossChains } from '../../lib/DIDDocument'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { applyToDAO } from '../../lib/DAOContract'
@@ -48,7 +49,7 @@ export default function OnboardingDAO() {
 
       setDid(doc.id)
       const fhirService = doc?.service?.find(
-        (s: any) => s.type === 'FHIRResource' || s.id?.includes('#fhir')
+        (s: any) => s.id?.includes('#fhir')
       )
       if (!fhirService?.serviceEndpoint) throw new Error('❌ No FHIR endpoint in DID document')
 
@@ -99,14 +100,34 @@ const handleApply = async () => {
     const daoContract = new ethers.Contract(daoAddress, daoAbi, signer)
     console.log('DAO Contract:', daoContract)
 
-    const role = 'member'
-    const orgName =
-      Array.isArray(fhirResource?.name) && typeof fhirResource.name[0] === 'object' && 'text' in fhirResource.name[0]
-        ? fhirResource.name[0].text
-        : typeof fhirResource?.name === 'string'
-        ? fhirResource.name
-        : 'unknown'
+    let orgName = 'unknown'
+    let role = 'member'
+    
+    if (fhirResource?.resourceType === 'Organization') {
+      if (typeof fhirResource.name === 'string') {
+        orgName = fhirResource.name
+      }
+    } else if (fhirResource?.resourceType === 'Practitioner') {
+      if (Array.isArray(fhirResource.name)) {
+        const nameObj = fhirResource.name[0]
+        if (nameObj) {
+          const given = Array.isArray(nameObj.given) ? nameObj.given.join(' ') : nameObj.given || ''
+          const family = nameObj.family || ''
+          orgName = `${given} ${family}`.trim() || 'unknown'
+          role = 'member'
+        }
+      }
+    
+      const qualification = fhirResource.qualification?.[0] as PractitionerQualificationWithSpecialty
+      const specialty = qualification?.specialty?.[0]?.text
+      if (typeof specialty === 'string') {
+        role = specialty
+      }
+    }
+    
 
+        console.log('Role:', role)
+        console.log('Org Name:', orgName)
     const ipfsUri = serviceEndpoint
     console.log('IPFS URI:', ipfsUri)
 

@@ -5,7 +5,6 @@ import { ConnectLit } from '../lit/ConnectLit'
 import { useOnboardingState } from '../../store/OnboardingState'
 import { SetupStorage } from '../SetupStorage'
 import { CreateDIDForm } from '../fhir/CreateDIDType'
-
 import RegisterDIDBTC from './RegisterDIDBTC'
 import { SetEncryption } from '../lit/SetEncryption'
 import CreatePatientForm from '../fhir/CreatePatientForm'
@@ -17,46 +16,13 @@ import btclogo from '../../assets/bitcoin-btc-logo.svg'
 import type { Patient, Practitioner, Organization, Device } from 'fhir/r4'
 
 type FHIRResource = Patient | Practitioner | Organization | Device
-
-type OnboardingState = {
-  walletConnected: boolean
-  walletAddress: string | null
-  litConnected: boolean
-  storageReady: boolean
-  fhirResource: FHIRResource | null
-  did: string | null
-  litClient: any | null
-  email: string | null
-  web3SpaceDid: string | null
-  sessionSigs?: any | null
-  accessControlConditions: any | null
-  encryptionSkipped: boolean
-  ipfsUri: string | null
-  chainId: number | string | null
-  w3upClient: any | null
-
-  setWalletConnected: (value: boolean) => void
-  setWalletAddress: (address: string) => void
-  setLitConnected: (value: boolean) => void
-  setStorageReady: (value: boolean) => void
-  setFHIRResource: (resource: FHIRResource) => void
-  setDID: (did: string) => void
-  setLitClient: (client: any) => void
-  setEmail: (email: string) => void
-  setWeb3SpaceDid: (did: string) => void
-  setAccessControlConditions: (value: any) => void
-  setEncryptionSkipped: (value: boolean) => void
-  setIpfsUri: (uri: string | null) => void
-  setChainId: (chainId: number | string | null) => void
-  setW3upClient: (client: any) => void
-}
 type StepCardProps = {
   step: string
   title: string
   children: React.ReactNode
 }
 
-export default function OnboardingEth() {
+export default function OnboardingBTC() {
   const { t } = useTranslation()
 
   const {
@@ -64,17 +30,18 @@ export default function OnboardingEth() {
     litConnected,
     storageReady,
     fhirResource,
-    did,
     accessControlConditions,
+    setW3upClient,
+    did,
     encryptionSkipped,
     walletAddress,
-    setFHIRResource,
-    setW3upClient
-  } = useOnboardingState() as OnboardingState
+    setFhirResource,
+    setStorageReady,
+  } = useOnboardingState()
 
   const handleSubmit = async (updatedFHIR: any) => {
     console.log('💾 Submitting updated FHIR:', updatedFHIR)
-    setFHIRResource(updatedFHIR)
+    setFhirResource(updatedFHIR)
   }
 
   return (
@@ -120,31 +87,26 @@ export default function OnboardingEth() {
         </StepCard>
 
         {walletConnected && (
-          <StepCard step="2" title={t('connectLit')}>
             <ConnectLit />
-          </StepCard>
         )}
 
-        {walletConnected && litConnected && (
-          <StepCard step="3" title={t('setupStorage')}>
-            <SetupStorage onReady={(client) => setW3upClient(client)} />
-          </StepCard>
-        )}
+            {walletConnected && litConnected && (
+               <StepCard step="2" title={t('setupStorage.title')}>
+                 <SetupStorage onReady={(client) => {
+                   setStorageReady(true)
+                   console.log('Storage setup complete:', client)
+                 }} />
+               </StepCard>
+             )}
 
         {walletConnected && litConnected && storageReady && !fhirResource && (
-          <StepCard step="4" title={t('createFHIR')}>
-            <CreateDIDForm onSubmit={function (_resource: Patient | Practitioner | Organization | Device): void {
-              throw new Error('Function not implemented.')
-            } } />
+          <StepCard step="3" title={t('createFHIR')}>
+            <CreateDIDForm />
           </StepCard>
         )}
 
         {fhirResource && (
-          <StepCard step="4" title={t('fhirCreated')}>
-            <p className="text-green-600 dark:text-green-400 font-medium">
-              ✅ {t('created')} <strong>{fhirResource.resourceType}</strong>
-            </p>
-            <div className="mt-2">
+          <StepCard step="3" title={t('fhirCreated')}>
               {(() => {
                 if (!fhirResource) {
                   return null
@@ -161,7 +123,7 @@ export default function OnboardingEth() {
                 if (!isFHIRResource(fhirResource)) {
                   return (
                     <p className="text-sm text-red-500">
-                      ❌ Unsupported FHIR resource type
+                      ❌ {t('unsupportedFHIRResourceType')}
                     </p>
                   )
                 }
@@ -179,60 +141,49 @@ export default function OnboardingEth() {
                     return null
                 }
               })()}
-            </div>
           </StepCard>
         )}
 
         {walletConnected && litConnected && storageReady && fhirResource && !accessControlConditions && !encryptionSkipped && (
-          <StepCard step="5" title={t('setAccessControl')}>
+          <StepCard step="4" title={t('setAccessControl')}>
             <SetEncryption />
           </StepCard>
         )}
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
-          <StepCard step="5" title="Access Control Configured">
+          <StepCard step="4" title={t('AccessControlConditions')}>
             {encryptionSkipped ? (
               <>
-                <p className="text-yellow-600 font-medium mb-4">⚠️ Encryption was skipped for this resource type.</p>
-                <button
-                  onClick={() => {
-                    useOnboardingState.getState().setEncryptionSkipped(false)
-                    useOnboardingState.getState().setAccessControlConditions(null)
-                  }}
-                  className="btn btn-outline btn-warning"
-                >
-                  🔄 Change Encryption Decision
-                </button>
+                <p className="text-yellow-600 font-medium mb-4">⚠️ {t('encryptionSkipped')}</p>
               </>
             ) : (
               <>
-                <p className="text-green-600 font-medium mb-2">✅ Access Control Conditions have been set.</p>
-                {accessControlConditions.map((cond: any, idx: number) => {
+                <p className="text-green-600 font-medium mb-2">✅ {t('AccessControlConditionsSet')}</p>
+                {(accessControlConditions ?? []).map((cond: any, idx: number) => {
                   const isSelfOnly =
                     cond.returnValueTest?.comparator === '=' &&
                     String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase()
 
                   return (
                     <div key={idx} className="bg-gray-100 rounded p-4 shadow">
-                      <p className="font-semibold text-gray-700 mb-1">Condition #{idx + 1}</p>
+                      <p className="font-semibold text-gray-700 mb-1">{t('condition')} #{idx + 1}</p>
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                         <div>
-                          <span className="font-medium text-gray-600">Chain:</span> {String(cond.chain ?? 'N/A')}
+                          <span className="font-medium text-gray-600">{t('chain')}:</span> {String(cond.chain ?? 'N/A')}
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Parameters:</span> {
+                          <span className="font-medium text-gray-600">{t('parameters')}:</span> {
                             Array.isArray(cond.parameters)
                               ? cond.parameters.map((p: unknown) => String(p)).join(', ')
                               : 'N/A'}
                         </div>
                         <div>
-                          <span className="font-medium text-gray-600">Return Value Test:</span>
                           <div className="ml-2">
-                            Who Can View it:
+                            {t('whoCanViewIt')}
                             <br />
                             {isSelfOnly && (
                               <p className="mt-2 text-green-600 font-medium">
-                                ✅ Only viewable by <span className="underline">you</span>.
+                                ✅ {t('onlyViewableBy')} <span className="underline">{t('you')}</span>.
                               </p>
                             )}
                           </div>
@@ -243,11 +194,11 @@ export default function OnboardingEth() {
                 })}
                 <button
                   onClick={() => {
-                    useOnboardingState.getState().setAccessControlConditions(null)
+                    useOnboardingState.getState().setAccessControlConditions([])
                   }}
-                  className="btn btn-outline btn-accent"
+                  className="btn btn-primary text-blue-600"
                 >
-                  🔄 Edit Access Control
+                  🔄 {t('editAccessControl')}
                 </button>
               </>
             )}
@@ -255,20 +206,20 @@ export default function OnboardingEth() {
         )}
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && (
-          <StepCard step="6" title={t('chooseDID')}>
+          <StepCard step="5" title={t('chooseDID')}>
             <div className="space-y-4">
               <p className="text-gray-600">
-                Your DID is automatically generated from your Bitcoin wallet address:
+                {t('yourDIDBTC')}:
               </p>
               <div className="bg-blue-50 p-4 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <code className="text-sm font-mono">did:health:btc:{walletAddress}</code>
+                  <code className="text-sm font-mono break-all max-w-full">did:health:btc:{walletAddress}</code>
                   <button
                     onClick={() => navigator.clipboard.writeText(`did:health:btc:${walletAddress}`)}
                     className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300 transition-colors"
                     title="Copy DID"
                   >
-                    📋 Copy
+                    📋 {t('common.copy')}
                   </button>
                 </div>
               </div>
@@ -277,7 +228,7 @@ export default function OnboardingEth() {
         )}
 
         {walletConnected && litConnected && storageReady && fhirResource && (accessControlConditions || encryptionSkipped) && did && (
-          <StepCard step="7" title={t('registerDID')}>
+          <StepCard step="6" title={t('RegisterDIDBTC.title')}>
             <RegisterDIDBTC />
           </StepCard>
         )}
@@ -287,11 +238,12 @@ export default function OnboardingEth() {
 }
 
 export function StepCard({ step, title, children }: StepCardProps) {
+  const { t } = useTranslation()
   return (
     <section className="relative bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl p-8 transition-transform hover:scale-[1.01] hover:shadow-2xl group">
       <div className="absolute -top-5 left-6">
         <div className="bg-blue-600 dark:bg-blue-400 text-white dark:text-gray-900 text-xs font-bold px-3 py-1 rounded-full shadow-md tracking-wider uppercase">
-          Step {step}
+          {t('step')} {step}
         </div>
       </div>
 

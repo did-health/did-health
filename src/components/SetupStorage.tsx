@@ -7,27 +7,28 @@ import { ResetWeb3SpaceButton } from './buttons/ResetWeb3SpaceButton'
 export function SetupStorage({ onReady }: { onReady: (client: any) => void }) {
   const { t } = useTranslation()
   const {
-    email: emailState,
+    email,
     web3SpaceDid,
+    storageReady,
     setEmail,
     setWeb3SpaceDid,
     setStorageReady,
   } = useOnboardingState()
 
-  const email = emailState || ''
+
 
   const [status, setStatus] = useState('')
   const [client, setClient] = useState<any>()
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    // Initialize client if we have email and web3SpaceDid
     if (email && web3SpaceDid && !client) {
       const initializeClient = async () => {
         try {
+          console.log('initializing client')
           const newClient = await create()
           setClient(newClient)
-          setStatus(t('setupStorage.status.alreadySetup', { did: web3SpaceDid }))
+          setStatus(t('setupStorage.status.alreadySetup'))
           setStorageReady(true)
         } catch (err) {
           console.error('Error initializing client:', err)
@@ -40,19 +41,22 @@ export function SetupStorage({ onReady }: { onReady: (client: any) => void }) {
   }, [email, web3SpaceDid, setStorageReady, t])
 
   async function setupStorage() {
+console.log('setting up storage')
     try {
       if (!email || !email.includes('@')) {
         setStatus(t('setupStorage.status.invalidEmail'))
         return
       }
+      console.log("loading......................")
       setLoading(true)
 
       const newClient = await create()
       setClient(newClient)
-
+      console.log("client created")
+      setStatus(t('setupStorage.status.emailSent'))
       const account = await newClient.login(email as `${string}@${string}`)
 
-      setStatus(t('setupStorage.status.emailSent'))
+
       // After each setStatus call in setupStorage and useEffect
 setStatus(t('setupStorage.status.emailSent'));
 console.log('Status set:', t('setupStorage.status.emailSent'));
@@ -65,12 +69,17 @@ console.log('Rendering status:', status);
       await account?.plan.wait()
 
       const space = await newClient.createSpace('did-health-user-space', { account })
-      await newClient.setCurrentSpace(space.did())
-
-      setWeb3SpaceDid(space.did())
-      setStorageReady(true)
-      setStatus(t('setupStorage.status.spaceReady', { did: space.did() }))
-
+      const spaceDid = space.did()
+      console.log('spaceDid', spaceDid)
+      await newClient.setCurrentSpace(spaceDid)
+      setEmail(email)
+      setWeb3SpaceDid(spaceDid)
+   
+      console.log('email', email)
+      console.log('web3SpaceDid', web3SpaceDid)
+      console.log('space', space)
+      console.log('storageReady', storageReady)
+      setStatus(t('setupStorage.status.spaceReady'))
       onReady(newClient)
     } catch (err) {
       console.error(err)
@@ -90,7 +99,7 @@ console.log('Rendering status:', status);
 
       await client.setCurrentSpace(newDid)
       setWeb3SpaceDid(newDid)
-      setStatus(t('setupStorage.status.spaceReady', { did: newDid }))
+      setStatus(t('setupStorage.status.spaceReady'))
     } catch (err) {
       console.error('Error resetting space:', err)
       setStatus(t('setupStorage.status.error'))
@@ -98,7 +107,7 @@ console.log('Rendering status:', status);
   }
 
   return (
-    <div className="max-w-md mx-auto p-4 space-y-4">
+    <div>
       <input
         type="email"
         className="input input-bordered w-full bg-white text-black rounded-md border border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-300 transition outline-none disabled:bg-gray-100 disabled:text-gray-400"

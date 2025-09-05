@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { v4 as uuidv4 } from 'uuid'
 import Webcam from 'react-webcam'
 import { useOnboardingState } from '../../store/OnboardingState'
+import { useTranslation } from 'react-i18next'
 import logo from '../../assets/did-health.png'
 import type { Practitioner } from 'fhir/r4'
 interface CreatePractitionerFormProps {
@@ -13,12 +14,15 @@ interface CreatePractitionerFormProps {
 
 const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ defaultValues, onSubmit }) => {
   const navigate = useNavigate()
-  const { fhirResource, setFHIRResource } = useOnboardingState()
+  const { fhirResource, setFhirResource } = useOnboardingState()
   const [practitioner, setPractitioner] = useState<Practitioner>(defaultValues)
   const [showCamera, setShowCamera] = useState(false)
   const webcamRef = useRef<Webcam>(null)
+  const { t } = useTranslation(['fhir'])
+  const { t: t2 } = useTranslation()
 
   useEffect(() => {
+    if (!practitioner) {
     if (fhirResource?.resourceType === 'Practitioner') {
       setPractitioner(fhirResource as Practitioner)
     } else {
@@ -37,12 +41,10 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
         ],
       })
     }
+    }
   }, [fhirResource])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    await onSubmit(practitioner)
-  }
+
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -70,31 +72,29 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
     if (!updatedPractitioner.id) {
       updatedPractitioner.id = uuidv4()
     }
-    setFHIRResource(updatedPractitioner)
+    setFhirResource(updatedPractitioner)
   }
 
   if (!practitioner) return null
 
   return (
-    <div className="flex justify-center items-start sm:items-center min-h-screen p-4 bg-gray-50 dark:bg-gray-950">
       <div className="w-full max-w-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-8">
-
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
-          {fhirResource?.resourceType === 'Practitioner' ? 'Edit' : 'Create'} did:health Practitioner Record
+          did:health {t('Practitioner.label')}
         </h2>
         <div className="space-y-4">
           {/* Demographics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">First Name</label>
+              <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('HumanName.given.label')}</label>
               <input id="firstName" type="text" name="name.0.given.0" value={practitioner.name?.[0]?.given?.[0] || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Last Name</label>
+              <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('HumanName.family.label')}</label>
               <input id="lastName" type="text" name="name.0.family" value={practitioner.name?.[0]?.family || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="gender" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Gender</label>
+              <label htmlFor="gender" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Patient.gender.label')}</label>
               <select id="gender" name="gender" value={practitioner.gender || ''} onChange={handleInputChange} className="input">
                 <option value="">Select Gender</option>
                 <option value="male">Male</option>
@@ -104,50 +104,50 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
               </select>
             </div>
             <div>
-              <label htmlFor="birthDate" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Birth Date</label>
+              <label htmlFor="birthDate" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Patient.birthDate.label')}</label>
               <input id="birthDate" type="date" name="birthDate" value={practitioner.birthDate || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Phone</label>
+              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.phone.label')}</label>
               <input id="phone" type="tel" name="telecom.0.value" value={practitioner.telecom?.[0]?.value || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Email</label>
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('ContactPoint.system.email.label')}</label>
               <input id="email" type="email" name="telecom.1.value" value={practitioner.telecom?.[1]?.value || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="addressLine" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Address Line</label>
+              <label htmlFor="addressLine" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Address.line.label')}</label>
               <input id="addressLine" type="text" name="address.0.line.0" value={practitioner.address?.[0]?.line?.[0] || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="city" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">City</label>
+              <label htmlFor="city" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Address.city.label')}</label>
               <input id="city" type="text" name="address.0.city" value={practitioner.address?.[0]?.city || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="state" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">State</label>
+              <label htmlFor="state" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Address.state.label')}</label>
               <input id="state" type="text" name="address.0.state" value={practitioner.address?.[0]?.state || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="postalCode" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Postal Code</label>
+              <label htmlFor="postalCode" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Address.postalCode.label')}</label>
               <input id="postalCode" type="text" name="address.0.postalCode" value={practitioner.address?.[0]?.postalCode || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="country" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Country</label>
+              <label htmlFor="country" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Address.country.label')}</label>
               <input id="country" type="text" name="address.0.country" value={practitioner.address?.[0]?.country || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="qualification" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Qualification (e.g., MD, RN)</label>
+              <label htmlFor="qualification" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Practitioner.qualification.short')}</label>
               <input id="qualification" type="text" name="qualification.0.code.text" value={practitioner.qualification?.[0]?.code?.text || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label htmlFor="specialty" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Specialty (e.g., Cardiology)</label>
+              <label htmlFor="specialty" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">{t('Practitioner.qualification.specialty.short')}</label>
               <input id="specialty" type="text" name="qualification.0.specialty.0.text" value={(practitioner.qualification?.[0] as PractitionerQualificationWithSpecialty)?.specialty?.[0]?.text || ''} onChange={handleInputChange} className="input" />
             </div>
             <div>
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 block mb-2">Identifier (e.g. NPI, MRN, SSN)</label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 block mb-2">{t('Practitioner.identifier.label')}</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label htmlFor="identifierType" className="sr-only">Identifier Type</label>
+                  <label htmlFor="identifierType" className="sr-only">{t('Practitioner.identifier.short')}</label>
                   <select id="identifierType" name="identifier.2.type.coding.0.code" value={practitioner?.identifier?.[2]?.type?.coding?.[0]?.code || ''} onChange={handleInputChange} className="input input-bordered w-full">
                     <option value="">Type</option>
                     <option value="NI">National Insurance (UK)</option>
@@ -158,11 +158,11 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="identifierSystem" className="sr-only">System URI</label>
+                  <label htmlFor="identifierSystem" className="sr-only">{t('Practitioner.identifier.system.label')}</label>
                   <input id="identifierSystem" name="identifier.2.system" value={practitioner?.identifier?.[2]?.system || ''} onChange={handleInputChange} className="input input-bordered w-full" placeholder="System URI" />
                 </div>
                 <div>
-                  <label htmlFor="identifierValue" className="sr-only">Identifier Value</label>
+                  <label htmlFor="identifierValue" className="sr-only">{t('Practitioner.identifier.value.label')}</label>
                   <input id="identifierValue" name="identifier.2.value" value={practitioner?.identifier?.[2]?.value || ''} onChange={handleInputChange} className="input input-bordered w-full" placeholder="Identifier Value" />
                 </div>
               </div>
@@ -173,12 +173,11 @@ const CreatePractitionerForm: React.FC<CreatePractitionerFormProps> = ({ default
               onClick={updatePractitioner}
               className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              {practitioner.id ? '💾 Update Practitioner' : '✅ Save Practitioner Record'}
+              {practitioner.id ? t2('common.update') : t2('common.create')} {t('Practitioner.label')}
             </button>
           </div>
         </div>
       </div>
-    </div>
   )
 }
 

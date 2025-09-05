@@ -1,21 +1,22 @@
 import type { FHIRRendererProps } from '../../types';
 import type { StructureDefinitionMap } from '../../types/fhir/StructureDefintion';
+import type { Address, ContactPoint, HumanName, CodeableConcept, Coding } from 'fhir/r4';
 /**
  * Renders arrays of FHIR contained resources
  */
-export const renderContainedResources = (resources: any[]): React.ReactNode => (
+export const renderContainedResources = (resources: any[], t: (key: string) => string): React.ReactNode => (
     <ul>
         {resources.map((resource, i) => (
             <li key={resource.id || `resource-${i}`}>
-                <strong>{resource.resourceType} {resource.name ? `- ${resource.name}` : (resource.id ? `#${resource.id}` : '')}</strong>
+                <strong>{t(`ResourceType.${resource.resourceType}.label`)} {resource.name ? `- ${resource.name}` : (resource.id ? `#${resource.id}` : '')}</strong>
                 {resource.partOf && (
                     <div>
-                        Part of: {resource.partOf.display || resource.partOf.reference}
+                        {t('Resource.partOf.label')}: {resource.partOf.display || resource.partOf.reference}
                     </div>
                 )}
                 {resource.type && (
                     <div>
-                        Type: {resource.type[0]?.coding?.[0]?.display || resource.type[0]?.coding?.[0]?.code || JSON.stringify(resource.type)}
+                        {t('Resource.type.label')}: {resource.type[0]?.coding?.[0]?.display || resource.type[0]?.coding?.[0]?.code || JSON.stringify(resource.type)}
                     </div>
                 )}
             </li>
@@ -26,7 +27,7 @@ export const renderContainedResources = (resources: any[]): React.ReactNode => (
 /**
  * Renders FHIR CodeableConcept values (like maritalStatus)
  */
-export const renderCodeableConcept = (concept: any): React.ReactNode => {
+export const renderCodeableConcept = (concept: CodeableConcept, t: (key: string) => string): React.ReactNode => {
     // Handle null or undefined
     if (!concept) return null;
 
@@ -57,16 +58,16 @@ export const renderCodeableConcept = (concept: any): React.ReactNode => {
 /**
  * Renders arrays of FHIR CodeableConcept elements
  */
-export const renderCodeableConceptValues = (concepts: any[]): React.ReactNode => {
+export const renderCodeableConceptValues = (concepts: any[], t: (key: string) => string): React.ReactNode => {
     if (!concepts || !Array.isArray(concepts)) {
-        return renderCodeableConcept(concepts);
+        return renderCodeableConcept(concepts, t);
     }
 
     return (
         <ul>
             {concepts.map((concept, i) => (
                 <li key={`concept-${i}`}>
-                    {renderCodeableConcept(concept)}
+                    {renderCodeableConcept(concept, t)}
                 </li>
             ))}
         </ul>
@@ -76,25 +77,26 @@ export const renderCodeableConceptValues = (concepts: any[]): React.ReactNode =>
 /**
  * Renders arrays of FHIR address elements
  */
-export const renderAddressValues = (addresses: any[]): React.ReactNode => (
+export const renderAddressValues = (addresses: Address[], t: (key: string) => string): React.ReactNode => (
     <ul>
         {addresses.map((address, i) => (
             <li key={`address-${i}`}>
+                <strong>{t('Address.label')}</strong>
                 {address.line && (
-                    <div>
+                    <div className="address-lines">
                         {address.line.map((line: string, j: number) => (
                             <div key={`line-${j}`}>{line}</div>
                         ))}
                     </div>
                 )}
-                <div>
+                <div className="address-details">
                     {address.city && <span>{address.city}, </span>}
                     {address.district && <span>{address.district}, </span>}
                     {address.state && <span>{address.state} </span>}
                     {address.postalCode && <span>{address.postalCode}</span>}
                 </div>
                 {address.country && <div>{address.country}</div>}
-                {address.use && <div><em>({address.use})</em></div>}
+                {address.use && <div><em>{address.use}</em></div>}
             </li>
         ))}
     </ul>
@@ -103,7 +105,7 @@ export const renderAddressValues = (addresses: any[]): React.ReactNode => (
 /**
  * Renders arrays of FHIR human name elements
  */
-export const renderHumanNameValues = (names: any[]): React.ReactNode => (
+export const renderHumanNameValues = (names: HumanName[], t: (key: string) => string): React.ReactNode => (
     <ul>
         {names.map((name, i) => (
             <li key={`name-${i}`}>
@@ -111,12 +113,12 @@ export const renderHumanNameValues = (names: any[]): React.ReactNode => (
                 {name.given && <span>{name.given.join(' ')} </span>}
                 {name.family && <span>{name.family}</span>}
                 {name.suffix && <span> {name.suffix.join(', ')}</span>}
-                {name.use && <div><em>({name.use})</em></div>}
+                {name.use && <div><em></em></div>}
                 {name.period && (
-                    <div>
+                    <div className="period">
                         <small>
-                            {name.period.start && `From: ${name.period.start}`}
-                            {name.period.end && ` To: ${name.period.end}`}
+                            {name.period.start && <span>{name.period.start}</span>}
+                            {name.period.end && <span>{name.period.end}</span>}
                         </small>
                     </div>
                 )}
@@ -128,13 +130,13 @@ export const renderHumanNameValues = (names: any[]): React.ReactNode => (
 /**
  * Renders arrays of FHIR language elements
  */
-export const renderLanguageValues = (languages: any[]): React.ReactNode => (
+export const renderLanguageValues = (languages: any[], t: (key: string) => string): React.ReactNode => (
     <ul>
         {languages.map((lang, i) => (
             <li key={`lang-${i}`}>
                 {lang.language?.coding?.[0]?.display || lang.language?.coding?.[0]?.code || ''}
                 {lang.language?.text && <span> ({lang.language.text})</span>}
-                {lang.preferred && <strong> (Preferred)</strong>}
+                {lang.preferred && <strong> ({lang.preferred})</strong>}
             </li>
         ))}
     </ul>
@@ -143,53 +145,43 @@ export const renderLanguageValues = (languages: any[]): React.ReactNode => (
 /**
  * Renders arrays of identifiers and telecom entries
  */
-export const renderIdentifierAndTelecom = (items: any[]): React.ReactNode => (
+export const renderIdentifierAndTelecom = (items: Array<ContactPoint | { system?: string; value: string; use?: string; type?: { coding?: Coding[]; text?: string } }>, t: (key: string) => string): React.ReactNode => (
     <ul>
         {items.map((item, i) => {
-            // Telecom entries like email/phone
-            if (item?.system && item?.value && !item.type) {
+            if (!item) return null; // Skip null items
+            
+            if ('system' in item && item.system && item.value) {
                 return (
                     <li key={`telecom-${i}`}>
-                        <strong>{item.system}</strong>: {item.value}
+                        {item.value}
                         {item.use && <span> ({item.use})</span>}
                     </li>
                 );
             }
-
-            // Identifier entries
-            if (item?.value) {
-                const coding = item.type?.coding?.[0];
-                const label =
-                    item.type?.text ||
-                    coding?.display ||
-                    coding?.code ||
-                    'Identifier';
-
+            if (item?.value && !item?.system) {
                 return (
                     <li key={`identifier-${i}`}>
-                        <strong>{label}</strong>: {item.value}
+                        {item.value}
                         {item.use && <span> ({item.use})</span>}
                     </li>
                 );
             }
-
-            // Fallback
             return <li key={`item-${i}`}>{JSON.stringify(item)}</li>;
         })}
     </ul>
-);
-
+)
 
 /**
  * Renders arrays of FHIR extension values and primitive data
  */
-export const renderExtensionValues = (value: any[], path: string, props: Omit<FHIRRendererProps, 'path' | 'value'>, renderElement: any): React.ReactNode => (
+export const renderExtensionValues = (value: any[], path: string, props: Omit<FHIRRendererProps, 'path' | 'value'>, renderElement: any, t: (key: string) => string): React.ReactNode => (
     value.map((v, i) => (
         <div key={i}>
             {renderElement({
                 path,
                 value: v,
-                ...props
+                ...props,
+                t
             })}
         </div>
     ))
@@ -198,19 +190,40 @@ export const renderExtensionValues = (value: any[], path: string, props: Omit<FH
 /**
  * Renders an array of generic objects with appropriate formatting
  */
-export const renderArrayOfObjects = (arr: any[], followReferences: boolean): React.ReactNode => {
+export const renderArrayOfObjects = (arr: any[], followReferences: boolean, t: (key: string) => string): React.ReactNode => {
     return (
         <ul>
             {arr.map((item, i) => {
-
                 if (typeof item !== 'object' || item === null) {
                     return <li key={i}>{String(item)}</li>;
                 }
 
                 if ('reference' in item && typeof item.reference === 'string' && item.reference.includes('/')) {
                     const [resourceType, id] = item.reference.split('/');
-                    return <li key={i}>{resourceType}</li>
+                    const hash = `#${resourceType}.${id}`;
+                    return (
+                        <li key={i}>
+                            <a 
+                                href={hash}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const target = document.querySelector(hash);
+                                    if (target) {
+                                        e.preventDefault();
+                                        target.scrollIntoView({ behavior: 'smooth' });
+                                    }
+                                }}
+                                className="text-blue-600 hover:underline"
+                                title={`View ${resourceType} ${id}`}
+                            >
+                                {t('view')}
+                            </a>
+                        </li>
+                    );
                 }
+                
+                // Handle case where the item is a reference object but we need to render something
+                return <li key={i}>{JSON.stringify(item)}</li>;
             })}
         </ul>
     );

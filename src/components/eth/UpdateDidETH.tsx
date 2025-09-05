@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useAccount } from 'wagmi'
 import { useOnboardingState } from '../../store/OnboardingState'
 import { ConnectWallet } from './WalletConnectETH'
@@ -15,7 +15,14 @@ import CreateOrganizationForm from '../fhir/CreateOrganizationForm'
 import CreatePractitionerForm from '../fhir/CreatePractitionerForm'
 import CreateDeviceForm from '../fhir/CreateDeviceForm'
 import { SetEncryption } from '../lit/SetEncryption'
-
+import {useTranslation} from 'react-i18next'
+import logo from '../../assets/did-health.png'
+import ethlogo from '../../assets/ethereum-eth-logo.svg'
+import { SetupStorage } from '../SetupStorage'
+interface FHIRResource {
+  accessControlConditions?: any
+  [key: string]: any
+}
 interface DIDDocument {
   id: string;
   controller: string;
@@ -81,14 +88,19 @@ function StatusModal({ isOpen, status, onClose }: { isOpen: boolean; status: str
 }
 
 export default function UpdateDIDETH() {
-  const { litClient, litConnected } = useOnboardingState()
+  const { litConnected, litClient, chainId, 
+    storageReady,
+    encryptionSkipped , fhirResource, 
+    walletAddress,
+    accessControlConditions, setFhirResource, 
+    setAccessControlConditions,
+    setStorageReady} = useOnboardingState()
   const { address: connectedWalletAddress, isConnected } = useAccount()
-
+  const { t } = useTranslation()
   const [status, setStatus] = useState('')
   const [didDoc, setDidDoc] = useState<DIDDocument | null>(null)
   const [fhir, setFhir] = useState<any | null>(null)
-  const [qrCode, setQrCode] = useState<string>('')
-  const [accessControlConditions, setAccessControlConditions] = useState<any | null>(null)
+
   const [resolvedChainName, setResolvedChainName] = useState<string>('')
   const [didFHIRResources, setDidFHIRResources] = useState<
     { uri: string; resource: any; error?: string }[]
@@ -96,82 +108,107 @@ export default function UpdateDIDETH() {
   const [modalOpen, setModalOpen] = useState(false)
   const [chainName, setChainName] = useState<string>('ethereum')
 
+  // Memoize the load function to prevent unnecessary re-renders
+  const loadData = useCallback(async () => {
+    try {
+      if (!connectedWalletAddress || !litConnected || !litClient) return
+
+      setStatus('🔍 Resolving DID...')
+      setDidDoc(null)
+      setFhir(fhirResource)
+      setChainName('')
+      setDidFHIRResources([])
+
+      if (!isConnected || !connectedWalletAddress) {
+        setStatus('❌ {t("walletNotConnected")}')
+        return
+      }
+
+      // Only try to resolve on the main chain (Sepolia)
+      if (!chainId) {
+        setStatus('❌ { t("noChainId") }')
+        return
+      }
+      
+      const result = await resolveDidHealth(chainId, connectedWalletAddress)
+      if (!result) {
+        setStatus('❌ {t("noDIDFound")}')
+        return
+      }
+
+      setStatus('✅ Resolved DID')
+      const { doc, chainName: resolvedChain } = result
+      setChainName(resolvedChain)
+      setDidDoc(doc)
+
+      // Extract FHIRResource service endpoints
+      const fhirServices = doc.service?.filter(
+        (s: any) => s.serviceEndpoint
+      ) || []
+
+      if (fhirServices.length === 0) {
+        setStatus('✅ ' + t('noFHIRResourcesFound'))
+        return
+      }
+
+      setDidFHIRResources(fhirServices)
+      const primary = fhirServices[0]
+      const resourceUrl = primary.serviceEndpoint
+      const isEncrypted = resourceUrl.endsWith('.enc') || resourceUrl.endsWith('.lit')
+
+      setStatus(`📦 ${t('fetchingFHIRResource')} ${resourceUrl}`)
+      const response = await fetch(resourceUrl)
+      
+      if (!response.ok) {
+        setStatus(`❌ Failed to fetch FHIR resource: ${response.statusText}`)
+        return
+      }
+
+      const json = await response.json() as FHIRResource
+      
+      if (isEncrypted) {
+        setStatus('🔐 Decrypting...')
+        const acc = json.accessControlConditions || []
+        setAccessControlConditions(acc)
+
+        const accChain = acc?.[0]?.chain || resolvedChain || 'ethereum'
+        const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
+        setFhir(decrypted)
+        setStatus('✅ Decrypted FHIR loaded. Ready to edit.')
+      } else {
+        setFhir(json)
+        setStatus('✅ Plaintext FHIR loaded. Ready to edit.')
+      }
+    } catch (err: any) {
+      console.error('Error loading data:', err)
+      setStatus(err.message || '❌ Unexpected error')
+    }
+  }, [
+    connectedWalletAddress,
+    isConnected,
+    litClient,
+    litConnected,
+    chainId,
+    fhirResource,
+    t
+  ])
+
+  // Main effect to load data
   useEffect(() => {
-    const load = async () => {
-      try {
-        if (!connectedWalletAddress || !litConnected || !litClient) return
+    if (isConnected && connectedWalletAddress && litConnected && litClient) {
+      const controller = new AbortController()
+      
+      // Load data with a small delay to prevent rapid re-fetches
+      const timer = setTimeout(() => {
+        loadData().catch(console.error)
+      }, 100)
 
-        setStatus('🔍 Resolving DID...')
-        setDidDoc(null)
-        setFhir(null)
-        setQrCode('')
-        setChainName('')
-        setDidFHIRResources([])
-
-        if (!isConnected || !connectedWalletAddress) {
-          setStatus('❌ Wallet not connected')
-          return
-        }
-
-        // Only try to resolve on the main chain (Sepolia)
-        const chainId = 11155111 // Sepolia
-        const result = await resolveDidHealth(chainId, connectedWalletAddress)
-        if (!result) {
-          setStatus('❌ No DID found on supported chains')
-          return
-        }
-
-        setStatus('✅ DID resolved!')
-        const { doc, chainName } = result
-        setChainName(chainName)
-        setDidDoc(doc)
-
-        // Extract FHIRResource service endpoints
-        const fhirServices = doc.service?.filter(
-          (s: any) => s.serviceEndpoint
-        ) || []
-
-        if (fhirServices.length === 0) {
-          setStatus('✅ DID resolved, but no FHIR resources found')
-          return
-        }
-
-        setDidFHIRResources(fhirServices)
-        const primary = fhirServices[0]
-        const resourceUrl = primary.serviceEndpoint
-
-        const isEncrypted = primary.serviceEndpoint.endsWith('.enc') || primary.serviceEndpoint.endsWith('.lit')
-
-        setStatus(`📦 Fetching FHIR resource from ${resourceUrl}...`)
-        const response = await fetch(resourceUrl)
-        if (!response.ok) throw new Error(`❌ Failed to fetch: ${response.statusText}`)
-
-        const json = await response.json()
-
-        if (isEncrypted) {
-          setStatus('🔐 Decrypting...')
-          const acc = json.accessControlConditions || []
-          useOnboardingState.setState({ accessControlConditions: acc })
-
-          const accChain = acc?.[0]?.chain || chainName || 'ethereum'
-          const decrypted = await getLitDecryptedFHIR(json, litClient, { chain: accChain })
-
-          setFhir(decrypted)
-          setStatus('✅ Decrypted FHIR loaded. Ready to edit.')
-        } else {
-          setFhir(json)
-          setStatus('✅ Plaintext FHIR loaded. Ready to edit.')
-        }
-      } catch (err: any) {
-        console.error(err)
-        setStatus(err.message || '❌ Unexpected error')
+      return () => {
+        controller.abort()
+        clearTimeout(timer)
       }
     }
-
-    if (isConnected && connectedWalletAddress && litConnected && litClient) {
-      load()
-    }
-  }, [connectedWalletAddress, isConnected, litConnected, litClient])
+  }, [isConnected, connectedWalletAddress, litConnected, litClient, loadData])
 
   const handleUpdateClick = () => {
     if (!fhir) {
@@ -193,8 +230,7 @@ export default function UpdateDIDETH() {
   const handleUpdateDID = async (updatedFHIR: any) => {
     try {
       const resourceType = updatedFHIR?.resourceType
-      const { encryptionSkipped, accessControlConditions } = useOnboardingState.getState()
-  
+    
       if (!didDoc?.id) {
         setStatus('❌ DID Document not loaded')
         return
@@ -244,15 +280,29 @@ export default function UpdateDIDETH() {
       setStatus('📄 Updating DID Document...')
       const updatedService = {
         id: `${didDoc.id}#fhir`,
-        type: 'FHIRResource',
+        type: resourceType,
         serviceEndpoint: fhirUrl
       }
   
       const existingServices = Array.isArray(didDoc.service) ? didDoc.service : []
-      const updatedServices = [
-        ...existingServices.filter((s: { type: string; id?: string }) => !(s.type === 'FHIRResource' || s.id?.includes('#fhir'))),
-        updatedService
-      ]
+
+      const updatedServices = []
+      
+      let replaced = false
+      
+      for (const s of existingServices) {
+        if (s.id?.includes('#fhir') && s.type === resourceType) {
+          updatedServices.push(updatedService)
+          replaced = true
+        } else {
+          updatedServices.push(s)
+        }
+      }
+      
+      // Append if no match was replaced
+      if (!replaced) {
+        updatedServices.push(updatedService)
+      }
   
       const updatedDidDoc = {
         ...didDoc,
@@ -260,7 +310,7 @@ export default function UpdateDIDETH() {
       }
   
       // 📦 Upload updated DID Document to IPFS
-      const didDocUrl = await storePlainFHIRFile(updatedDidDoc, `did-${uuidv4()}`, 'didDocument')
+      const didDocUrl = await storePlainFHIRFile(updatedDidDoc, `didhealth-${uuidv4()}`, 'didDocument')
       if (!didDocUrl) throw new Error('❌ Failed to upload updated DID Document')
   
       // 🔗 Update the DID registry on-chain with the new DID Document URI
@@ -281,6 +331,12 @@ export default function UpdateDIDETH() {
   }
 
 
+  const handleSubmit = async (updatedFHIR: any) => {
+    console.log('💾 Submitting updated FHIR:', updatedFHIR)
+    setFhirResource(updatedFHIR)
+    setFhir(updatedFHIR)
+  }
+
   const renderForm = () => {
     if (!fhir || typeof fhir.resourceType !== 'string') {
       return <p className="text-sm text-gray-500">⏳ Loading or unsupported resource...</p>
@@ -288,7 +344,7 @@ export default function UpdateDIDETH() {
 
     const props = {
       defaultValues: fhir,
-      onSubmit: handleUpdateDID,
+      onSubmit: handleSubmit,
     }
 
     switch (fhir.resourceType) {
@@ -306,43 +362,125 @@ export default function UpdateDIDETH() {
   }
 
   return (
-    <main className="p-6 space-y-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold">✏️ Update Your <span className="text-indigo-600">did:health</span> Resource</h1>
-
-      <ConnectWallet />
-      <ConnectLit />
-      {/* ✅ Show resolved DID */}
-      {didDoc?.id && (
-        <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-700 text-sm text-gray-800 dark:text-gray-200">
-          <p className="font-medium text-gray-600 dark:text-gray-400 mb-1">Resolved DID:</p>
-          <code className="block break-words text-indigo-700 dark:text-indigo-400">{didDoc.id}</code>
-          <p className="mt-1 text-xs text-gray-500">🔗 Found on: {chainName}</p>
-        </div>
-      )}
-
-      {status && <p className="text-sm text-gray-600">{status}</p>}
-      {renderForm()}
-
-      {fhir && (
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold">🔐 Edit Access Control</h2>
-          <SetEncryption />
-          <div className="mt-4 text-right">
-            <button
-              onClick={handleUpdateClick}
-              className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
-            >
-              🔄 Update did:health
-            </button>
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header with Logios */}
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center gap-6 mb-4">
+            {/* DID:Health Logo */}
+            <div className="w-16 h-16 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-red-400/40 hover:scale-105 transition-transform duration-300">
+              <img
+                src={logo}
+                alt="did:health Logo"
+                className="w-full h-full object-contain p-2"
+              />
+            </div>
+            <div className="text-2xl font-bold text-gray-600 dark:text-gray-300">+</div>
+            {/* Chain Logo */}
+            <div className="w-16 h-16 rounded-full overflow-hidden shadow-lg bg-white/10 backdrop-blur-md ring-4 ring-yellow-400/30 hover:rotate-6 hover:scale-110 transition-all duration-300">
+              <img
+                src={ethlogo}
+                alt="Ethereum logo"
+                className="w-full h-full object-contain p-2"
+              />
+            </div>
           </div>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">✏️ {t('updateDID')}</h1>
         </div>
-      )}
 
-      <StatusModal
-        isOpen={modalOpen}
-        status={status}
-        onClose={() => setModalOpen(false)}
-      />
+        {/* Main Content */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 space-y-6">
+          <ConnectWallet />
+          <ConnectLit />
+
+          {/* Show resolved DID */}
+          {didDoc?.id && (
+            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+              <p className="font-medium text-gray-600 dark:text-gray-300 mb-1">{t('resolvedDID')}:</p>
+              <code className="block break-words text-indigo-600 dark:text-indigo-300 text-sm p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                {didDoc.id}
+              </code>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                🔗 Found on: {chainName}
+              </p>
+            </div>
+          )}
+
+          {status && (
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-sm">
+              {status}
+            </div>
+          )}
+
+          {renderForm()}
+
+          {fhir && (
+            <div className="space-y-6">
+              {storageReady && (
+                <div> 
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">{t('setupStorage.title')}</h2>
+               
+               <SetupStorage 
+                  onReady={(client) => {
+                    setStorageReady(true)
+                    console.log('Storage setup complete:', client)
+                  }} 
+                />
+                 </div>
+              )}
+
+              {!encryptionSkipped && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+                    {t('AccessControlConditions')}
+                  </h2>
+                  <p className="text-green-600 dark:text-green-400 font-medium">
+                    ✅ {t('AccessControlConditionsSet')}
+                  </p>
+                  
+                  {accessControlConditions?.map((cond: any, idx: number) => {
+                    const isSelf = cond.returnValueTest?.comparator === '=' &&
+                      String(cond.returnValueTest?.value).toLowerCase() === walletAddress?.toLowerCase();
+
+                    return (
+                      <div key={idx} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div className="text-sm text-gray-800 dark:text-gray-200">
+                          <div className="font-mono text-sm break-all">
+                            {cond.returnValueTest?.value.toLowerCase()}
+                          </div>
+                          {isSelf && (
+                            <p className="mt-2 text-green-600 dark:text-green-400 font-medium">
+                              ✅ {t('ViewableBy')} <span className="underline">{t('you')}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => useOnboardingState.getState().setAccessControlConditions([])}
+                    className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                  >
+                    🔄 {t('editAccessControl')}
+                  </button>
+                </div>
+              )}
+
+              {(encryptionSkipped || ((accessControlConditions?.length ?? 0) > 0)) && (
+                <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={handleUpdateClick}
+                    className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
+                  >
+                    🔄 {t('updateDID')}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </main>
   )
 }

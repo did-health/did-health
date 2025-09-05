@@ -309,7 +309,7 @@ const deployedContracts = {
         chainId: 421614,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://arb-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
+          "https://arb-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "arbitrum-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/arbitrum-sepolia/version/latest",
@@ -788,7 +788,7 @@ const deployedContracts = {
         chainId: 421614,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://arb-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
+          "https://arb-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "arbitrum-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/arbitrum-sepolia/version/latest",
@@ -1103,7 +1103,7 @@ const deployedContracts = {
         chainId: 84532,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
+          "https://base-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "base-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/base-sepolia/version/latest",
@@ -1582,7 +1582,7 @@ const deployedContracts = {
         chainId: 84532,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://base-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
+          "https://base-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "base-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/base-sepolia/version/latest",
@@ -1898,7 +1898,7 @@ const deployedContracts = {
         chainId: 11155420,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://opt-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
+          "https://opt-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "optimism-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/optimism-sepolia/version/latest",
@@ -2377,7 +2377,7 @@ const deployedContracts = {
         chainId: 11155420,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://opt-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
+          "https://opt-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "optimism-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/optimism-sepolia/version/latest",
@@ -3093,7 +3093,7 @@ const deployedContracts = {
         chainId: 534351,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://scroll-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
+          "https://scroll-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "scroll-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/scroll-sepolia/version/latest",
@@ -3572,7 +3572,7 @@ const deployedContracts = {
         chainId: 534351,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://scroll-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
+          "https://scroll-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "scroll-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/scroll-sepolia/version/latest",
@@ -3580,7 +3580,7 @@ const deployedContracts = {
     },
     sepolia: {
       DidHealthDAO: {
-        address: "0x726D744e6536Cf2cfDb7df484dB1f1Df905375D4",
+        address: "0x42148f8363b5d93fD44C2599d8A5A4C98562e9b1",
         abi: [
           {
             type: "constructor",
@@ -3608,6 +3608,11 @@ const deployedContracts = {
               },
               {
                 name: "ipfsUri",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "zipCode",
                 type: "string",
                 internalType: "string",
               },
@@ -3644,6 +3649,11 @@ const deployedContracts = {
                 type: "string",
                 internalType: "string",
               },
+              {
+                name: "zipCode",
+                type: "string",
+                internalType: "string",
+              },
             ],
             outputs: [],
             stateMutability: "nonpayable",
@@ -3659,6 +3669,11 @@ const deployedContracts = {
               },
             ],
             outputs: [
+              {
+                name: "",
+                type: "string",
+                internalType: "string",
+              },
               {
                 name: "",
                 type: "string",
@@ -3738,6 +3753,11 @@ const deployedContracts = {
               },
               {
                 name: "orgName",
+                type: "string",
+                internalType: "string",
+              },
+              {
+                name: "zipCode",
                 type: "string",
                 internalType: "string",
               },
@@ -3842,6 +3862,12 @@ const deployedContracts = {
                 indexed: false,
                 internalType: "string",
               },
+              {
+                name: "zipCode",
+                type: "string",
+                indexed: false,
+                internalType: "string",
+              },
             ],
             anonymous: false,
           },
@@ -3867,6 +3893,12 @@ const deployedContracts = {
                 indexed: false,
                 internalType: "string",
               },
+              {
+                name: "zipCode",
+                type: "string",
+                indexed: false,
+                internalType: "string",
+              },
             ],
             anonymous: false,
           },
@@ -3887,13 +3919,13 @@ const deployedContracts = {
         chainId: 11155111,
         chainIdHex: "0xaa36a7",
         rpcUrl:
-          "https://eth-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
+          "https://eth-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/sepolia/version/latest",
       },
       HealthDIDRegistry: {
-        address: "0x05837A4e999DA0e5725eE8B287e864455CF1D589",
+        address: "0x05ffdD89B0dc76C4Cd607aaf83D7E0A641D3E2C5",
         abi: [
           {
             type: "constructor",
@@ -4366,7 +4398,7 @@ const deployedContracts = {
         chainId: 11155111,
         chainIdHex: "0xaa36a7",
         rpcUrl:
-          "https://eth-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
+          "https://eth-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/sepolia/version/latest",
@@ -4681,7 +4713,7 @@ const deployedContracts = {
         chainId: 300,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://zksync-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
+          "https://zksync-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "zksync-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/zksync-sepolia/version/latest",
@@ -5214,7 +5246,7 @@ const deployedContracts = {
         chainId: 300,
         chainIdHex: "0x0",
         rpcUrl:
-          "https://zksync-sepolia.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_KEY}",
+          "https://zksync-sepolia.g.alchemy.com/v2/BXP3qmrrSWjmqSOJYQitNssCMI4dI_Ke",
         litChainKey: "zksync-sepolia",
         graphRpcUrl:
           "https://api.studio.thegraph.com/query/114229/zksync-sepolia/version/latest",
